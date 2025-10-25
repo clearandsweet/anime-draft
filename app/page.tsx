@@ -2,40 +2,6 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 
-// TEMP data until AniList loads
-const fakeAnimePool = [
-  {
-    id: 1,
-    title: {
-      english: "Fullmetal Alchemist: Brotherhood",
-      romaji: "Hagane no Renkinjutsushi: Brotherhood",
-    },
-    coverImage: {
-      large: "https://placehold.co/200x280?text=FMA:B",
-    },
-    seasonYear: 2009,
-    format: "TV",
-    popularity: 999999,
-    episodes: 64,
-    genres: ["Action", "Adventure", "Drama"],
-  },
-  {
-    id: 2,
-    title: {
-      english: "Chainsaw Man",
-      romaji: "Chainsaw Man",
-    },
-    coverImage: {
-      large: "https://placehold.co/200x280?text=CSM",
-    },
-    seasonYear: 2022,
-    format: "TV",
-    popularity: 888888,
-    episodes: 12,
-    genres: ["Action", "Horror", "Dark Comedy"],
-  },
-];
-
 const PLAYER_COLOR_KEYS = [
   "rose",
   "sky",
@@ -70,7 +36,6 @@ function makeInitialPlayers() {
   }));
 }
 
-// color theming for each player
 const COLOR_MAP: Record<
   string,
   {
@@ -150,44 +115,76 @@ function roundIsOdd(r: number) {
   return r % 2 === 1;
 }
 
+// formats a big popularity number like 16091565 -> "16.09M"
+function formatPopularityMillions(pop: number) {
+  const millions = pop / 1_000_000;
+  return `${millions.toFixed(2)}M`;
+}
+
 export default function Page() {
-  // ---------- STATE ----------
-  const [animePool, setAnimePool] = useState<any[]>(fakeAnimePool);
+  // initial placeholder pool shown for half a second before AniList loads in
+  const [animePool, setAnimePool] = useState<any[]>([
+    {
+      id: 1,
+      title: {
+        english: "Fullmetal Alchemist: Brotherhood",
+        romaji: "Hagane no Renkinjutsushi: Brotherhood",
+      },
+      coverImage: {
+        large: "https://placehold.co/200x280?text=FMA:B",
+      },
+      seasonYear: 2009,
+      format: "TV",
+      popularity: 999999,
+      episodes: 64,
+      genres: ["Action", "Adventure", "Drama"],
+    },
+    {
+      id: 2,
+      title: {
+        english: "Chainsaw Man",
+        romaji: "Chainsaw Man",
+      },
+      coverImage: {
+        large: "https://placehold.co/200x280?text=CSM",
+      },
+      seasonYear: 2022,
+      format: "TV",
+      popularity: 888888,
+      episodes: 12,
+      genres: ["Action", "Horror", "Dark Comedy"],
+    },
+  ]);
+
   const [players, setPlayers] = useState<any[]>(makeInitialPlayers);
 
-  // snake draft state
-  const [round, setRound] = useState<number>(1); // start round 1
+  const [round, setRound] = useState<number>(1);
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState<number>(0);
 
-  // timer + last pick
-  const [timerSeconds, setTimerSeconds] = useState<number>(180); // 3 min
+  const [timerSeconds, setTimerSeconds] = useState<number>(180);
   const [lastPick, setLastPick] = useState<null | {
     playerName: string;
     anime: any;
   }>(null);
 
-  // filters
   const [filters, setFilters] = useState<{ year: string; searchText: string }>({
     year: "All",
     searchText: "",
   });
 
-  // undo stack
-  // each entry: { playerIndex, anime, round }
+  // history entries: { playerIndex, anime, round }
   const [history, setHistory] = useState<
     { playerIndex: number; anime: any; round: number }[]
   >([]);
 
-  // current drafter
   const currentPlayer = players[currentPlayerIndex];
 
-  // timer display mm:ss
   const clockDisplay =
     String(Math.floor(timerSeconds / 60)).padStart(2, "0") +
     ":" +
     String(timerSeconds % 60).padStart(2, "0");
 
-  // ---------- HYDRATE REAL DATA FROM /api/anime ----------
+  // fetch top anime data from our serverless route
   useEffect(() => {
     async function load() {
       try {
@@ -207,37 +204,32 @@ export default function Page() {
     load();
   }, []);
 
-  // distinct years to populate dropdown
+  // unique years for dropdown
   const years = useMemo(() => {
     const ys = new Set(animePool.map((a) => a.seasonYear));
     return ["All", ...Array.from(ys).sort((a: any, b: any) => b - a)];
   }, [animePool]);
 
-  // apply filters
+  // filtered pool
   const filteredAnime = useMemo(() => {
     return animePool.filter((a) => {
-      const yearMatch =
+      const matchesYear =
         filters.year === "All" || String(a.seasonYear) === String(filters.year);
-      const textBlob = `${a.title.english || ""} ${
+      const text = `${a.title.english || ""} ${
         a.title.romaji || ""
       } ${a.title.native || ""}`.toLowerCase();
-      const searchMatch = textBlob.includes(
-        filters.searchText.toLowerCase()
-      );
-      return yearMatch && searchMatch;
+      const matchesSearch = text.includes(filters.searchText.toLowerCase());
+      return matchesYear && matchesSearch;
     });
   }, [animePool, filters]);
 
-  // ---------- TIMER WITH AUTOPICK ----------
+  // timer w/ auto-pick
   useEffect(() => {
     const id = setInterval(() => {
       setTimerSeconds((t) => {
         if (t > 1) return t - 1;
 
-        // timeout -> auto pick best available
         autopickIfNeeded();
-
-        // reset timer for whoever's next
         return 180;
       });
     }, 1000);
@@ -259,7 +251,7 @@ export default function Page() {
     performPick(top);
   }
 
-  // ---------- DRAFT ACTION ----------
+  // Draft action
   function performPick(chosenAnime: any) {
     const drafterIndex = currentPlayerIndex;
     const drafter = players[drafterIndex];
@@ -268,7 +260,7 @@ export default function Page() {
     // remove from pool
     setAnimePool((prev) => prev.filter((a) => a.id !== chosenAnime.id));
 
-    // add to player's picks
+    // give to player
     setPlayers((prev) =>
       prev.map((pl, i) =>
         i === drafterIndex
@@ -282,10 +274,10 @@ export default function Page() {
       )
     );
 
-    // store last pick info
+    // announce last pick
     setLastPick({ playerName: drafter.name, anime: chosenAnime });
 
-    // log in undo history
+    // push history (for undo)
     setHistory((prev) => [
       ...prev,
       {
@@ -295,7 +287,7 @@ export default function Page() {
       },
     ]);
 
-    // advance the turn
+    // move to next drafter
     advanceTurn();
   }
 
@@ -305,38 +297,36 @@ export default function Page() {
     performPick(chosen);
   }
 
-  // ---------- SNAKE TURN ORDER ----------
+  // snake draft turn advance
   function advanceTurn() {
     setTimerSeconds(180);
 
     setCurrentPlayerIndex((idx) => {
       const goingForward = roundIsOdd(round);
-
       const atEndForward = goingForward && idx === players.length - 1;
       const atEndBackward = !goingForward && idx === 0;
 
       if (atEndForward || atEndBackward) {
-        // just finished a round
+        // end of round
         setRound((r) => r + 1);
-        // stay at the end so next round starts from here going opposite direction
+        // we stay on same drafter index to start next round from that end
         return goingForward ? players.length - 1 : 0;
       }
 
-      // still same round, keep moving
       return goingForward ? idx + 1 : idx - 1;
     });
   }
 
-  // ---------- UNDO LAST PICK ----------
+  // undo last pick
   function handleUndo() {
     if (history.length === 0) return;
     const last = history[history.length - 1];
     const { playerIndex, anime: undoneAnime, round: prevRound } = last;
 
-    // return anime to pool
+    // put anime back
     setAnimePool((prev) => [...prev, undoneAnime]);
 
-    // remove from that player's picks + fix score
+    // remove from player's picks
     setPlayers((prev) =>
       prev.map((pl, i) => {
         if (i !== playerIndex) return pl;
@@ -351,19 +341,40 @@ export default function Page() {
       })
     );
 
-    // roll back turn/round
+    // roll back turn
     setHistory((prev) => prev.slice(0, prev.length - 1));
     setRound(prevRound);
     setCurrentPlayerIndex(playerIndex);
 
-    // clear last pick banner (that pick no longer happened)
     setLastPick(null);
-
-    // restart the clock for the restored drafter
     setTimerSeconds(180);
   }
 
-  // ---------- RENDER ----------
+  // figure out popularity min/max across all players
+  const { minPop, maxPop } = useMemo(() => {
+    if (players.length === 0) {
+      return { minPop: 0, maxPop: 0 };
+    }
+    const pops = players.map((p) => p.popularityTotal || 0);
+    return {
+      minPop: Math.min(...pops),
+      maxPop: Math.max(...pops),
+    };
+  }, [players]);
+
+  // helper to color each player's popularity based on min/max
+  function popularityColorClass(pop: number) {
+    if (pop === maxPop && maxPop !== minPop) {
+      // worst (highest demerits) -> red
+      return "text-red-400";
+    }
+    if (pop === minPop && maxPop !== minPop) {
+      // best (lowest demerits) -> green
+      return "text-emerald-400";
+    }
+    return "text-neutral-300";
+  }
+
   return (
     <div className="min-h-screen bg-neutral-900 text-neutral-100 p-4 grid grid-rows-[auto_1fr] gap-4 font-sans">
       {/* HEADER */}
@@ -372,7 +383,7 @@ export default function Page() {
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-2xl font-bold">Anime Draft</h1>
 
-            {/* on the clock */}
+            {/* ON THE CLOCK */}
             <div className="text-xs bg-neutral-800 border border-neutral-700 rounded-lg px-2 py-1 text-neutral-300 flex items-center gap-1">
               <span className="text-neutral-500 uppercase">On the clock:</span>
               <span className="font-semibold text-white">
@@ -381,7 +392,7 @@ export default function Page() {
               <span className="text-neutral-500">(R{round})</span>
             </div>
 
-            {/* timer */}
+            {/* TIMER */}
             <div className="text-xs bg-neutral-800 border border-neutral-700 rounded-lg px-2 py-1 text-neutral-300">
               Time left:{" "}
               <span className="font-mono text-white">{clockDisplay}</span>
@@ -444,11 +455,14 @@ export default function Page() {
 
       {/* BODY */}
       <main className="grid grid-cols-1 xl:grid-cols-[1fr_1fr] gap-4 min-h-0">
-        {/* LEFT COLUMN: player rosters */}
+        {/* LEFT: PLAYERS / ROSTERS */}
         <aside className="bg-neutral-800/40 border border-neutral-700/50 rounded-2xl p-3 overflow-y-auto min-h-0 space-y-4">
           {players.map((p, i) => {
             const base = COLOR_MAP[p.color] || COLOR_MAP.fallback;
             const isOnClock = i === currentPlayerIndex;
+
+            // figure color class for demerits
+            const demColor = popularityColorClass(p.popularityTotal || 0);
 
             return (
               <div
@@ -460,7 +474,9 @@ export default function Page() {
                     : "border-neutral-700")
                 }
               >
-                <div className="flex items-baseline justify-between mb-2">
+                {/* header row for player */}
+                <div className="flex items-start justify-between flex-wrap gap-2 mb-2">
+                  {/* left: name + badge */}
                   <div className="font-semibold text-neutral-100 flex items-center gap-2">
                     <span>{p.name}</span>
                     {isOnClock && (
@@ -474,62 +490,85 @@ export default function Page() {
                       </span>
                     )}
                   </div>
-                  <div className="text-[10px] text-neutral-500 text-right leading-tight">
-                    <div>{p.picks.length} picks</div>
-                    <div className="text-[10px] text-neutral-600">
-                      pop {p.popularityTotal || 0}
+
+                  {/* right: counts & demerits */}
+                  <div className="text-[10px] leading-tight text-right flex flex-col items-end">
+                    <div className="text-neutral-400">
+                      {p.picks.length} picks
+                    </div>
+                    <div className={`${demColor} font-semibold`}>
+                      <span className="block text-[9px] uppercase text-neutral-500">
+                        Popularity Demerits
+                      </span>
+                      <span className="text-[11px]">
+                        {formatPopularityMillions(
+                          p.popularityTotal || 0
+                        )}
+                      </span>
                     </div>
                   </div>
                 </div>
 
-                <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
-                  {p.picks.length === 0 && (
+                {/* PICKS GRID */}
+                <div className="max-w-[900px]">
+                  {p.picks.length === 0 ? (
                     <div className="text-neutral-600 text-xs italic">
                       No picks yet
                     </div>
-                  )}
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {p.picks.map((anime: any) => (
+                        <div
+                          key={anime.id}
+                          className="flex flex-col bg-neutral-800 border border-neutral-700/60 rounded-lg p-2 w-[180px] text-xs"
+                        >
+                          <div className="flex gap-2">
+                            <img
+                              src={anime.coverImage.large}
+                              alt={
+                                anime.title.english ||
+                                anime.title.romaji
+                              }
+                              className="w-10 h-16 object-cover rounded shadow-[0_0_12px_rgba(0,0,0,0.8)]"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium text-neutral-100 leading-snug text-[11px] truncate">
+                                {anime.title.english ||
+                                  anime.title.romaji}
+                              </div>
+                              <div className="text-[10px] text-neutral-500 truncate">
+                                {anime.seasonYear} • {anime.format}
+                              </div>
+                            </div>
+                          </div>
 
-                  {p.picks.map((anime: any) => (
-                    <div
-                      key={anime.id}
-                      className="flex items-start gap-2 text-xs bg-neutral-800 rounded-lg p-2 border border-neutral-700/60"
-                    >
-                      <img
-                        src={anime.coverImage.large}
-                        alt={anime.title.english || anime.title.romaji}
-                        className="w-14 h-20 object-cover rounded shadow-[0_0_12px_rgba(0,0,0,0.8)]"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium text-neutral-100 leading-snug truncate text-[11px]">
-                          {anime.title.english || anime.title.romaji}
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {anime.genres
+                              ?.slice(0, 3)
+                              .map((g: string) => (
+                                <span
+                                  key={g}
+                                  className="text-[9px] leading-tight bg-neutral-900 border border-neutral-700 rounded px-1 py-[1px] text-neutral-400"
+                                >
+                                  {g}
+                                </span>
+                              ))}
+                          </div>
                         </div>
-                        <div className="text-[10px] text-neutral-500 truncate">
-                          {anime.seasonYear} • {anime.format}
-                        </div>
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {anime.genres?.slice(0, 3).map((g: string) => (
-                            <span
-                              key={g}
-                              className="text-[9px] leading-tight bg-neutral-900 border border-neutral-700 rounded px-1 py-[1px] text-neutral-400"
-                            >
-                              {g}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
+                      ))}
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
             );
           })}
         </aside>
 
-        {/* RIGHT COLUMN: big board */}
+        {/* RIGHT: BIG BOARD */}
         <section className="flex flex-col min-h-0 bg-neutral-800/40 border border-neutral-700/50 rounded-2xl p-4">
-          {/* filters */}
+          {/* FILTERS */}
           <div className="flex flex-wrap gap-3 items-end mb-4">
-            {/* Year filter */}
+            {/* Year */}
             <div className="flex flex-col">
               <label className="text-xs text-neutral-400">Year</label>
               <select
@@ -547,7 +586,7 @@ export default function Page() {
               </select>
             </div>
 
-            {/* Search box */}
+            {/* Search */}
             <div className="flex flex-col flex-1 min-w-[200px] max-w-[300px]">
               <label className="text-xs text-neutral-400">Search</label>
               <input
@@ -564,7 +603,7 @@ export default function Page() {
             </div>
           </div>
 
-          {/* anime list */}
+          {/* ANIME GRID */}
           <div className="overflow-y-auto min-h-0 grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4">
             {filteredAnime.map((anime: any, idx: number) => (
               <AnimeCard
@@ -588,7 +627,6 @@ export default function Page() {
   );
 }
 
-// card for each anime in big board
 function AnimeCard({
   anime,
   rank,
