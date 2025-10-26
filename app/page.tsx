@@ -31,7 +31,7 @@ type Player = {
 
 // ---------- constants ----------
 
-// updated slot names per your request
+// slot names (your edited version)
 const SLOT_NAMES = [
   "Waifu",
   "Husbando",
@@ -169,6 +169,12 @@ export default function CharacterDraftApp() {
     slot: string;
   } | null>(null);
 
+  // deep cut search state
+  const [showDeepSearchModal, setShowDeepSearchModal] = useState<boolean>(false);
+  const [deepSearchQuery, setDeepSearchQuery] = useState<string>("");
+  const [deepSearchLoading, setDeepSearchLoading] = useState<boolean>(false);
+  const [deepSearchResults, setDeepSearchResults] = useState<Character[]>([]);
+
   const currentPlayer = players[currentPlayerIndex];
 
   const clockDisplay = `${String(Math.floor(timerSeconds / 60)).padStart(
@@ -273,8 +279,16 @@ export default function CharacterDraftApp() {
   }
 
   // ---------- user clicked "Pick" ----------
-  function handleDraft(id: number) {
-    const chosen = characters.find((c) => c.id === id);
+  // enhance to accept either ID (normal board) or a full deep-search character
+  function handleDraft(idOrChar: number | Character) {
+    let chosen: Character | undefined;
+
+    if (typeof idOrChar === "number") {
+      chosen = characters.find((c) => c.id === idOrChar);
+    } else {
+      chosen = idOrChar;
+    }
+
     if (!chosen) return;
     setPendingPick(chosen);
     setPaused(true);
@@ -287,7 +301,8 @@ export default function CharacterDraftApp() {
     const drafter = players[idx];
     if (!slotName || drafter.slots[slotName]) return;
 
-    // remove from pool
+    // remove from pool (if they were in pool; if they came from deep search
+    // and aren't in pool, this filter just won't remove anything, which is fine)
     setCharacters((prev) => prev.filter((c) => c.id !== chosen.id));
 
     // assign into that player's slot
@@ -379,7 +394,34 @@ export default function CharacterDraftApp() {
     setTimerSeconds(180);
   }
 
-  // ---------- loading screen while we grab (up to) 10k chars ----------
+  // ---------- Deep Cut Search helper ----------
+  async function runDeepSearch() {
+    if (!deepSearchQuery.trim()) return;
+    try {
+      setDeepSearchLoading(true);
+
+      const res = await fetch(
+        `/api/searchCharacterByName?q=${encodeURIComponent(
+          deepSearchQuery.trim()
+        )}`,
+        { cache: "no-store" }
+      );
+
+      const data = await res.json();
+      if (Array.isArray(data.characters)) {
+        setDeepSearchResults(data.characters);
+      } else {
+        setDeepSearchResults([]);
+      }
+    } catch (err) {
+      console.error("deep search failed:", err);
+      setDeepSearchResults([]);
+    } finally {
+      setDeepSearchLoading(false);
+    }
+  }
+
+  // ---------- loading screen while we grab ~20k chars ----------
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-neutral-900 text-neutral-400 text-lg">
@@ -404,7 +446,7 @@ export default function CharacterDraftApp() {
           <div className="text-sm text-neutral-400">
             On the clock:{" "}
             <span className="text-white font-semibold">
-              {currentPlayer.name}
+              {players[currentPlayerIndex].name}
             </span>{" "}
             (R{round}) —{" "}
             <span className="font-mono text-white">{clockDisplay}</span>
@@ -537,6 +579,28 @@ export default function CharacterDraftApp() {
 
         {/* RIGHT: CHARACTER POOL */}
         <section className="overflow-y-auto max-h-[80vh] grid grid-cols-1 md:grid-cols-2 gap-3">
+          {/* header row with deep cut button */}
+          <div className="md:col-span-2 flex items-start justify-between bg-neutral-800 border border-neutral-700 rounded-xl p-3">
+            <div className="text-xs text-neutral-400 leading-tight">
+              {filtered.length} results
+              <br />
+              <span className="text-neutral-500">
+                Can't find someone? Try deep cut search.
+              </span>
+            </div>
+
+            <button
+              onClick={() => {
+                setShowDeepSearchModal(true);
+                setDeepSearchQuery("");
+                setDeepSearchResults([]);
+              }}
+              className="text-[11px] font-semibold bg-gradient-to-r from-indigo-600/30 to-fuchsia-600/30 border border-fuchsia-500/40 text-fuchsia-300 rounded px-2 py-1 hover:from-indigo-600/40 hover:to-fuchsia-600/40 hover:text-white shadow-[0_0_10px_rgba(217,70,239,0.6)]"
+            >
+              Deep Cut Search
+            </button>
+          </div>
+
           {filtered.map((c, idx) => (
             <div
               key={c.id}
@@ -607,6 +671,101 @@ export default function CharacterDraftApp() {
               className="mt-4 text-xs text-neutral-500 hover:text-neutral-300"
             >
               Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* DEEP CUT SEARCH MODAL */}
+      {showDeepSearchModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-neutral-900 border border-neutral-700 rounded-2xl p-6 w-[500px] max-w-[90vw] max-h-[80vh] flex flex-col">
+            <h2 className="text-lg font-bold mb-2 text-white">
+              Deep Cut Character Search
+            </h2>
+            <p className="text-sm text-neutral-400 mb-3 leading-snug">
+              Type part of their name. We'll query AniList directly, even if
+              they're super obscure (low favourites).
+            </p>
+
+            <div className="flex gap-2 mb-3">
+              <input
+                className="flex-1 bg-neutral-800 border border-neutral-700 rounded px-2 py-2 text-sm text-white"
+                placeholder="e.g. Rakushun"
+                value={deepSearchQuery}
+                onChange={(e) => setDeepSearchQuery(e.target.value)}
+              />
+              <button
+                onClick={runDeepSearch}
+                className="bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm hover:bg-neutral-700 text-white"
+              >
+                Search
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto border border-neutral-800 rounded p-2 bg-neutral-950/50">
+              {deepSearchLoading && (
+                <div className="text-neutral-500 text-sm italic">
+                  Searching…
+                </div>
+              )}
+
+              {!deepSearchLoading && deepSearchResults.length === 0 && (
+                <div className="text-neutral-600 text-sm italic">
+                  No results yet.
+                </div>
+              )}
+
+              {!deepSearchLoading && deepSearchResults.length > 0 && (
+                <div className="grid gap-2">
+                  {deepSearchResults.map((c, idx) => (
+                    <div
+                      key={c.id}
+                      className="bg-neutral-900 border border-neutral-700 rounded-xl p-3 flex gap-3"
+                    >
+                      <img
+                        src={c.image.large}
+                        alt={c.name.full}
+                        className="w-16 h-20 object-cover rounded"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-neutral-100 truncate">
+                          {c.name.full}
+                        </div>
+                        <div className="text-xs text-neutral-400 truncate">
+                          {c.name.native}
+                        </div>
+                        <div className="text-xs text-neutral-500 mt-1">
+                          {c.gender} • ❤ {c.favourites.toLocaleString()}
+                        </div>
+
+                        <button
+                          onClick={() => {
+                            // choose this deep cut character, go straight to slot modal
+                            handleDraft(c);
+                            // close this modal (slot modal will now open)
+                            setShowDeepSearchModal(false);
+                          }}
+                          className="mt-2 text-[11px] bg-neutral-800 border border-neutral-700 rounded px-2 py-1 hover:bg-neutral-700"
+                        >
+                          Pick #{idx + 1}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <button
+              onClick={() => {
+                setShowDeepSearchModal(false);
+                setDeepSearchResults([]);
+                setDeepSearchQuery("");
+              }}
+              className="mt-4 text-xs text-neutral-500 hover:text-neutral-300 self-start"
+            >
+              Close
             </button>
           </div>
         </div>
