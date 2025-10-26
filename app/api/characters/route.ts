@@ -1,83 +1,86 @@
+// app/api/characters/route.ts
+
 export const dynamic = "force-dynamic";
 
-const ANILIST_URL = "https://graphql.anilist.co";
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const pageParam = searchParams.get("page") || "1";
+  const page = parseInt(pageParam, 10) || 1;
 
-const QUERY = `
-  query ($page: Int, $perPage: Int) {
-    Page(page: $page, perPage: $perPage) {
-      characters(sort: FAVOURITES_DESC) {
-        id
-        name { full native }
-        gender
-        image { large medium }
-        favourites
+  // AniList GraphQL query for characters ordered by favourites desc
+  // We request, say, 50 per page
+  const query = `
+    query ($page: Int) {
+      Page(page: $page, perPage: 50) {
+        characters(sort: FAVOURITES_DESC) {
+          id
+          name {
+            full
+            native
+          }
+          gender
+          image {
+            large
+          }
+          favourites
+        }
       }
     }
-  }
-`;
+  `;
 
-async function fetchCharPage(page: number, perPage = 100) {
-  const res = await fetch(ANILIST_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body: JSON.stringify({
-      query: QUERY,
-      variables: { page, perPage },
-    }),
-  });
+  const variables = { page };
 
-  if (!res.ok) {
-    throw new Error(`AniList page ${page} failed with ${res.status}`);
-  }
-
-  const data = await res.json();
-  return data?.data?.Page?.characters ?? [];
-}
-
-export async function GET() {
   try {
-    const allChars: any[] = [];
-    const perPage = 100;
-    const maxPages = 30; // ~3000 characters, safer for Vercel
+    const result = await fetch("https://graphql.anilist.co", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      },
+      body: JSON.stringify({
+        query,
+        variables,
+      }),
+    });
 
-    for (let page = 1; page <= maxPages; page++) {
-      const chunk = await fetchCharPage(page, perPage);
-      if (!chunk.length) break;
-      allChars.push(...chunk);
+    if (!result.ok) {
+      return new Response(
+        JSON.stringify({
+          error: "AniList request failed",
+          status: result.status,
+        }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
     }
 
-    const characters = allChars.map((c) => ({
-      id: c.id,
-      name: {
-        full: c.name?.full ?? "",
-        native: c.name?.native ?? "",
-      },
-      gender: c.gender ?? "Unknown",
-      image: { large: c.image?.large ?? "" },
-      favourites: c.favourites ?? 0,
-    }));
+    const json = await result.json();
 
-    characters.sort(
-      (a, b) => (b.favourites || 0) - (a.favourites || 0)
+    // <- THIS IS IMPORTANT: shape must match what page.tsx expects
+    const characters =
+      json?.data?.Page?.characters?.map((c: any) => ({
+        id: c.id,
+        name: {
+          full: c?.name?.full ?? "",
+          native: c?.name?.native ?? "",
+        },
+        gender: c?.gender ?? "Unknown",
+        image: {
+          large: c?.image?.large ?? "",
+        },
+        favourites: c?.favourites ?? 0,
+      })) ?? [];
+
+    return new Response(
+      JSON.stringify({ characters }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
     );
-
-    return new Response(JSON.stringify({ characters }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
   } catch (err: any) {
-    console.error("characters GET failed:", err);
     return new Response(
       JSON.stringify({
-        error: err?.message ?? "Character fetch failed",
+        error: "AniList fetch threw",
+        message: err?.message || String(err),
       }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      }
+      { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
 }
