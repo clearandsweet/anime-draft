@@ -4,8 +4,13 @@ export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));
+
   const n = Number(body.targetPlayers);
-  LobbyStore.setTargetPlayers(n);
+  const actingName = (body.meName || "").toString().trim();
+
+  // host-only
+  LobbyStore.setTargetPlayers(n, actingName);
+
   const lobby = LobbyStore.getLobby();
 
   return new Response(JSON.stringify(lobby), {
