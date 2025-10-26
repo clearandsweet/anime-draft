@@ -1,6 +1,6 @@
 // app/api/lobby/store.ts
 
-// Types reused server-side
+// Shared types
 export type Character = {
   id: number;
   name: { full: string; native: string };
@@ -28,9 +28,12 @@ export type LobbyState = {
     slot: string;
   };
   history: { playerIndex: number; char: Character; slot: string }[];
+
+  // NEW:
+  targetPlayers: number;   // 2 / 4 / 8 / 12
+  draftActive: boolean;    // false until "Start Draft"
 };
 
-// slot list (MUST match client)
 const SLOT_NAMES = [
   "Waifu",
   "Husbando",
@@ -44,7 +47,6 @@ const SLOT_NAMES = [
   "Wildcard",
 ];
 
-// fixed color cycle, same as client but we just keep text values
 const PLAYER_COLORS = [
   "rose",
   "sky",
@@ -56,7 +58,6 @@ const PLAYER_COLORS = [
   "cyan",
 ];
 
-// initial (empty) lobby
 let lobby: LobbyState = {
   players: [],
   round: 1,
@@ -64,17 +65,16 @@ let lobby: LobbyState = {
   timerSeconds: 180,
   lastPick: null,
   history: [],
+
+  targetPlayers: 4,
+  draftActive: false,
 };
 
-// helper: find or create player slot
-function addPlayerIfMissing(name: string): LobbyState {
-  // does this name already exist?
-  const existingIdx = lobby.players.findIndex(
+function addPlayerIfMissing(name: string): void {
+  const already = lobby.players.find(
     (p) => p.name.toLowerCase() === name.toLowerCase()
   );
-  if (existingIdx !== -1) {
-    return lobby; // already in
-  }
+  if (already) return;
 
   const newIndex = lobby.players.length;
   const color = PLAYER_COLORS[newIndex % PLAYER_COLORS.length];
@@ -91,11 +91,9 @@ function addPlayerIfMissing(name: string): LobbyState {
   };
 
   lobby.players.push(newPlayer);
-
-  return lobby;
 }
 
-// helper: snake draft turn advance
+// snake-advance
 function advanceTurn() {
   lobby.timerSeconds = 180;
 
@@ -106,7 +104,6 @@ function advanceTurn() {
   const atEndBwd = !odd && i === 0;
 
   if (atEndFwd || atEndBwd) {
-    // new round
     lobby.round += 1;
     lobby.currentPlayerIndex = odd
       ? lobby.players.length - 1
@@ -116,15 +113,18 @@ function advanceTurn() {
   }
 }
 
-// main draft action (server-authoritative)
+// enforce turn + fill slot
 function draftCharacter(params: {
-  actingName: string;     // who is trying
-  chosen: Character;      // character data (full object from client)
-  slotName: string;       // which slot to fill
+  actingName: string;
+  chosen: Character;
+  slotName: string;
 }) {
   const { actingName, chosen, slotName } = params;
 
-  // sanity checks
+  if (!lobby.draftActive) {
+    throw new Error("Draft has not started yet");
+  }
+
   if (!lobby.players.length) {
     throw new Error("No players in lobby");
   }
@@ -136,32 +136,30 @@ function draftCharacter(params: {
     throw new Error("Not your turn");
   }
 
-  // make sure that slot is open on that player
   if (turnPlayer.slots[slotName]) {
     throw new Error("Slot already filled");
   }
 
-  // assign char
+  // assign
   turnPlayer.slots[slotName] = chosen;
   turnPlayer.popularityTotal += chosen.favourites || 0;
 
-  // log history
   lobby.lastPick = {
     playerName: turnPlayer.name,
     char: chosen,
     slot: slotName,
   };
+
   lobby.history.push({
     playerIndex: lobby.currentPlayerIndex,
     char: chosen,
     slot: slotName,
   });
 
-  // next turn
   advanceTurn();
 }
 
-// undo the last pick (simple global undo)
+// undo last pick (global)
 function undoLast() {
   if (!lobby.history.length) return;
 
@@ -170,37 +168,80 @@ function undoLast() {
   const pl = lobby.players[playerIndex];
   if (!pl) return;
 
-  // remove char from slot, refund score
   pl.slots[slot] = null;
   pl.popularityTotal = Math.max(
     0,
     pl.popularityTotal - (char.favourites || 0)
   );
 
-  // reset lastPick
   lobby.lastPick = null;
 
-  // give turn back to that drafter
   lobby.currentPlayerIndex = playerIndex;
-  // do NOT rewind round for now; that's fine for v1
   lobby.timerSeconds = 180;
 
-  // pop history
   lobby.history.pop();
 }
 
-// tick timer down 1 second; if hits 0, autopick
-// autopick = do nothing for v1, just reset timer + advance turn.
-// (We'll upgrade later.)
+// shared timer tick
 function tickTimer() {
+  if (!lobby.draftActive) {
+    // pregame lobby -> don't tick, don't skip
+    return;
+  }
   if (!lobby.players.length) return;
+
   if (lobby.timerSeconds > 0) {
     lobby.timerSeconds -= 1;
     return;
   }
-  // timer hit 0 -> skip their turn for now
+
+  // timeout: skip turn (no forced autopick yet)
   lobby.timerSeconds = 180;
   advanceTurn();
+}
+
+// set how many players we're expecting
+function setTargetPlayers(n: number) {
+  if (![2, 4, 8, 12].includes(n)) return;
+  if (lobby.draftActive) return; // can't change mid-draft
+  lobby.targetPlayers = n;
+}
+
+// start the draft if ready
+function startDraft() {
+  if (lobby.draftActive) return;
+
+  // must have exactly targetPlayers joined, min 2
+  if (
+    lobby.players.length !== lobby.targetPlayers ||
+    lobby.players.length < 2
+  ) {
+    throw new Error("Not enough players joined yet");
+  }
+
+  // lock it in
+  lobby.draftActive = true;
+
+  // reset round/turn/timer cleanly
+  lobby.round = 1;
+  lobby.currentPlayerIndex = 0;
+  lobby.timerSeconds = 180;
+  lobby.lastPick = null;
+  lobby.history = [];
+}
+
+// reset whole lobby (not wired to any route yet, stays for debugging)
+function resetLobby() {
+  lobby = {
+    players: [],
+    round: 1,
+    currentPlayerIndex: 0,
+    timerSeconds: 180,
+    lastPick: null,
+    history: [],
+    targetPlayers: 4,
+    draftActive: false,
+  };
 }
 
 export const LobbyStore = {
@@ -209,15 +250,9 @@ export const LobbyStore = {
   },
   join(name: string) {
     addPlayerIfMissing(name);
-    // if this is the very first player, currentPlayerIndex stays 0,
-    // which means round/turn starts with them
     return lobby;
   },
-  pick(params: {
-    actingName: string;
-    slotName: string;
-    chosen: Character;
-  }) {
+  pick(params: { actingName: string; slotName: string; chosen: Character }) {
     draftCharacter(params);
     return lobby;
   },
@@ -229,15 +264,17 @@ export const LobbyStore = {
     tickTimer();
     return lobby;
   },
+  setTargetPlayers(n: number) {
+    setTargetPlayers(n);
+    return lobby;
+  },
+  startDraft() {
+    startDraft();
+    return lobby;
+  },
+  // not exposed via route by default, but here for completeness
   reset() {
-    lobby = {
-      players: [],
-      round: 1,
-      currentPlayerIndex: 0,
-      timerSeconds: 180,
-      lastPick: null,
-      history: [],
-    };
+    resetLobby();
     return lobby;
   },
 };
