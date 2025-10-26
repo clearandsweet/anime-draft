@@ -1,7 +1,8 @@
 "use client";
+
 import React, { useEffect, useMemo, useState } from "react";
 
-// ---------- types ----------
+// ---------- Shared Types (mirror server) ----------
 
 type Character = {
   id: number;
@@ -22,16 +23,28 @@ type PlayerColorKey =
   | "cyan";
 
 type Player = {
-  id: string;
+  id: string; // e.g. "p1"
   name: string;
-  color: PlayerColorKey;
+  color: PlayerColorKey | string;
   slots: Record<string, Character | null>;
   popularityTotal: number;
 };
 
-// ---------- constants ----------
+type LobbyState = {
+  players: Player[];
+  round: number;
+  currentPlayerIndex: number;
+  timerSeconds: number;
+  lastPick: null | {
+    playerName: string;
+    char: Character;
+    slot: string;
+  };
+  history: { playerIndex: number; char: Character; slot: string }[];
+};
 
-// slot names (your edited version)
+// ---------- Constants (slots must match server!) ----------
+
 const SLOT_NAMES = [
   "Waifu",
   "Husbando",
@@ -45,31 +58,9 @@ const SLOT_NAMES = [
   "Wildcard",
 ];
 
-const PLAYER_COLOR_KEYS: PlayerColorKey[] = [
-  "rose",
-  "sky",
-  "emerald",
-  "amber",
-  "fuchsia",
-  "indigo",
-  "lime",
-  "cyan",
-];
-
-const PLAYER_NAMES = [
-  "Kai",
-  "Som",
-  "Dannie",
-  "Nick",
-  "Gizmo",
-  "Ed",
-  "Snowman",
-  "King",
-  "Mike",
-];
-
+// color map for glow/border in roster cards
 const COLOR_MAP: Record<
-  PlayerColorKey,
+  string,
   { glow: string; text: string; border: string }
 > = {
   rose: {
@@ -112,106 +103,88 @@ const COLOR_MAP: Record<
     text: "text-cyan-400",
     border: "border-cyan-500",
   },
+
+  // just in case
+  default: {
+    glow: "shadow-[0_0_10px_rgba(255,255,255,0.15)]",
+    text: "text-neutral-300",
+    border: "border-neutral-500",
+  },
 };
 
-// ---------- helpers ----------
-
-function makeInitialPlayers(): Player[] {
-  const shuffled = [...PLAYER_NAMES].sort(() => Math.random() - 0.5);
-  return shuffled.map((name, i) => ({
-    id: `p${i + 1}`,
-    name,
-    color: PLAYER_COLOR_KEYS[i % PLAYER_COLOR_KEYS.length],
-    slots: Object.fromEntries(SLOT_NAMES.map((s) => [s, null])) as Record<
-      string,
-      Character | null
-    >,
-    popularityTotal: 0,
-  }));
+// pick a color style safely
+function colorStyleForPlayer(p: Player) {
+  return COLOR_MAP[p.color] || COLOR_MAP["default"];
 }
 
-function firstEmptySlot(p: Player): string | null {
-  for (const [slotName, val] of Object.entries(p.slots)) {
-    if (!val) return slotName;
-  }
-  return null;
-}
-
-// ---------- component ----------
+// ---------- Component ----------
 
 export default function CharacterDraftApp() {
-  // data / draft state
+  //
+  // --- Local-only state (per browser) ---
+  //
+
+  // this browser's claimed identity
+  const [meName, setMeName] = useState<string>("");
+
+  // giant character pool (local only)
   const [characters, setCharacters] = useState<Character[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loadingChars, setLoadingChars] = useState<boolean>(true);
 
-  const [players, setPlayers] = useState<Player[]>(makeInitialPlayers);
-
-  const [round, setRound] = useState<number>(1);
-  const [currentPlayerIndex, setCurrentPlayerIndex] = useState<number>(0);
-
-  const [timerSeconds, setTimerSeconds] = useState<number>(180);
-  const [paused, setPaused] = useState<boolean>(false);
-
-  const [pendingPick, setPendingPick] = useState<Character | null>(null);
-  const [showSlotModal, setShowSlotModal] = useState<boolean>(false);
-
+  // filters for right panel
   const [filters, setFilters] = useState<{ searchText: string; gender: string }>(
     { searchText: "", gender: "All" }
   );
 
-  const [history, setHistory] = useState<
-    { playerIndex: number; char: Character; slot: string }[]
-  >([]);
-
-  const [lastPick, setLastPick] = useState<{
-    playerName: string;
-    char: Character;
-    slot: string;
-  } | null>(null);
-
-  // deep cut search state
+  // deep cut search modal state
   const [showDeepSearchModal, setShowDeepSearchModal] = useState<boolean>(false);
   const [deepSearchQuery, setDeepSearchQuery] = useState<string>("");
   const [deepSearchLoading, setDeepSearchLoading] = useState<boolean>(false);
   const [deepSearchResults, setDeepSearchResults] = useState<Character[]>([]);
 
-  const currentPlayer = players[currentPlayerIndex];
+  // slot selection modal state
+  const [showSlotModal, setShowSlotModal] = useState<boolean>(false);
+  const [pendingPick, setPendingPick] = useState<Character | null>(null);
 
-  const clockDisplay = `${String(Math.floor(timerSeconds / 60)).padStart(
-    2,
-    "0"
-  )}:${String(timerSeconds % 60).padStart(2, "0")}`;
+  //
+  // --- Shared lobby state (fetched from server) ---
+  //
 
-  // ---------- fetch MANY pages of characters ----------
+  const [lobby, setLobby] = useState<LobbyState>({
+    players: [],
+    round: 1,
+    currentPlayerIndex: 0,
+    timerSeconds: 180,
+    lastPick: null,
+    history: [],
+  });
+
+  //
+  // ---------- Load giant character pool (local only) ----------
+  //
   useEffect(() => {
     async function loadAllPages() {
       try {
-        setLoading(true);
+        setLoadingChars(true);
 
         const bigList: Character[] = [];
-        // page 1 .. 200 (20k-ish characters)
+
+        // up to page 200 => ~20k chars
         for (let page = 1; page <= 200; page++) {
           const res = await fetch(`/api/characters?page=${page}`, {
             cache: "no-store",
           });
 
-          if (!res.ok) {
-            // stop if this page failed (rate limit or whatever)
-            break;
-          }
+          if (!res.ok) break;
 
           const data = await res.json();
-
           const chunk: Character[] = data?.characters || [];
-          if (!chunk.length) {
-            // no more results
-            break;
-          }
+          if (!chunk.length) break;
 
           bigList.push(...chunk);
         }
 
-        // de-dupe in case AniList returns overlaps between pages
+        // de-dupe by ID
         const byId = new Map<number, Character>();
         for (const ch of bigList) {
           if (!byId.has(ch.id)) {
@@ -219,7 +192,7 @@ export default function CharacterDraftApp() {
           }
         }
 
-        // final array sorted by favourites desc
+        // sort by favourites desc
         const finalList = Array.from(byId.values()).sort(
           (a, b) => b.favourites - a.favourites
         );
@@ -229,32 +202,70 @@ export default function CharacterDraftApp() {
         console.error("Failed to load character pages:", err);
         setCharacters([]);
       } finally {
-        setLoading(false);
+        setLoadingChars(false);
       }
     }
 
     loadAllPages();
   }, []);
 
-  // ---------- countdown timer (pauses in modal) ----------
+  //
+  // ---------- Poll lobby state from server every second ----------
+  //
+  // NOTE: server also ticks the shared timer when we GET /api/lobby/state
+  //
   useEffect(() => {
-    if (paused) return;
-
-    const id = setInterval(() => {
-      setTimerSeconds((t) => {
-        if (t > 1) return t - 1;
-
-        // timer hit zero -> autopick best available in first open slot
-        autopick();
-        return 180;
-      });
+    const id = setInterval(async () => {
+      try {
+        const res = await fetch("/api/lobby/state", {
+          cache: "no-store",
+        });
+        if (!res.ok) return;
+        const data: LobbyState = await res.json();
+        setLobby(data);
+      } catch (err) {
+        console.error("poll lobby/state failed", err);
+      }
     }, 1000);
 
     return () => clearInterval(id);
-  }, [paused, characters, players, currentPlayerIndex, round]);
+  }, []);
 
-  // ---------- filtering ----------
-  const filtered = useMemo(() => {
+  //
+  // ---------- Auto-join lobby when meName is set ----------
+  //
+  useEffect(() => {
+    async function joinLobby() {
+      if (!meName.trim()) return;
+      try {
+        await fetch("/api/lobby/join", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: meName.trim() }),
+        });
+        // we don't have to manually setLobby here; the poll loop will pick up new players
+      } catch (err) {
+        console.error("join lobby failed", err);
+      }
+    }
+
+    joinLobby();
+  }, [meName]);
+
+  //
+  // ---------- Derived values ----------
+  //
+  const currentPlayer =
+    lobby.players[lobby.currentPlayerIndex] || null;
+
+  const clockDisplay = `${String(
+    Math.floor(lobby.timerSeconds / 60)
+  ).padStart(2, "0")}:${String(
+    lobby.timerSeconds % 60
+  ).padStart(2, "0")}`;
+
+  // filter the local pool based on gender + search text
+  const filteredLocalPool = useMemo(() => {
     return characters.filter((c) => {
       const genderOK =
         filters.gender === "All" ||
@@ -267,134 +278,9 @@ export default function CharacterDraftApp() {
     });
   }, [characters, filters]);
 
-  // ---------- autopick when timer expires ----------
-  function autopick() {
-    if (!characters.length) return;
-    const best = [...characters].sort(
-      (a, b) => b.favourites - a.favourites
-    )[0];
-    const slot = firstEmptySlot(currentPlayer);
-    if (!slot) return;
-    performPick(best, slot);
-  }
-
-  // ---------- user clicked "Pick" ----------
-  // enhance to accept either ID (normal board) or a full deep-search character
-  function handleDraft(idOrChar: number | Character) {
-    let chosen: Character | undefined;
-
-    if (typeof idOrChar === "number") {
-      chosen = characters.find((c) => c.id === idOrChar);
-    } else {
-      chosen = idOrChar;
-    }
-
-    if (!chosen) return;
-    setPendingPick(chosen);
-    setPaused(true);
-    setShowSlotModal(true);
-  }
-
-  // ---------- lock character into a slot ----------
-  function performPick(chosen: Character, slotName: string) {
-    const idx = currentPlayerIndex;
-    const drafter = players[idx];
-    if (!slotName || drafter.slots[slotName]) return;
-
-    // remove from pool (if they were in pool; if they came from deep search
-    // and aren't in pool, this filter just won't remove anything, which is fine)
-    setCharacters((prev) => prev.filter((c) => c.id !== chosen.id));
-
-    // assign into that player's slot
-    setPlayers((prev) =>
-      prev.map((p, i) =>
-        i === idx
-          ? {
-              ...p,
-              slots: {
-                ...p.slots,
-                [slotName]: chosen,
-              },
-              popularityTotal: p.popularityTotal + (chosen.favourites || 0),
-            }
-          : p
-      )
-    );
-
-    setLastPick({
-      playerName: drafter.name,
-      char: chosen,
-      slot: slotName,
-    });
-
-    setHistory((h) => [
-      ...h,
-      { playerIndex: idx, char: chosen, slot: slotName },
-    ]);
-
-    // cleanup & move turn
-    setShowSlotModal(false);
-    setPendingPick(null);
-    setPaused(false);
-    advanceTurn();
-  }
-
-  // ---------- snake draft advancement logic ----------
-  function advanceTurn() {
-    setTimerSeconds(180);
-
-    const odd = round % 2 === 1; // odd rounds go forward, even rounds go backward
-
-    setCurrentPlayerIndex((i) => {
-      const atEndFwd = odd && i === players.length - 1;
-      const atEndBwd = !odd && i === 0;
-
-      if (atEndFwd || atEndBwd) {
-        // new round
-        setRound((r) => r + 1);
-        return odd ? players.length - 1 : 0;
-      }
-
-      return odd ? i + 1 : i - 1;
-    });
-  }
-
-  // ---------- undo last pick ----------
-  function handleUndo() {
-    if (!history.length) return;
-    const last = history[history.length - 1];
-    const { playerIndex, char, slot } = last;
-
-    // put character back into pool
-    setCharacters((prev) => [...prev, char]);
-
-    // free their slot + adjust score
-    setPlayers((prev) =>
-      prev.map((p, i) =>
-        i === playerIndex
-          ? {
-              ...p,
-              slots: {
-                ...p.slots,
-                [slot]: null,
-              },
-              popularityTotal: Math.max(
-                0,
-                p.popularityTotal - (char.favourites || 0)
-              ),
-            }
-          : p
-      )
-    );
-
-    setHistory((h) => h.slice(0, -1));
-    setCurrentPlayerIndex(playerIndex);
-    // we aren't rewinding round, just give turn back
-    setLastPick(null);
-    setTimerSeconds(180);
-  }
-
+  //
   // ---------- Deep Cut Search helper ----------
+  //
   async function runDeepSearch() {
     if (!deepSearchQuery.trim()) return;
     try {
@@ -406,7 +292,6 @@ export default function CharacterDraftApp() {
         )}`,
         { cache: "no-store" }
       );
-
       const data = await res.json();
       if (Array.isArray(data.characters)) {
         setDeepSearchResults(data.characters);
@@ -421,47 +306,185 @@ export default function CharacterDraftApp() {
     }
   }
 
-  // ---------- loading screen while we grab ~20k chars ----------
-  if (loading) {
+  //
+  // ---------- Choosing a character to draft (client-side step 1) ----------
+  //
+  // When you click "Pick" from either the main pool or deep search:
+  // - we store that character in pendingPick
+  // - open the slot selection modal
+  // - we DO NOT talk to the server yet
+  //
+  function beginDraftPick(charOrId: Character | number) {
+    let chosen: Character | undefined;
+
+    if (typeof charOrId === "number") {
+      chosen = characters.find((c) => c.id === charOrId);
+    } else {
+      chosen = charOrId;
+    }
+
+    if (!chosen) return;
+
+    // Only allow if it's actually our turn.
+    // (Client-side guard. Server will enforce again.)
+    if (
+      !currentPlayer ||
+      currentPlayer.name.toLowerCase() !== meName.trim().toLowerCase()
+    ) {
+      alert("It's not your turn.");
+      return;
+    }
+
+    setPendingPick(chosen);
+    setShowSlotModal(true);
+  }
+
+  //
+  // ---------- Confirming the slot (client-side step 2 -> server POST) ----------
+  //
+  async function confirmSlot(slotName: string) {
+    if (!pendingPick) return;
+    if (!meName.trim()) {
+      alert("Set your name first.");
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/lobby/pick", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          actingName: meName.trim(),
+          slotName,
+          chosen: pendingPick,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.error || "Pick failed");
+        return;
+      }
+
+      // success:
+      // 1. locally remove that character from our visible pool
+      setCharacters((prev) => prev.filter((c) => c.id !== pendingPick.id));
+
+      // 2. close modal
+      setPendingPick(null);
+      setShowSlotModal(false);
+
+      // 3. update lobby immediately with server response
+      setLobby(data);
+    } catch (err: any) {
+      console.error("confirmSlot failed", err);
+      alert("Server error when drafting");
+    }
+  }
+
+  //
+  // ---------- Undo button ----------
+  //
+  async function handleUndo() {
+    try {
+      const res = await fetch("/api/lobby/undo", {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || "Undo failed");
+        return;
+      }
+      setLobby(data);
+    } catch (err) {
+      console.error("undo failed", err);
+    }
+  }
+
+  //
+  // ---------- Export button ----------
+  //
+  function handleExport() {
+    const data = {
+      lobby,
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "character-draft.json";
+    a.click();
+  }
+
+  //
+  // ---------- Loading screen for the giant pool ----------
+  //
+  if (loadingChars) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-neutral-900 text-neutral-400 text-lg">
         <div className="w-8 h-8 rounded-full border-2 border-neutral-700 border-t-neutral-200 animate-spin" />
         <div>Fetching gigantic character pool…</div>
         <div className="text-xs text-neutral-600">
-          (This is normal — we’re pulling thousands)
+          (This is normal — we’re pulling tens of thousands)
         </div>
       </div>
     );
   }
 
+  //
   // ---------- UI ----------
-
+  //
   return (
     <div className="min-h-screen bg-neutral-900 text-neutral-100 p-4 font-sans">
-      {/* HEADER */}
-      <header className="flex flex-wrap gap-3 items-center justify-between mb-4">
-        <div className="flex flex-col gap-1">
+      {/* HEADER / CONTROL BAR */}
+      <header className="flex flex-wrap gap-4 items-start justify-between mb-4">
+        <div className="flex flex-col gap-2">
           <h1 className="text-2xl font-bold">Anime Character Draft</h1>
 
-          <div className="text-sm text-neutral-400">
-            On the clock:{" "}
-            <span className="text-white font-semibold">
-              {players[currentPlayerIndex].name}
-            </span>{" "}
-            (R{round}) —{" "}
-            <span className="font-mono text-white">{clockDisplay}</span>
-          </div>
+          {/* identify yourself */}
+          <div className="flex flex-wrap items-center gap-2 text-sm">
+            <label className="text-xs text-neutral-400 flex flex-col">
+              <span className="uppercase tracking-wide text-[10px] text-neutral-500">
+                Your Name
+              </span>
+              <input
+                className="bg-neutral-900 border border-neutral-700 rounded px-2 py-1 text-sm text-white w-32"
+                placeholder="Type name"
+                value={meName}
+                onChange={(e) => setMeName(e.target.value)}
+              />
+            </label>
 
-          {lastPick && (
-            <div className="text-xs text-neutral-500">
-              Last pick:{" "}
-              <span className="text-white">{lastPick.playerName}</span>{" "}
-              drafted {lastPick.char.name.full} as {lastPick.slot}
-            </div>
-          )}
+            {currentPlayer && (
+              <div className="text-xs bg-neutral-800 border border-neutral-700 rounded-lg px-2 py-1 text-neutral-300 flex items-center gap-1">
+                <span className="text-neutral-500 uppercase">On clock:</span>
+                <span className="font-semibold text-white">
+                  {currentPlayer.name}
+                </span>
+                <span className="text-neutral-500">(R{lobby.round})</span>
+                <span className="font-mono text-white ml-1">
+                  {clockDisplay}
+                </span>
+              </div>
+            )}
+
+            {lobby.lastPick && (
+              <div className="text-[11px] text-neutral-500 leading-tight">
+                Last pick:{" "}
+                <span className="text-white">
+                  {lobby.lastPick.playerName}
+                </span>{" "}
+                drafted {lobby.lastPick.char.name.full} as{" "}
+                {lobby.lastPick.slot}
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 self-start">
           <button
             onClick={handleUndo}
             className="bg-neutral-800 px-3 py-1 rounded border border-neutral-700 hover:bg-neutral-700 text-sm"
@@ -470,17 +493,7 @@ export default function CharacterDraftApp() {
           </button>
 
           <button
-            onClick={() => {
-              const data = { players, round };
-              const blob = new Blob([JSON.stringify(data, null, 2)], {
-                type: "application/json",
-              });
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement("a");
-              a.href = url;
-              a.download = "character-draft.json";
-              a.click();
-            }}
+            onClick={handleExport}
             className="bg-neutral-800 px-3 py-1 rounded border border-neutral-700 hover:bg-neutral-700 text-sm"
           >
             Export
@@ -522,11 +535,17 @@ export default function CharacterDraftApp() {
 
       {/* BODY */}
       <main className="grid xl:grid-cols-[1fr_1fr] gap-4">
-        {/* LEFT: PLAYERS */}
+        {/* LEFT: PLAYERS / LOBBY STATE */}
         <aside className="space-y-4 overflow-y-auto max-h-[80vh] pr-1">
-          {players.map((p, i) => {
-            const col = COLOR_MAP[p.color];
-            const isOnClock = i === currentPlayerIndex;
+          {lobby.players.length === 0 && (
+            <div className="text-neutral-600 text-sm italic">
+              No players yet. Type your name above to join.
+            </div>
+          )}
+
+          {lobby.players.map((p, i) => {
+            const col = colorStyleForPlayer(p);
+            const isOnClock = i === lobby.currentPlayerIndex;
 
             return (
               <div
@@ -577,12 +596,12 @@ export default function CharacterDraftApp() {
           })}
         </aside>
 
-        {/* RIGHT: CHARACTER POOL */}
+        {/* RIGHT: CHARACTER POOL (local) */}
         <section className="overflow-y-auto max-h-[80vh] grid grid-cols-1 md:grid-cols-2 gap-3">
           {/* header row with deep cut button */}
           <div className="md:col-span-2 flex items-start justify-between bg-neutral-800 border border-neutral-700 rounded-xl p-3">
             <div className="text-xs text-neutral-400 leading-tight">
-              {filtered.length} results
+              {filteredLocalPool.length} results
               <br />
               <span className="text-neutral-500">
                 Can't find someone? Try deep cut search.
@@ -601,7 +620,7 @@ export default function CharacterDraftApp() {
             </button>
           </div>
 
-          {filtered.map((c, idx) => (
+          {filteredLocalPool.map((c, idx) => (
             <div
               key={c.id}
               className="bg-neutral-900 border border-neutral-700 rounded-xl p-3 flex gap-3"
@@ -623,7 +642,7 @@ export default function CharacterDraftApp() {
                 </div>
 
                 <button
-                  onClick={() => handleDraft(c.id)}
+                  onClick={() => beginDraftPick(c.id)}
                   className="mt-2 text-[11px] bg-neutral-800 border border-neutral-700 rounded px-2 py-1 hover:bg-neutral-700"
                 >
                   Pick #{idx + 1}
@@ -635,27 +654,30 @@ export default function CharacterDraftApp() {
       </main>
 
       {/* SLOT SELECTION MODAL */}
-      {showSlotModal && pendingPick && (
+      {showSlotModal && pendingPick && currentPlayer && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
           <div className="bg-neutral-900 border border-neutral-700 rounded-2xl p-6 w-[400px] max-w-[90vw]">
             <h2 className="text-lg font-bold mb-2 text-white">
               Assign Slot
             </h2>
             <p className="text-sm text-neutral-400 mb-3">
-              Select a slot for{" "}
+              You're drafting{" "}
               <span className="text-white font-semibold">
                 {pendingPick.name.full}
               </span>
+              . Choose which slot you want to fill.
             </p>
 
-            <div className="grid grid-cols-2 gap-2">
-              {Object.entries(currentPlayer.slots)
-                .filter(([_, v]) => !v)
+            <div className="grid grid-cols-2 gap-2 max-h-[200px] overflow-y-auto">
+              {Object.entries(
+                lobby.players[lobby.currentPlayerIndex]?.slots || {}
+              )
+                .filter(([_, v]) => !v) // only empty slots
                 .map(([slotName]) => (
                   <button
                     key={slotName}
-                    onClick={() => performPick(pendingPick, slotName)}
-                    className="bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2 text-sm hover:bg-neutral-700 text-white"
+                    onClick={() => confirmSlot(slotName)}
+                    className="bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2 text-sm hover:bg-neutral-700 text-white text-left"
                   >
                     {slotName}
                   </button>
@@ -665,7 +687,6 @@ export default function CharacterDraftApp() {
             <button
               onClick={() => {
                 setShowSlotModal(false);
-                setPaused(false);
                 setPendingPick(null);
               }}
               className="mt-4 text-xs text-neutral-500 hover:text-neutral-300"
@@ -741,9 +762,10 @@ export default function CharacterDraftApp() {
 
                         <button
                           onClick={() => {
-                            // choose this deep cut character, go straight to slot modal
-                            handleDraft(c);
-                            // close this modal (slot modal will now open)
+                            // same beginDraftPick logic but with full object instead of ID
+                            // also check turn locally
+                            beginDraftPick(c);
+                            // close deep search modal, slot modal will open
                             setShowDeepSearchModal(false);
                           }}
                           className="mt-2 text-[11px] bg-neutral-800 border border-neutral-700 rounded px-2 py-1 hover:bg-neutral-700"
