@@ -31,16 +31,16 @@ type Player = {
 
 // ---------- constants ----------
 
-// NOTE: renamed "Protagonist" -> "Minor Character", "Mentor" -> "Sex Pest"
+// updated slot names per your request
 const SLOT_NAMES = [
   "Waifu",
   "Husbando",
   "Animal",
-  "Artificial",
+  "Not Alive",
   "Old",
   "Minor Character",
   "Villain",
-  "Sex Pest",
+  "Child",
   "Comic Relief",
   "Wildcard",
 ];
@@ -176,29 +176,61 @@ export default function CharacterDraftApp() {
     "0"
   )}:${String(timerSeconds % 60).padStart(2, "0")}`;
 
-  // fetch characters from /api/characters
+  // ---------- fetch MANY pages of characters ----------
   useEffect(() => {
-    async function load() {
+    async function loadAllPages() {
       try {
         setLoading(true);
-        const res = await fetch("/api/characters", { cache: "no-store" });
-        const data = await res.json();
-        if (data?.characters) {
-          setCharacters(data.characters as Character[]);
-        } else {
-          setCharacters([]); // fallback
+
+        const bigList: Character[] = [];
+        // page 1 .. 100 (10k-ish characters)
+        for (let page = 1; page <= 100; page++) {
+          const res = await fetch(`/api/characters?page=${page}`, {
+            cache: "no-store",
+          });
+
+          if (!res.ok) {
+            // stop if this page failed (rate limit or whatever)
+            break;
+          }
+
+          const data = await res.json();
+
+          const chunk: Character[] = data?.characters || [];
+          if (!chunk.length) {
+            // no more results
+            break;
+          }
+
+          bigList.push(...chunk);
         }
+
+        // de-dupe in case AniList returns overlaps between pages
+        const byId = new Map<number, Character>();
+        for (const ch of bigList) {
+          if (!byId.has(ch.id)) {
+            byId.set(ch.id, ch);
+          }
+        }
+
+        // final array sorted by favourites desc
+        const finalList = Array.from(byId.values()).sort(
+          (a, b) => b.favourites - a.favourites
+        );
+
+        setCharacters(finalList);
       } catch (err) {
-        console.error("Failed to fetch /api/characters:", err);
+        console.error("Failed to load character pages:", err);
         setCharacters([]);
       } finally {
         setLoading(false);
       }
     }
-    load();
+
+    loadAllPages();
   }, []);
 
-  // countdown timer (pauses during modal)
+  // ---------- countdown timer (pauses in modal) ----------
   useEffect(() => {
     if (paused) return;
 
@@ -215,7 +247,7 @@ export default function CharacterDraftApp() {
     return () => clearInterval(id);
   }, [paused, characters, players, currentPlayerIndex, round]);
 
-  // filter by gender + text
+  // ---------- filtering ----------
   const filtered = useMemo(() => {
     return characters.filter((c) => {
       const genderOK =
@@ -229,7 +261,7 @@ export default function CharacterDraftApp() {
     });
   }, [characters, filters]);
 
-  // if someone runs out of time
+  // ---------- autopick when timer expires ----------
   function autopick() {
     if (!characters.length) return;
     const best = [...characters].sort(
@@ -240,7 +272,7 @@ export default function CharacterDraftApp() {
     performPick(best, slot);
   }
 
-  // user clicked "Pick"
+  // ---------- user clicked "Pick" ----------
   function handleDraft(id: number) {
     const chosen = characters.find((c) => c.id === id);
     if (!chosen) return;
@@ -249,7 +281,7 @@ export default function CharacterDraftApp() {
     setShowSlotModal(true);
   }
 
-  // lock character into a slot
+  // ---------- lock character into a slot ----------
   function performPick(chosen: Character, slotName: string) {
     const idx = currentPlayerIndex;
     const drafter = players[idx];
@@ -292,7 +324,7 @@ export default function CharacterDraftApp() {
     advanceTurn();
   }
 
-  // snake draft advancement logic
+  // ---------- snake draft advancement logic ----------
   function advanceTurn() {
     setTimerSeconds(180);
 
@@ -312,7 +344,7 @@ export default function CharacterDraftApp() {
     });
   }
 
-  // undo last pick
+  // ---------- undo last pick ----------
   function handleUndo() {
     if (!history.length) return;
     const last = history[history.length - 1];
@@ -342,16 +374,20 @@ export default function CharacterDraftApp() {
 
     setHistory((h) => h.slice(0, -1));
     setCurrentPlayerIndex(playerIndex);
-    // we aren't rewinding round counter, we just give turn back
+    // we aren't rewinding round, just give turn back
     setLastPick(null);
     setTimerSeconds(180);
   }
 
-  // loading screen while we grab ~3000 chars
+  // ---------- loading screen while we grab (up to) 10k chars ----------
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-neutral-900 text-neutral-400 text-lg">
-        Fetching characters…
+      <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-neutral-900 text-neutral-400 text-lg">
+        <div className="w-8 h-8 rounded-full border-2 border-neutral-700 border-t-neutral-200 animate-spin" />
+        <div>Fetching gigantic character pool…</div>
+        <div className="text-xs text-neutral-600">
+          (This is normal — we’re pulling thousands)
+        </div>
       </div>
     );
   }
