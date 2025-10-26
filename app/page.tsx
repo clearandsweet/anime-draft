@@ -32,6 +32,9 @@ type LobbyState = {
   targetPlayers: number;
   draftActive: boolean;
   hostName: string | null;
+
+  // NEW: track which character IDs are already drafted
+  draftedIds?: number[];
 };
 
 const COLOR_MAP: Record<
@@ -134,11 +137,10 @@ export default function CharacterDraftApp() {
     targetPlayers: 4,
     draftActive: false,
     hostName: null,
+    draftedIds: [], // make sure we default this new field
   });
 
-  const currentPlayer =
-    lobby.players[lobby.currentPlayerIndex] || null;
-
+  const currentPlayer = lobby.players[lobby.currentPlayerIndex] || null;
   const onClockColor = colorStyleForPlayer(currentPlayer);
 
   const clockDisplay = `${String(
@@ -153,38 +155,55 @@ export default function CharacterDraftApp() {
     lobby.hostName &&
     meName.trim().toLowerCase() === lobby.hostName.toLowerCase();
 
-  // ---------- load character pool (first ~10 pages, fallback safe) ----------
+  // ---------- load character pool (first ~10 pages, hardened) ----------
   useEffect(() => {
     async function loadSomePages() {
       setLoadingChars(true);
       const gathered: Character[] = [];
+      let sawAny = false;
 
       for (let page = 1; page <= 10; page++) {
         try {
           const res = await fetch(`/api/characters?page=${page}`, {
             cache: "no-store",
           });
-          if (!res.ok) break;
+
+          if (!res.ok) {
+            console.warn("characters page", page, "not ok:", res.status);
+            // don't break the whole loop; just skip this page
+            continue;
+          }
+
           const data = await res.json();
           const chunk: Character[] = data?.characters || [];
-          if (!chunk.length) break;
+          if (chunk.length === 0) {
+            // assume AniList ran out of results
+            break;
+          }
+
           gathered.push(...chunk);
-        } catch {
-          break;
+          sawAny = true;
+        } catch (err) {
+          console.error("characters fetch fail on page", page, err);
+          // keep looping to try other pages
+          continue;
         }
       }
 
-      if (gathered.length > 0) {
+      if (sawAny) {
+        // dedupe + sort by favourites desc
         const byId = new Map<number, Character>();
         for (const ch of gathered) {
-          if (!byId.has(ch.id)) byId.set(ch.id, ch);
+          if (!byId.has(ch.id)) {
+            byId.set(ch.id, ch);
+          }
         }
         const finalList = Array.from(byId.values()).sort(
           (a, b) => b.favourites - a.favourites
         );
         setCharacters(finalList);
       } else {
-        // fallback: leave any existing state instead of wiping to []
+        // no data at all -> at least set empty array once
         if (characters.length === 0) {
           setCharacters([]);
         }
@@ -204,7 +223,12 @@ export default function CharacterDraftApp() {
         const res = await fetch("/api/lobby/state", { cache: "no-store" });
         if (!res.ok) return;
         const data: LobbyState = await res.json();
-        setLobby(data);
+        setLobby((prev) => ({
+          // make sure draftedIds always exists on client even if server forgot it
+          draftedIds: prev.draftedIds ?? [],
+          ...data,
+          draftedIds: data.draftedIds ?? prev.draftedIds ?? [],
+        }));
       } catch (err) {
         console.error("poll lobby/state failed", err);
       }
@@ -226,7 +250,11 @@ export default function CharacterDraftApp() {
       if (!res.ok) {
         alert(data.error || "Join failed");
       } else {
-        setLobby(data);
+        setLobby((prev) => ({
+          draftedIds: prev.draftedIds ?? [],
+          ...data,
+          draftedIds: data.draftedIds ?? prev.draftedIds ?? [],
+        }));
       }
     } catch (err) {
       console.error("join lobby failed", err);
@@ -243,7 +271,11 @@ export default function CharacterDraftApp() {
       });
       const data = await res.json();
       if (res.ok) {
-        setLobby(data);
+        setLobby((prev) => ({
+          draftedIds: prev.draftedIds ?? [],
+          ...data,
+          draftedIds: data.draftedIds ?? prev.draftedIds ?? [],
+        }));
       }
     } catch (err) {
       console.error("setTargetPlayers failed", err);
@@ -262,7 +294,11 @@ export default function CharacterDraftApp() {
       if (!res.ok) {
         alert(data.error || "Cannot start draft");
       } else {
-        setLobby(data);
+        setLobby((prev) => ({
+          draftedIds: prev.draftedIds ?? [],
+          ...data,
+          draftedIds: data.draftedIds ?? prev.draftedIds ?? [],
+        }));
       }
     } catch (err) {
       console.error("startDraft failed", err);
@@ -346,12 +382,17 @@ export default function CharacterDraftApp() {
         return;
       }
 
-      // success: remove locally
-      setCharacters((prev) => prev.filter((c) => c.id !== pendingPick.id));
+      // server now knows this character is drafted.
+      // server should have added it to lobby.draftedIds[]
+      setLobby((prev) => ({
+        draftedIds: prev.draftedIds ?? [],
+        ...data,
+        draftedIds: data.draftedIds ?? prev.draftedIds ?? [],
+      }));
 
+      // close modal locally
       setPendingPick(null);
       setShowSlotModal(false);
-      setLobby(data);
     } catch (err) {
       console.error("confirmSlot failed", err);
       alert("Server error when drafting");
@@ -371,7 +412,13 @@ export default function CharacterDraftApp() {
         alert(data.error || "Undo failed");
         return;
       }
-      setLobby(data);
+
+      // server undo should recompute draftedIds
+      setLobby((prev) => ({
+        draftedIds: prev.draftedIds ?? [],
+        ...data,
+        draftedIds: data.draftedIds ?? prev.draftedIds ?? [],
+      }));
     } catch (err) {
       console.error("undo failed", err);
     }
@@ -390,19 +437,28 @@ export default function CharacterDraftApp() {
     a.click();
   }
 
-  // ---------- filtered pool ----------
+  // ---------- filtered pool (excludes drafted chars, sticky filters UI handled below) ----------
   const filteredLocalPool = useMemo(() => {
+    const draftedSet = new Set(lobby.draftedIds || []);
+
     return characters.filter((c) => {
+      // don't show characters that are already drafted
+      if (draftedSet.has(c.id)) return false;
+
+      // gender filter
       const genderOK =
         filters.gender === "All" ||
         (c.gender &&
           c.gender.toLowerCase().includes(filters.gender.toLowerCase()));
+
+      // text filter
       const textOK = `${c.name.full} ${c.name.native}`
         .toLowerCase()
         .includes(filters.searchText.toLowerCase());
+
       return genderOK && textOK;
     });
-  }, [characters, filters]);
+  }, [characters, filters, lobby.draftedIds]);
 
   // ---------- loading skeleton during first pool load ----------
   if (loadingChars) {
@@ -616,7 +672,6 @@ export default function CharacterDraftApp() {
         className="bg-neutral-900 border border-neutral-700 rounded px-2 py-1 text-[11px] hover:bg-neutral-700 text-white"
         onClick={() => {
           // just setting meName is enough; server already has us
-          // nothing else to do here.
         }}
       >
         Set
@@ -761,10 +816,11 @@ export default function CharacterDraftApp() {
         </aside>
 
         {/* RIGHT: Filters + Deep Cut + Pool */}
-        <section className="overflow-y-auto max-h-[80vh] flex flex-col gap-3">
-          {/* Filters row */}
-          <div className="bg-neutral-800/40 border border-neutral-700 rounded-xl p-3">
-            <div className="flex flex-wrap gap-3 items-end justify-between">
+        {/* We break this into a sticky header bar and a scrollable pool below */}
+        <section className="flex flex-col bg-neutral-900/0">
+          {/* sticky filters / search / deep cut */}
+          <div className="bg-neutral-800/40 border border-neutral-700 rounded-xl p-3 mb-3 sticky top-0 z-20 shadow-[0_10px_20px_rgba(0,0,0,0.6)]">
+            <div className="flex flex-wrap gap-4 items-start justify-between">
               {/* gender */}
               <div className="flex flex-col">
                 <label className="text-[10px] uppercase text-neutral-500 font-semibold">
@@ -786,7 +842,7 @@ export default function CharacterDraftApp() {
               </div>
 
               {/* search */}
-              <div className="flex flex-col flex-1 min-w-[180px] max-w-[220px]">
+              <div className="flex flex-col min-w-[180px] flex-1 max-w-[220px]">
                 <label className="text-[10px] uppercase text-neutral-500 font-semibold">
                   Search
                 </label>
@@ -799,7 +855,7 @@ export default function CharacterDraftApp() {
                     }))
                   }
                   placeholder="Character name"
-                  className="bg-neutral-900 border border-neutral-700 rounded px-2 py-1 text-sm text-white"
+                  className="bg-neutral-900 border border-neutral-700 rounded px-2 py-1 text-sm text-white w-full"
                 />
               </div>
 
@@ -819,15 +875,18 @@ export default function CharacterDraftApp() {
                   Deep Cut Search
                 </button>
               </div>
-            </div>
 
-            <div className="text-[10px] text-neutral-500 mt-2">
-              {filteredLocalPool.length} matches in local pool
+              {/* counts / debug */}
+              <div className="text-[10px] text-neutral-500 leading-tight">
+                {filteredLocalPool.length} matches in local pool
+                <br />
+                total loaded: {characters.length}
+              </div>
             </div>
           </div>
 
-          {/* pool grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {/* scrollable pool below sticky filters */}
+          <div className="overflow-y-auto max-h-[70vh] pr-1 grid grid-cols-1 md:grid-cols-2 gap-3">
             {filteredLocalPool.map((c, idx) => (
               <div
                 key={c.id}
@@ -838,11 +897,11 @@ export default function CharacterDraftApp() {
                   alt={c.name.full}
                   className="w-20 h-28 object-cover rounded"
                 />
-                <div className="flex-1">
-                  <div className="font-semibold text-neutral-100">
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold text-neutral-100 truncate">
                     {c.name.full}
                   </div>
-                  <div className="text-xs text-neutral-400">
+                  <div className="text-xs text-neutral-400 truncate">
                     {c.name.native}
                   </div>
                   <div className="text-xs text-neutral-500 mt-1">
@@ -858,6 +917,15 @@ export default function CharacterDraftApp() {
                 </div>
               </div>
             ))}
+
+            {filteredLocalPool.length === 0 && (
+              <div className="col-span-full text-center text-neutral-500 text-sm py-12">
+                No local matches.
+                <div className="mt-2 text-[11px] text-neutral-600">
+                  Try Deep Cut Search → to pull from AniList directly.
+                </div>
+              </div>
+            )}
           </div>
         </section>
       </main>

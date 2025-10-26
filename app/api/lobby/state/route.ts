@@ -1,14 +1,16 @@
-import { LobbyStore } from "../store";
-
-export const dynamic = "force-dynamic";
+// app/api/lobby/state/route.ts
+import { NextResponse } from "next/server";
+import { getLobby, tickTimerAndMaybeAutopick, LobbyState } from "../store";
 
 export async function GET() {
-  // tick timer each poll so everyone stays synced
-  LobbyStore.tick();
-  const lobby = LobbyStore.getLobby();
+  // run 1-second tick logic here to keep timer moving on prod
+  tickTimerAndMaybeAutopick();
 
-  return new Response(JSON.stringify(lobby), {
-    status: 200,
-    headers: { "Content-Type": "application/json" },
-  });
+  const lobby = getLobby();
+  const body: LobbyState = {
+    ...lobby,
+    draftedIds: lobby.draftedIds ?? [],
+  };
+
+  return NextResponse.json(body, { status: 200 });
 }

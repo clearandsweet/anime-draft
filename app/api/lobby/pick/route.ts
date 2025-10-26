@@ -1,36 +1,44 @@
-import { LobbyStore } from "../store";
+// app/api/lobby/pick/route.ts
+import { NextResponse } from "next/server";
+import {
+  getLobby,
+  draftPick,
+  LobbyState,
+  Character,
+} from "../store";
 
-export const dynamic = "force-dynamic";
-
-export async function POST(req: Request) {
+export async function POST(request: Request) {
   try {
-    const body = await req.json().catch(() => ({}));
+    const body = await request.json();
+    const actingName = body.actingName;
+    const slotName = body.slotName;
+    const chosen: Character = body.chosen;
 
-    const actingName = (body.actingName || "").toString().trim();
-    const slotName = (body.slotName || "").toString().trim();
-    const chosen = body.chosen; // should be full Character object
-
-    if (!actingName || !slotName || !chosen) {
-      return new Response(
-        JSON.stringify({ error: "Missing fields" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    const lobby = LobbyStore.pick({
+    const result = draftPick({
       actingName,
       slotName,
       chosen,
     });
 
-    return new Response(JSON.stringify(lobby), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
-  } catch (err: any) {
-    return new Response(
-      JSON.stringify({ error: err?.message || "Pick failed" }),
-      { status: 400, headers: { "Content-Type": "application/json" } }
+    if (!result.ok) {
+      return NextResponse.json(
+        { error: result.error || "Pick failed." },
+        { status: 400 }
+      );
+    }
+
+    const lobby = getLobby();
+    const responseBody: LobbyState = {
+      ...lobby,
+      draftedIds: lobby.draftedIds ?? [],
+    };
+
+    return NextResponse.json(responseBody, { status: 200 });
+  } catch (err) {
+    console.error("pick error:", err);
+    return NextResponse.json(
+      { error: "Server error." },
+      { status: 500 }
     );
   }
 }

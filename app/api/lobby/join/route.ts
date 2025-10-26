@@ -1,22 +1,31 @@
-import { LobbyStore } from "../store";
+// app/api/lobby/join/route.ts
+import { NextResponse } from "next/server";
+import { getLobby, joinLobby, LobbyState } from "../store";
 
-export const dynamic = "force-dynamic";
+export async function POST(request: Request) {
+  try {
+    const { name } = await request.json();
 
-export async function POST(req: Request) {
-  const body = await req.json().catch(() => ({}));
-  const name = (body.name || "").toString().trim();
+    const result = joinLobby(name);
+    if (!result.ok) {
+      return NextResponse.json(
+        { error: result.error || "Join failed" },
+        { status: 400 }
+      );
+    }
 
-  if (!name) {
-    return new Response(
-      JSON.stringify({ error: "Name required" }),
-      { status: 400, headers: { "Content-Type": "application/json" } }
+    const lobby = getLobby();
+    const body: LobbyState = {
+      ...lobby,
+      draftedIds: lobby.draftedIds ?? [],
+    };
+
+    return NextResponse.json(body, { status: 200 });
+  } catch (err) {
+    console.error("join error:", err);
+    return NextResponse.json(
+      { error: "Server error." },
+      { status: 500 }
     );
   }
-
-  const lobby = LobbyStore.join(name);
-
-  return new Response(JSON.stringify(lobby), {
-    status: 200,
-    headers: { "Content-Type": "application/json" },
-  });
 }

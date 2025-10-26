@@ -1,20 +1,35 @@
-import { LobbyStore } from "../store";
+// app/api/lobby/target/route.ts
+import { NextResponse } from "next/server";
+import {
+  getLobby,
+  setTargetPlayerCount,
+  LobbyState,
+} from "../store";
 
-export const dynamic = "force-dynamic";
+export async function POST(request: Request) {
+  try {
+    const { targetPlayers, meName } = await request.json();
 
-export async function POST(req: Request) {
-  const body = await req.json().catch(() => ({}));
+    const result = setTargetPlayerCount(meName, targetPlayers);
+    if (!result.ok) {
+      return NextResponse.json(
+        { error: result.error || "Cannot set target player count." },
+        { status: 400 }
+      );
+    }
 
-  const n = Number(body.targetPlayers);
-  const actingName = (body.meName || "").toString().trim();
+    const lobby = getLobby();
+    const body: LobbyState = {
+      ...lobby,
+      draftedIds: lobby.draftedIds ?? [],
+    };
 
-  // host-only
-  LobbyStore.setTargetPlayers(n, actingName);
-
-  const lobby = LobbyStore.getLobby();
-
-  return new Response(JSON.stringify(lobby), {
-    status: 200,
-    headers: { "Content-Type": "application/json" },
-  });
+    return NextResponse.json(body, { status: 200 });
+  } catch (err) {
+    console.error("target error:", err);
+    return NextResponse.json(
+      { error: "Server error." },
+      { status: 500 }
+    );
+  }
 }

@@ -1,27 +1,31 @@
-import { LobbyStore } from "../store";
+// app/api/lobby/start/route.ts
+import { NextResponse } from "next/server";
+import { getLobby, startDraft, LobbyState } from "../store";
 
-export const dynamic = "force-dynamic";
-
-export async function POST(req: Request) {
+export async function POST(request: Request) {
   try {
-    const body = await req.json().catch(() => ({}));
-    const actingName = (body.meName || "").toString().trim();
+    const { meName } = await request.json();
 
-    // host-only
-    LobbyStore.startDraft(actingName);
+    const result = startDraft(meName);
+    if (!result.ok) {
+      return NextResponse.json(
+        { error: result.error || "Cannot start draft." },
+        { status: 400 }
+      );
+    }
 
-    const lobby = LobbyStore.getLobby();
+    const lobby = getLobby();
+    const body: LobbyState = {
+      ...lobby,
+      draftedIds: lobby.draftedIds ?? [],
+    };
 
-    return new Response(JSON.stringify(lobby), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
-  } catch (err: any) {
-    return new Response(
-      JSON.stringify({
-        error: err?.message || "Cannot start draft yet",
-      }),
-      { status: 400, headers: { "Content-Type": "application/json" } }
+    return NextResponse.json(body, { status: 200 });
+  } catch (err) {
+    console.error("start error:", err);
+    return NextResponse.json(
+      { error: "Server error." },
+      { status: 500 }
     );
   }
 }
