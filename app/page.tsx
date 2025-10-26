@@ -35,11 +35,11 @@ type Player = {
 const SLOT_NAMES = [
   "Waifu",
   "Husbando",
-  "Animal",
-  "Not Alive",
+  "Not Human",
+  "Not Alive or Artifical",
   "Old",
   "Minor Character",
-  "Villain",
+  "Evil",
   "Child",
   "Comic Relief",
   "Wildcard",
@@ -183,8 +183,8 @@ export default function CharacterDraftApp() {
         setLoading(true);
 
         const bigList: Character[] = [];
-        // page 1 .. 100 (10k-ish characters)
-        for (let page = 1; page <= 100; page++) {
+        // page 1 .. 200 (20k-ish characters)
+        for (let page = 1; page <= 200; page++) {
           const res = await fetch(`/api/characters?page=${page}`, {
             cache: "no-store",
           });
