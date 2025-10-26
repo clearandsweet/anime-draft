@@ -2,8 +2,6 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 
-// ---------- Types ----------
-
 type Character = {
   id: number;
   name: { full: string; native: string };
@@ -33,103 +31,99 @@ type LobbyState = {
   history: { playerIndex: number; char: Character; slot: string }[];
   targetPlayers: number;
   draftActive: boolean;
+  hostName: string | null;
 };
 
-// slot names must match server
-const SLOT_NAMES = [
-  "Waifu",
-  "Husbando",
-  "Not Human",
-  "Not Alive or Artifical",
-  "Old",
-  "Minor Character",
-  "Evil",
-  "Child",
-  "Comic Relief",
-  "Wildcard",
-];
-
-// player color styling
 const COLOR_MAP: Record<
   string,
-  { glow: string; text: string; border: string }
+  { glow: string; text: string; border: string; ring: string }
 > = {
   rose: {
     glow: "shadow-[0_0_10px_rgba(244,63,94,0.5)]",
     text: "text-rose-400",
     border: "border-rose-500",
+    ring: "ring-rose-500/60 shadow-[0_0_16px_rgba(244,63,94,0.5)]",
   },
   sky: {
     glow: "shadow-[0_0_10px_rgba(14,165,233,0.5)]",
     text: "text-sky-400",
     border: "border-sky-500",
+    ring: "ring-sky-500/60 shadow-[0_0_16px_rgba(14,165,233,0.5)]",
   },
   emerald: {
     glow: "shadow-[0_0_10px_rgba(16,185,129,0.5)]",
     text: "text-emerald-400",
     border: "border-emerald-500",
+    ring: "ring-emerald-500/60 shadow-[0_0_16px_rgba(16,185,129,0.5)]",
   },
   amber: {
     glow: "shadow-[0_0_10px_rgba(251,191,36,0.5)]",
     text: "text-amber-400",
     border: "border-amber-500",
+    ring: "ring-amber-400/60 shadow-[0_0_16px_rgba(251,191,36,0.5)]",
   },
   fuchsia: {
     glow: "shadow-[0_0_10px_rgba(217,70,239,0.5)]",
     text: "text-fuchsia-400",
     border: "border-fuchsia-500",
+    ring: "ring-fuchsia-500/60 shadow-[0_0_16px_rgba(217,70,239,0.5)]",
   },
   indigo: {
     glow: "shadow-[0_0_10px_rgba(99,102,241,0.5)]",
     text: "text-indigo-400",
     border: "border-indigo-500",
+    ring: "ring-indigo-500/60 shadow-[0_0_16px_rgba(99,102,241,0.5)]",
   },
   lime: {
     glow: "shadow-[0_0_10px_rgba(163,230,53,0.5)]",
     text: "text-lime-400",
     border: "border-lime-500",
+    ring: "ring-lime-500/60 shadow-[0_0_16px_rgba(163,230,53,0.5)]",
   },
   cyan: {
     glow: "shadow-[0_0_10px_rgba(34,211,238,0.5)]",
     text: "text-cyan-400",
     border: "border-cyan-500",
+    ring: "ring-cyan-500/60 shadow-[0_0_16px_rgba(34,211,238,0.5)]",
   },
   default: {
     glow: "shadow-[0_0_10px_rgba(255,255,255,0.15)]",
     text: "text-neutral-300",
     border: "border-neutral-500",
+    ring: "ring-neutral-500/60 shadow-[0_0_16px_rgba(255,255,255,0.15)]",
   },
 };
 
-function colorStyleForPlayer(p: Player) {
+function colorStyleForPlayer(p: Player | null) {
+  if (!p) return COLOR_MAP["default"];
   return COLOR_MAP[p.color] || COLOR_MAP["default"];
 }
 
 export default function CharacterDraftApp() {
-  //
-  // -------- Local-only client state --------
-  //
+  // local identity (not in lobby state)
   const [meName, setMeName] = useState<string>("");
 
+  // local character pool
   const [characters, setCharacters] = useState<Character[]>([]);
   const [loadingChars, setLoadingChars] = useState<boolean>(true);
 
+  // search / gender filters
   const [filters, setFilters] = useState<{ searchText: string; gender: string }>(
     { searchText: "", gender: "All" }
   );
 
-  // deep cut search modal state
+  // deep cut modal
   const [showDeepSearchModal, setShowDeepSearchModal] =
     useState<boolean>(false);
   const [deepSearchQuery, setDeepSearchQuery] = useState<string>("");
   const [deepSearchLoading, setDeepSearchLoading] = useState<boolean>(false);
   const [deepSearchResults, setDeepSearchResults] = useState<Character[]>([]);
 
-  // slot selection modal
+  // slot select modal
   const [showSlotModal, setShowSlotModal] = useState<boolean>(false);
   const [pendingPick, setPendingPick] = useState<Character | null>(null);
 
-  // -------- Shared lobby state (server-polled) --------
+  // lobby (server-polled)
   const [lobby, setLobby] = useState<LobbyState>({
     players: [],
     round: 1,
@@ -139,25 +133,34 @@ export default function CharacterDraftApp() {
     history: [],
     targetPlayers: 4,
     draftActive: false,
+    hostName: null,
   });
 
-  // UI convenience
-  const currentPlayer = lobby.players[lobby.currentPlayerIndex] || null;
+  const currentPlayer =
+    lobby.players[lobby.currentPlayerIndex] || null;
+
+  const onClockColor = colorStyleForPlayer(currentPlayer);
 
   const clockDisplay = `${String(
     Math.floor(lobby.timerSeconds / 60)
   ).padStart(2, "0")}:${String(lobby.timerSeconds % 60).padStart(2, "0")}`;
 
-  //
-  // ---------- Load giant character pool locally ----------
-  //
-  useEffect(() => {
-    async function loadAllPages() {
-      try {
-        setLoadingChars(true);
+  // am I in the lobby by name?
+  const iAmJoined = lobby.players.some(
+    (p) => p.name.toLowerCase() === meName.trim().toLowerCase()
+  );
+  const iAmHost =
+    lobby.hostName &&
+    meName.trim().toLowerCase() === lobby.hostName.toLowerCase();
 
-        const bigList: Character[] = [];
-        for (let page = 1; page <= 200; page++) {
+  // ---------- load character pool (first ~10 pages, fallback safe) ----------
+  useEffect(() => {
+    async function loadSomePages() {
+      setLoadingChars(true);
+      const gathered: Character[] = [];
+
+      for (let page = 1; page <= 10; page++) {
+        try {
           const res = await fetch(`/api/characters?page=${page}`, {
             cache: "no-store",
           });
@@ -165,36 +168,36 @@ export default function CharacterDraftApp() {
           const data = await res.json();
           const chunk: Character[] = data?.characters || [];
           if (!chunk.length) break;
-          bigList.push(...chunk);
+          gathered.push(...chunk);
+        } catch {
+          break;
         }
+      }
 
+      if (gathered.length > 0) {
         const byId = new Map<number, Character>();
-        for (const ch of bigList) {
-          if (!byId.has(ch.id)) {
-            byId.set(ch.id, ch);
-          }
+        for (const ch of gathered) {
+          if (!byId.has(ch.id)) byId.set(ch.id, ch);
         }
-
         const finalList = Array.from(byId.values()).sort(
           (a, b) => b.favourites - a.favourites
         );
-
         setCharacters(finalList);
-      } catch (err) {
-        console.error("Failed to load character pages:", err);
-        setCharacters([]);
-      } finally {
-        setLoadingChars(false);
+      } else {
+        // fallback: leave any existing state instead of wiping to []
+        if (characters.length === 0) {
+          setCharacters([]);
+        }
       }
+
+      setLoadingChars(false);
     }
 
-    loadAllPages();
+    loadSomePages();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  //
-  // ---------- Poll lobby state every second ----------
-  // server also ticks timer when /state is fetched
-  //
+  // ---------- poll lobby every second ----------
   useEffect(() => {
     const id = setInterval(async () => {
       try {
@@ -210,13 +213,7 @@ export default function CharacterDraftApp() {
     return () => clearInterval(id);
   }, []);
 
-  //
-  // ---------- Join lobby when I set my name ----------
-  //
-  const hasJoined = lobby.players.some(
-    (p) => p.name.toLowerCase() === meName.trim().toLowerCase()
-  );
-
+  // ---------- join lobby ----------
   async function tryJoin() {
     if (!meName.trim()) return;
     try {
@@ -236,12 +233,13 @@ export default function CharacterDraftApp() {
     }
   }
 
+  // ---------- host-only: change target players ----------
   async function setTargetPlayers(n: number) {
     try {
       const res = await fetch("/api/lobby/target", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ targetPlayers: n }),
+        body: JSON.stringify({ targetPlayers: n, meName: meName.trim() }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -252,10 +250,13 @@ export default function CharacterDraftApp() {
     }
   }
 
+  // ---------- host-only: start draft ----------
   async function startDraft() {
     try {
       const res = await fetch("/api/lobby/start", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ meName: meName.trim() }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -268,9 +269,7 @@ export default function CharacterDraftApp() {
     }
   }
 
-  //
-  // ---------- Deep Cut Search ----------
-  //
+  // ---------- deep cut search ----------
   async function runDeepSearch() {
     if (!deepSearchQuery.trim()) return;
     try {
@@ -295,9 +294,7 @@ export default function CharacterDraftApp() {
     }
   }
 
-  //
-  // ---------- Begin draft pick (client step 1) ----------
-  //
+  // ---------- begin pick ----------
   function beginDraftPick(charOrId: Character | number) {
     let chosen: Character | undefined;
 
@@ -306,7 +303,6 @@ export default function CharacterDraftApp() {
     } else {
       chosen = charOrId;
     }
-
     if (!chosen) return;
 
     if (!lobby.draftActive) {
@@ -326,13 +322,11 @@ export default function CharacterDraftApp() {
     setShowSlotModal(true);
   }
 
-  //
-  // ---------- Confirm slot, POST to server (client step 2) ----------
-  //
+  // ---------- confirm pick -> server POST ----------
   async function confirmSlot(slotName: string) {
     if (!pendingPick) return;
     if (!meName.trim()) {
-      alert("Set your name first.");
+      alert("Reconnect with your joined name first.");
       return;
     }
     try {
@@ -345,7 +339,6 @@ export default function CharacterDraftApp() {
           chosen: pendingPick,
         }),
       });
-
       const data = await res.json();
 
       if (!res.ok) {
@@ -353,27 +346,25 @@ export default function CharacterDraftApp() {
         return;
       }
 
-      // success: remove locally so I don't see them again
+      // success: remove locally
       setCharacters((prev) => prev.filter((c) => c.id !== pendingPick.id));
 
       setPendingPick(null);
       setShowSlotModal(false);
-
-      // update local lobby snapshot
       setLobby(data);
-    } catch (err: any) {
+    } catch (err) {
       console.error("confirmSlot failed", err);
       alert("Server error when drafting");
     }
   }
 
-  //
-  // ---------- Undo ----------
-  //
+  // ---------- undo (host only) ----------
   async function handleUndo() {
     try {
       const res = await fetch("/api/lobby/undo", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ meName: meName.trim() }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -386,9 +377,7 @@ export default function CharacterDraftApp() {
     }
   }
 
-  //
-  // ---------- Export ----------
-  //
+  // ---------- export ----------
   function handleExport() {
     const data = { lobby };
     const blob = new Blob([JSON.stringify(data, null, 2)], {
@@ -401,9 +390,7 @@ export default function CharacterDraftApp() {
     a.click();
   }
 
-  //
-  // ---------- Derived filtered pool for the right column ----------
-  //
+  // ---------- filtered pool ----------
   const filteredLocalPool = useMemo(() => {
     return characters.filter((c) => {
       const genderOK =
@@ -417,29 +404,25 @@ export default function CharacterDraftApp() {
     });
   }, [characters, filters]);
 
-  //
-  // ---------- Loading screen for first load of pool ----------
-  //
+  // ---------- loading skeleton during first pool load ----------
   if (loadingChars) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-neutral-900 text-neutral-400 text-lg">
         <div className="w-8 h-8 rounded-full border-2 border-neutral-700 border-t-neutral-200 animate-spin" />
-        <div>Fetching gigantic character pool…</div>
+        <div>Fetching character pool…</div>
         <div className="text-xs text-neutral-600">
-          (This is normal — we’re pulling tens of thousands)
+          (Pulling top pages from AniList)
         </div>
       </div>
     );
   }
 
-  //
-  // ---------- Pregame Lobby Modal (full-screen until draftActive = true) ----------
-  //
+  // ---------- PRE-DRAFT LOBBY FULLSCREEN ----------
   if (!lobby.draftActive) {
     const joinedCount = lobby.players.length;
     const target = lobby.targetPlayers;
-    const readyToStart =
-      joinedCount === target && joinedCount >= 2;
+    const readyToStart = joinedCount === target && joinedCount >= 2;
+    const isHost = iAmHost;
 
     return (
       <div className="min-h-screen bg-neutral-900 text-neutral-100 flex items-center justify-center p-4 font-sans">
@@ -448,7 +431,26 @@ export default function CharacterDraftApp() {
             Anime Character Draft Lobby
           </h1>
 
-          {/* top row: target players selector */}
+          {/* host info */}
+          <div className="text-center text-[11px] text-neutral-400 mb-4">
+            {lobby.hostName ? (
+              <>
+                Host:{" "}
+                <span className="text-white font-semibold">
+                  {lobby.hostName}
+                </span>{" "}
+                {isHost && (
+                  <span className="text-emerald-400 font-semibold ml-1">
+                    (You are Host)
+                  </span>
+                )}
+              </>
+            ) : (
+              "Waiting for first player to join…"
+            )}
+          </div>
+
+          {/* Number of drafters row */}
           <div className="mb-6">
             <div className="text-xs uppercase text-neutral-500 font-semibold mb-2 text-center">
               Number of Drafters
@@ -456,15 +458,20 @@ export default function CharacterDraftApp() {
             <div className="flex justify-center gap-2 flex-wrap">
               {[2, 4, 8, 12].map((n) => {
                 const active = n === lobby.targetPlayers;
+                const canClick = isHost && !lobby.draftActive;
                 return (
                   <button
                     key={n}
-                    onClick={() => setTargetPlayers(n)}
-                    disabled={lobby.draftActive}
+                    onClick={() => canClick && setTargetPlayers(n)}
+                    disabled={!canClick}
                     className={`px-3 py-2 rounded-lg text-sm border ${
                       active
                         ? "border-fuchsia-500 text-white bg-fuchsia-600/20 shadow-[0_0_10px_rgba(217,70,239,0.6)]"
-                        : "border-neutral-700 text-neutral-300 bg-neutral-800 hover:bg-neutral-700"
+                        : "border-neutral-700 text-neutral-300 bg-neutral-800"
+                    } ${
+                      canClick
+                        ? "hover:bg-neutral-700"
+                        : "opacity-50 cursor-not-allowed"
                     }`}
                   >
                     {n}
@@ -477,16 +484,16 @@ export default function CharacterDraftApp() {
             </div>
           </div>
 
-          {/* middle row: name/join vs lobby list */}
+          {/* join + lobby list */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            {/* left: enter name / join */}
+            {/* left: join box */}
             <div className="bg-neutral-800/40 border border-neutral-700 rounded-xl p-4 min-h-[150px] flex flex-col justify-between">
               <div>
                 <div className="text-xs uppercase text-neutral-500 font-semibold mb-2">
                   Enter Your Name
                 </div>
 
-                {!hasJoined ? (
+                {!iAmJoined ? (
                   <>
                     <input
                       className="w-full bg-neutral-900 border border-neutral-700 rounded px-2 py-2 text-sm text-white mb-3"
@@ -504,7 +511,7 @@ export default function CharacterDraftApp() {
                 ) : (
                   <div className="text-sm text-neutral-300">
                     You joined as{" "}
-                    <span className="font-semibold text-white">
+                    <span className="text-white font-semibold">
                       {meName}
                     </span>
                     .<br />
@@ -514,8 +521,7 @@ export default function CharacterDraftApp() {
               </div>
 
               <div className="text-[10px] text-neutral-500 mt-4">
-                Once you join, your name will appear in the lobby and you'll
-                be assigned a color.
+                Once you join, you're locked in that seat.
               </div>
             </div>
 
@@ -540,7 +546,6 @@ export default function CharacterDraftApp() {
                     <span className="font-semibold text-neutral-100 flex items-center gap-2">
                       <span
                         className={`inline-block w-2 h-2 rounded-full ${
-                          // just tint: crude mapping
                           p.color === "rose"
                             ? "bg-rose-500"
                             : p.color === "sky"
@@ -570,18 +575,18 @@ export default function CharacterDraftApp() {
               </ul>
 
               <div className="text-[10px] text-neutral-500 mt-4">
-                We’ll start once we hit the selected total.
+                Draft Host will press Start when the lobby count matches.
               </div>
             </div>
           </div>
 
-          {/* bottom row: start button */}
+          {/* start button */}
           <div className="flex justify-center">
             <button
               onClick={startDraft}
-              disabled={!readyToStart}
+              disabled={!readyToStart || !isHost}
               className={`px-4 py-2 rounded-lg text-sm font-semibold border ${
-                readyToStart
+                readyToStart && isHost
                   ? "border-emerald-500 text-white bg-emerald-600/20 shadow-[0_0_10px_rgba(16,185,129,0.6)] hover:bg-emerald-600/30"
                   : "border-neutral-700 text-neutral-500 bg-neutral-800 cursor-not-allowed"
               }`}
@@ -594,36 +599,63 @@ export default function CharacterDraftApp() {
     );
   }
 
-  //
-  // ---------- Main Draft UI (once draftActive === true) ----------
-  //
+  // ---------- RECONNECT STRIP (draft is active, but browser isn't identified) ----------
+  const needReconnect = lobby.draftActive && !iAmJoined;
+  const reconnectStrip = needReconnect ? (
+    <div className="bg-neutral-800 border border-neutral-700 rounded-lg p-2 text-xs text-neutral-300 flex flex-wrap items-center gap-2 justify-between">
+      <div className="flex-1">
+        Reconnect: enter the exact name you used to join.
+      </div>
+      <input
+        className="bg-neutral-900 border border-neutral-700 rounded px-2 py-1 text-[11px] text-white w-[120px]"
+        placeholder="Your name"
+        value={meName}
+        onChange={(e) => setMeName(e.target.value)}
+      />
+      <button
+        className="bg-neutral-900 border border-neutral-700 rounded px-2 py-1 text-[11px] hover:bg-neutral-700 text-white"
+        onClick={() => {
+          // just setting meName is enough; server already has us
+          // nothing else to do here.
+        }}
+      >
+        Set
+      </button>
+    </div>
+  ) : null;
+
+  // ---------- MAIN DRAFT UI ----------
   return (
     <div className="min-h-screen bg-neutral-900 text-neutral-100 p-4 font-sans">
-      {/* HEADER */}
       <header className="mb-4 flex flex-col gap-3">
-        {/* row 1: On the Clock big + Last Pick on the right */}
+        {reconnectStrip}
+
+        {/* row: On the Clock pill + Last Pick */}
         <div className="flex flex-wrap items-start justify-between gap-3">
-          {/* Big On the Clock block */}
-          <div className="flex-1 text-center">
-            <div className="text-[10px] uppercase tracking-wide text-neutral-500 font-semibold">
-              On the Clock
-            </div>
-            {currentPlayer ? (
-              <div className="text-2xl font-bold text-white leading-tight">
-                {currentPlayer.name}
-              </div>
-            ) : (
-              <div className="text-xl font-bold text-neutral-600">
-                (nobody?)
-              </div>
-            )}
-            <div className="text-xs text-neutral-400 mt-1">
-              R{lobby.round} •{" "}
-              <span className="font-mono text-white">{clockDisplay}</span>
+          {/* CLOCK PILL */}
+          <div
+            className={[
+              "flex-1 min-w-[200px] text-center border rounded-xl px-4 py-3 bg-neutral-900 ring-2",
+              onClockColor.ring,
+            ].join(" ")}
+          >
+            <div className="text-sm font-bold text-white leading-tight flex flex-wrap items-center justify-center gap-2">
+              <span className="uppercase text-[10px] tracking-wide text-neutral-500 font-semibold">
+                On the Clock:
+              </span>
+              <span className="text-lg font-extrabold text-white">
+                {currentPlayer ? currentPlayer.name : "(nobody)"}
+              </span>
+              <span className="text-[12px] text-neutral-400">
+                R{lobby.round}
+              </span>
+              <span className="font-mono text-white text-[13px] bg-neutral-800/60 border border-neutral-700 rounded px-2 py-[2px]">
+                {clockDisplay}
+              </span>
             </div>
           </div>
 
-          {/* Last Pick info on the right */}
+          {/* LAST PICK */}
           <div className="text-right flex-1 min-w-[200px]">
             <div className="text-[10px] uppercase tracking-wide text-neutral-500 font-semibold">
               Last Pick
@@ -647,41 +679,26 @@ export default function CharacterDraftApp() {
           </div>
         </div>
 
-        {/* row 2: Your Name / Undo / Export */}
+        {/* row: host controls / export */}
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <label className="text-xs text-neutral-400 flex flex-col">
-              <span className="uppercase tracking-wide text-[10px] text-neutral-500">
-                You Are
-              </span>
-              <input
-                className="bg-neutral-900 border border-neutral-700 rounded px-2 py-1 text-sm text-white w-32"
-                placeholder="Your name"
-                value={meName}
-                onChange={(e) => setMeName(e.target.value)}
-              />
-            </label>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
+          {iAmHost && (
             <button
               onClick={handleUndo}
               className="bg-neutral-800 px-3 py-1 rounded border border-neutral-700 hover:bg-neutral-700 text-sm"
             >
-              Undo
+              Undo (Host)
             </button>
+          )}
 
-            <button
-              onClick={handleExport}
-              className="bg-neutral-800 px-3 py-1 rounded border border-neutral-700 hover:bg-neutral-700 text-sm"
-            >
-              Export
-            </button>
-          </div>
+          <button
+            onClick={handleExport}
+            className="bg-neutral-800 px-3 py-1 rounded border border-neutral-700 hover:bg-neutral-700 text-sm ml-auto"
+          >
+            Export
+          </button>
         </div>
       </header>
 
-      {/* BODY */}
       <main className="grid xl:grid-cols-[1fr_1fr] gap-4">
         {/* LEFT: Rosters */}
         <aside className="space-y-4 overflow-y-auto max-h-[80vh] pr-1">
@@ -709,7 +726,7 @@ export default function CharacterDraftApp() {
                     return (
                       <div
                         key={slotName}
-                        className={`relative w-[90px] h-[120px] rounded border overflow-hidden ${col.glow}`}
+                        className={`relative w-[90px] h-[120px] rounded border overflow-hidden ${col.glow} group`}
                       >
                         {char ? (
                           <>
@@ -718,10 +735,15 @@ export default function CharacterDraftApp() {
                               alt={char.name.full}
                               className="w-full h-full object-cover"
                             />
+                            {/* slot ribbon */}
                             <div
                               className={`absolute bottom-0 left-0 right-0 bg-black/70 text-[11px] font-semibold text-center py-[3px] ${col.text}`}
                             >
                               {slotName}
+                            </div>
+                            {/* hover tooltip with char name */}
+                            <div className="absolute inset-0 bg-black/80 text-[11px] text-white font-semibold flex items-center justify-center px-2 text-center opacity-0 group-hover:opacity-100 transition-opacity">
+                              {char.name.full}
                             </div>
                           </>
                         ) : (
@@ -781,7 +803,7 @@ export default function CharacterDraftApp() {
                 />
               </div>
 
-              {/* Deep Cut Search trigger */}
+              {/* deep cut */}
               <div className="flex flex-col">
                 <label className="text-[10px] uppercase text-neutral-500 font-semibold">
                   Can't Find Them?
@@ -804,7 +826,7 @@ export default function CharacterDraftApp() {
             </div>
           </div>
 
-          {/* character pool grid */}
+          {/* pool grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {filteredLocalPool.map((c, idx) => (
               <div
@@ -840,7 +862,7 @@ export default function CharacterDraftApp() {
         </section>
       </main>
 
-      {/* SLOT SELECTION MODAL */}
+      {/* SLOT SELECT MODAL */}
       {showSlotModal && pendingPick && currentPlayer && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
           <div className="bg-neutral-900 border border-neutral-700 rounded-2xl p-6 w-[400px] max-w-[90vw]">
