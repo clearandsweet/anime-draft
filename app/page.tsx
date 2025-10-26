@@ -31,6 +31,20 @@ type Player = {
 
 // ---------- constants ----------
 
+// NOTE: renamed "Protagonist" -> "Minor Character", "Mentor" -> "Sex Pest"
+const SLOT_NAMES = [
+  "Waifu",
+  "Husbando",
+  "Animal",
+  "Artificial",
+  "Old",
+  "Minor Character",
+  "Villain",
+  "Sex Pest",
+  "Comic Relief",
+  "Wildcard",
+];
+
 const PLAYER_COLOR_KEYS: PlayerColorKey[] = [
   "rose",
   "sky",
@@ -52,19 +66,6 @@ const PLAYER_NAMES = [
   "Snowman",
   "King",
   "Mike",
-];
-
-const SLOT_NAMES = [
-  "Waifu",
-  "Husbando",
-  "Animal",
-  "Artificial",
-  "Old",
-  "Protagonist",
-  "Villain",
-  "Mentor",
-  "Comic Relief",
-  "Wildcard",
 ];
 
 const COLOR_MAP: Record<
@@ -136,9 +137,10 @@ function firstEmptySlot(p: Player): string | null {
   return null;
 }
 
-export default function CharacterDraftApp() {
-  // ---------- state ----------
+// ---------- component ----------
 
+export default function CharacterDraftApp() {
+  // data / draft state
   const [characters, setCharacters] = useState<Character[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -153,10 +155,9 @@ export default function CharacterDraftApp() {
   const [pendingPick, setPendingPick] = useState<Character | null>(null);
   const [showSlotModal, setShowSlotModal] = useState<boolean>(false);
 
-  const [filters, setFilters] = useState<{ searchText: string; gender: string }>({
-    searchText: "",
-    gender: "All",
-  });
+  const [filters, setFilters] = useState<{ searchText: string; gender: string }>(
+    { searchText: "", gender: "All" }
+  );
 
   const [history, setHistory] = useState<
     { playerIndex: number; char: Character; slot: string }[]
@@ -175,8 +176,7 @@ export default function CharacterDraftApp() {
     "0"
   )}:${String(timerSeconds % 60).padStart(2, "0")}`;
 
-  // ---------- data fetch ----------
-
+  // fetch characters from /api/characters
   useEffect(() => {
     async function load() {
       try {
@@ -185,9 +185,12 @@ export default function CharacterDraftApp() {
         const data = await res.json();
         if (data?.characters) {
           setCharacters(data.characters as Character[]);
+        } else {
+          setCharacters([]); // fallback
         }
       } catch (err) {
-        console.error(err);
+        console.error("Failed to fetch /api/characters:", err);
+        setCharacters([]);
       } finally {
         setLoading(false);
       }
@@ -195,25 +198,24 @@ export default function CharacterDraftApp() {
     load();
   }, []);
 
-  // ---------- timer with pause ----------
-
+  // countdown timer (pauses during modal)
   useEffect(() => {
     if (paused) return;
+
     const id = setInterval(() => {
       setTimerSeconds((t) => {
         if (t > 1) return t - 1;
 
-        // time ran out -> autopick
+        // timer hit zero -> autopick best available in first open slot
         autopick();
         return 180;
       });
     }, 1000);
+
     return () => clearInterval(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paused, characters, players, currentPlayerIndex, round]);
 
-  // ---------- filtering ----------
-
+  // filter by gender + text
   const filtered = useMemo(() => {
     return characters.filter((c) => {
       const genderOK =
@@ -227,20 +229,18 @@ export default function CharacterDraftApp() {
     });
   }, [characters, filters]);
 
-  // ---------- autopick ----------
-
+  // if someone runs out of time
   function autopick() {
     if (!characters.length) return;
-    const top = [...characters].sort(
+    const best = [...characters].sort(
       (a, b) => b.favourites - a.favourites
     )[0];
     const slot = firstEmptySlot(currentPlayer);
-    if (!slot) return; // <-- important: can't assign if all slots full
-    performPick(top, slot);
+    if (!slot) return;
+    performPick(best, slot);
   }
 
-  // ---------- draft flow ----------
-
+  // user clicked "Pick"
   function handleDraft(id: number) {
     const chosen = characters.find((c) => c.id === id);
     if (!chosen) return;
@@ -249,15 +249,16 @@ export default function CharacterDraftApp() {
     setShowSlotModal(true);
   }
 
+  // lock character into a slot
   function performPick(chosen: Character, slotName: string) {
     const idx = currentPlayerIndex;
     const drafter = players[idx];
     if (!slotName || drafter.slots[slotName]) return;
 
-    // remove character from pool
+    // remove from pool
     setCharacters((prev) => prev.filter((c) => c.id !== chosen.id));
 
-    // assign to slot + update popularity total
+    // assign into that player's slot
     setPlayers((prev) =>
       prev.map((p, i) =>
         i === idx
@@ -284,17 +285,19 @@ export default function CharacterDraftApp() {
       { playerIndex: idx, char: chosen, slot: slotName },
     ]);
 
-    // close modal, unpause, next turn
+    // cleanup & move turn
     setShowSlotModal(false);
     setPendingPick(null);
     setPaused(false);
     advanceTurn();
   }
 
+  // snake draft advancement logic
   function advanceTurn() {
     setTimerSeconds(180);
 
-    const odd = round % 2 === 1; // snake draft: odd rounds go forward
+    const odd = round % 2 === 1; // odd rounds go forward, even rounds go backward
+
     setCurrentPlayerIndex((i) => {
       const atEndFwd = odd && i === players.length - 1;
       const atEndBwd = !odd && i === 0;
@@ -309,15 +312,16 @@ export default function CharacterDraftApp() {
     });
   }
 
+  // undo last pick
   function handleUndo() {
     if (!history.length) return;
     const last = history[history.length - 1];
     const { playerIndex, char, slot } = last;
 
-    // put character back in pool
+    // put character back into pool
     setCharacters((prev) => [...prev, char]);
 
-    // clear that slot + adjust total
+    // free their slot + adjust score
     setPlayers((prev) =>
       prev.map((p, i) =>
         i === playerIndex
@@ -336,20 +340,18 @@ export default function CharacterDraftApp() {
       )
     );
 
-    // rollback turn to that drafter
     setHistory((h) => h.slice(0, -1));
     setCurrentPlayerIndex(playerIndex);
-    // round stays the same visually — we aren't rewinding round count here
+    // we aren't rewinding round counter, we just give turn back
     setLastPick(null);
     setTimerSeconds(180);
   }
 
-  // ---------- loading state ----------
-
+  // loading screen while we grab ~3000 chars
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-neutral-900 text-neutral-400 text-lg">
-        Fetching 10 000 characters…
+        Fetching characters…
       </div>
     );
   }
@@ -388,6 +390,7 @@ export default function CharacterDraftApp() {
           >
             Undo
           </button>
+
           <button
             onClick={() => {
               const data = { players, round };
@@ -446,6 +449,7 @@ export default function CharacterDraftApp() {
           {players.map((p, i) => {
             const col = COLOR_MAP[p.color];
             const isOnClock = i === currentPlayerIndex;
+
             return (
               <div
                 key={p.id}
@@ -461,36 +465,34 @@ export default function CharacterDraftApp() {
                 </div>
 
                 <div className="grid grid-cols-5 gap-2">
-                  {Object.entries(p.slots).map(
-                    ([slotName, charValue]) => {
-                      const char = charValue as Character | null;
-                      return (
-                        <div
-                          key={slotName}
-                          className={`relative w-[90px] h-[120px] rounded border overflow-hidden ${col.glow}`}
-                        >
-                          {char ? (
-                            <>
-                              <img
-                                src={char.image.large}
-                                alt={char.name.full}
-                                className="w-full h-full object-cover"
-                              />
-                              <div
-                                className={`absolute bottom-0 left-0 right-0 bg-black/70 text-[10px] text-center py-[2px] ${col.text}`}
-                              >
-                                {slotName}
-                              </div>
-                            </>
-                          ) : (
-                            <div className="flex items-center justify-center w-full h-full text-[10px] text-neutral-600 italic">
+                  {Object.entries(p.slots).map(([slotName, charValue]) => {
+                    const char = charValue as Character | null;
+                    return (
+                      <div
+                        key={slotName}
+                        className={`relative w-[90px] h-[120px] rounded border overflow-hidden ${col.glow}`}
+                      >
+                        {char ? (
+                          <>
+                            <img
+                              src={char.image.large}
+                              alt={char.name.full}
+                              className="w-full h-full object-cover"
+                            />
+                            <div
+                              className={`absolute bottom-0 left-0 right-0 bg-black/70 text-[11px] font-semibold text-center py-[3px] ${col.text}`}
+                            >
                               {slotName}
                             </div>
-                          )}
-                        </div>
-                      );
-                    }
-                  )}
+                          </>
+                        ) : (
+                          <div className="flex items-center justify-center w-full h-full text-[11px] font-semibold text-neutral-600 text-center leading-tight px-1">
+                            {slotName}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             );
@@ -535,7 +537,7 @@ export default function CharacterDraftApp() {
       {/* SLOT SELECTION MODAL */}
       {showSlotModal && pendingPick && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-          <div className="bg-neutral-900 border border-neutral-700 rounded-2xl p-6 w-[400px]">
+          <div className="bg-neutral-900 border border-neutral-700 rounded-2xl p-6 w-[400px] max-w-[90vw]">
             <h2 className="text-lg font-bold mb-2 text-white">
               Assign Slot
             </h2>
