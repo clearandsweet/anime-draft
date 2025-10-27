@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 export const runtime = "nodejs";
-import { createLobby, listLobbies } from "../lobby/fs";
+import { createLobby, listLobbies } from "../lobby/kv";
 import { LobbyState } from "../lobby/logic";
 
 export async function GET(request: Request) {

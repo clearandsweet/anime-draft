@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
 export const runtime = "nodejs";
-import { deleteLobby } from "../../lobby/fs";
+import { deleteLobby } from "../../lobby/kv";
 
 export async function DELETE(
   _request: NextRequest,

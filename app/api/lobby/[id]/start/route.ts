@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
 export const runtime = "nodejs";
-import { withLobby } from "../../../lobby/fs";
+import { withLobby } from "../../../lobby/kv";
 import { LobbyState, start } from "../../../lobby/logic";
 
 export async function POST(

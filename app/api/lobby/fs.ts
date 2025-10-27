@@ -99,10 +99,16 @@ export async function createLobby(opts?: {
 export async function loadLobby(id: string): Promise<LobbyState> {
   await ensureStorage();
   const p = lobbyPath(id);
-  const buf = await fs.readFile(p, "utf8");
-  const state = JSON.parse(buf) as LobbyState;
-  if (!state.draftedIds) state.draftedIds = [];
-  return state;
+  try {
+    const buf = await fs.readFile(p, "utf8");
+    const state = JSON.parse(buf) as LobbyState;
+    if (!state.draftedIds) state.draftedIds = [];
+    return state;
+  } catch (err: any) {
+    // If not found (e.g., another instance handled creation), start a fresh lobby
+    const fresh = makeFreshLobby();
+    return fresh;
+  }
 }
 
 export async function saveLobby(id: string, state: LobbyState) {
@@ -111,16 +117,28 @@ export async function saveLobby(id: string, state: LobbyState) {
   await fs.writeFile(lobbyPath(id), JSON.stringify(state, null, 2), "utf8");
 
   const idx = await readIndex();
-  const meta = idx.list.find((m) => m.id === id);
+  let meta = idx.list.find((m) => m.id === id);
   const now = new Date().toISOString();
-  if (meta) {
+  if (!meta) {
+    // Ensure an index entry exists even if this instance didn't create it
+    meta = {
+      id,
+      createdAt: now,
+      updatedAt: now,
+      hostName: state.hostName,
+      status: computeStatus(state),
+      playersCount: state.players.length,
+      lastPickAt: state.lastPick ? now : null,
+    };
+    idx.list.push(meta);
+  } else {
     meta.updatedAt = now;
     meta.hostName = state.hostName;
     meta.status = computeStatus(state);
     meta.playersCount = state.players.length;
     meta.lastPickAt = state.lastPick ? now : meta.lastPickAt;
-    await writeIndex(idx);
   }
+  await writeIndex(idx);
 }
 
 export async function listLobbies(filter?: { status?: "active" | "completed" }) {
