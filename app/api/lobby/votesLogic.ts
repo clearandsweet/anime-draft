@@ -1,4 +1,4 @@
-﻿
+
 export type VoteRecord = {
   id: string;
   ipHash: string;
