@@ -33,7 +33,7 @@ type LobbyState = {
   draftActive: boolean;
   hostName: string | null;
 
-  // NEW: track which character IDs are already drafted
+  // server should maintain this list:
   draftedIds?: number[];
 };
 
@@ -103,10 +103,10 @@ function colorStyleForPlayer(p: Player | null) {
 }
 
 export default function CharacterDraftApp() {
-  // local identity (not in lobby state)
+  // local identity: user types their name locally
   const [meName, setMeName] = useState<string>("");
 
-  // local character pool
+  // local giant character pool
   const [characters, setCharacters] = useState<Character[]>([]);
   const [loadingChars, setLoadingChars] = useState<boolean>(true);
 
@@ -122,11 +122,11 @@ export default function CharacterDraftApp() {
   const [deepSearchLoading, setDeepSearchLoading] = useState<boolean>(false);
   const [deepSearchResults, setDeepSearchResults] = useState<Character[]>([]);
 
-  // slot select modal
+  // slot selection modal (after you click Pick)
   const [showSlotModal, setShowSlotModal] = useState<boolean>(false);
   const [pendingPick, setPendingPick] = useState<Character | null>(null);
 
-  // lobby (server-polled)
+  // lobby state fetched from server (who joined, whose turn, etc.)
   const [lobby, setLobby] = useState<LobbyState>({
     players: [],
     round: 1,
@@ -137,7 +137,7 @@ export default function CharacterDraftApp() {
     targetPlayers: 4,
     draftActive: false,
     hostName: null,
-    draftedIds: [], // make sure we default this new field
+    draftedIds: [],
   });
 
   const currentPlayer = lobby.players[lobby.currentPlayerIndex] || null;
@@ -147,37 +147,39 @@ export default function CharacterDraftApp() {
     Math.floor(lobby.timerSeconds / 60)
   ).padStart(2, "0")}:${String(lobby.timerSeconds % 60).padStart(2, "0")}`;
 
-  // am I in the lobby by name?
+  // am I in the lobby already?
   const iAmJoined = lobby.players.some(
     (p) => p.name.toLowerCase() === meName.trim().toLowerCase()
   );
+  // am I host
   const iAmHost =
     lobby.hostName &&
     meName.trim().toLowerCase() === lobby.hostName.toLowerCase();
 
-  // ---------- load character pool (first ~10 pages, hardened) ----------
+  // -------------------------------------------------
+  // LOAD A HUGE CHARACTER POOL (up to ~100 pages ≈ ~5000 chars)
+  // -------------------------------------------------
   useEffect(() => {
     async function loadSomePages() {
       setLoadingChars(true);
       const gathered: Character[] = [];
       let sawAny = false;
 
-      for (let page = 1; page <= 10; page++) {
+      // go big: first 100 pages
+      for (let page = 1; page <= 100; page++) {
         try {
           const res = await fetch(`/api/characters?page=${page}`, {
             cache: "no-store",
           });
-
           if (!res.ok) {
-            console.warn("characters page", page, "not ok:", res.status);
-            // don't break the whole loop; just skip this page
+            // page failed (rate limit, etc.), skip instead of killing whole loop
             continue;
           }
 
           const data = await res.json();
           const chunk: Character[] = data?.characters || [];
-          if (chunk.length === 0) {
-            // assume AniList ran out of results
+          if (!chunk.length) {
+            // AniList stopped returning new stuff → break
             break;
           }
 
@@ -185,13 +187,13 @@ export default function CharacterDraftApp() {
           sawAny = true;
         } catch (err) {
           console.error("characters fetch fail on page", page, err);
-          // keep looping to try other pages
+          // network hiccup, skip this page and keep going
           continue;
         }
       }
 
       if (sawAny) {
-        // dedupe + sort by favourites desc
+        // dedupe, then sort by favourites desc
         const byId = new Map<number, Character>();
         for (const ch of gathered) {
           if (!byId.has(ch.id)) {
@@ -203,7 +205,7 @@ export default function CharacterDraftApp() {
         );
         setCharacters(finalList);
       } else {
-        // no data at all -> at least set empty array once
+        // if absolutely nothing loaded and we had nothing before, set empty
         if (characters.length === 0) {
           setCharacters([]);
         }
@@ -216,16 +218,17 @@ export default function CharacterDraftApp() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ---------- poll lobby every second ----------
+  // -------------------------------------------------
+  // POLL LOBBY FROM SERVER EVERY SECOND
+  // -------------------------------------------------
   useEffect(() => {
     const id = setInterval(async () => {
       try {
         const res = await fetch("/api/lobby/state", { cache: "no-store" });
         if (!res.ok) return;
         const data: LobbyState = await res.json();
+
         setLobby((prev) => ({
-          // make sure draftedIds always exists on client even if server forgot it
-          draftedIds: prev.draftedIds ?? [],
           ...data,
           draftedIds: data.draftedIds ?? prev.draftedIds ?? [],
         }));
@@ -237,7 +240,9 @@ export default function CharacterDraftApp() {
     return () => clearInterval(id);
   }, []);
 
-  // ---------- join lobby ----------
+  // -------------------------------------------------
+  // JOIN LOBBY
+  // -------------------------------------------------
   async function tryJoin() {
     if (!meName.trim()) return;
     try {
@@ -251,7 +256,6 @@ export default function CharacterDraftApp() {
         alert(data.error || "Join failed");
       } else {
         setLobby((prev) => ({
-          draftedIds: prev.draftedIds ?? [],
           ...data,
           draftedIds: data.draftedIds ?? prev.draftedIds ?? [],
         }));
@@ -261,7 +265,9 @@ export default function CharacterDraftApp() {
     }
   }
 
-  // ---------- host-only: change target players ----------
+  // -------------------------------------------------
+  // HOST ONLY: CHANGE TARGET # PLAYERS
+  // -------------------------------------------------
   async function setTargetPlayers(n: number) {
     try {
       const res = await fetch("/api/lobby/target", {
@@ -272,7 +278,6 @@ export default function CharacterDraftApp() {
       const data = await res.json();
       if (res.ok) {
         setLobby((prev) => ({
-          draftedIds: prev.draftedIds ?? [],
           ...data,
           draftedIds: data.draftedIds ?? prev.draftedIds ?? [],
         }));
@@ -282,7 +287,9 @@ export default function CharacterDraftApp() {
     }
   }
 
-  // ---------- host-only: start draft ----------
+  // -------------------------------------------------
+  // HOST ONLY: START DRAFT
+  // -------------------------------------------------
   async function startDraft() {
     try {
       const res = await fetch("/api/lobby/start", {
@@ -295,7 +302,6 @@ export default function CharacterDraftApp() {
         alert(data.error || "Cannot start draft");
       } else {
         setLobby((prev) => ({
-          draftedIds: prev.draftedIds ?? [],
           ...data,
           draftedIds: data.draftedIds ?? prev.draftedIds ?? [],
         }));
@@ -305,7 +311,9 @@ export default function CharacterDraftApp() {
     }
   }
 
-  // ---------- deep cut search ----------
+  // -------------------------------------------------
+  // DEEP CUT SEARCH
+  // -------------------------------------------------
   async function runDeepSearch() {
     if (!deepSearchQuery.trim()) return;
     try {
@@ -330,7 +338,9 @@ export default function CharacterDraftApp() {
     }
   }
 
-  // ---------- begin pick ----------
+  // -------------------------------------------------
+  // BEGIN PICK (USER CLICKED "PICK #")
+  // -------------------------------------------------
   function beginDraftPick(charOrId: Character | number) {
     let chosen: Character | undefined;
 
@@ -346,6 +356,7 @@ export default function CharacterDraftApp() {
       return;
     }
 
+    // enforce turn
     if (
       !currentPlayer ||
       currentPlayer.name.toLowerCase() !== meName.trim().toLowerCase()
@@ -358,7 +369,9 @@ export default function CharacterDraftApp() {
     setShowSlotModal(true);
   }
 
-  // ---------- confirm pick -> server POST ----------
+  // -------------------------------------------------
+  // CONFIRM SLOT (USER CHOOSES WHICH SLOT TO FILL)
+  // -------------------------------------------------
   async function confirmSlot(slotName: string) {
     if (!pendingPick) return;
     if (!meName.trim()) {
@@ -382,15 +395,13 @@ export default function CharacterDraftApp() {
         return;
       }
 
-      // server now knows this character is drafted.
-      // server should have added it to lobby.draftedIds[]
+      // server responds with updated lobby state incl draftedIds
       setLobby((prev) => ({
-        draftedIds: prev.draftedIds ?? [],
         ...data,
         draftedIds: data.draftedIds ?? prev.draftedIds ?? [],
       }));
 
-      // close modal locally
+      // close modal
       setPendingPick(null);
       setShowSlotModal(false);
     } catch (err) {
@@ -399,7 +410,9 @@ export default function CharacterDraftApp() {
     }
   }
 
-  // ---------- undo (host only) ----------
+  // -------------------------------------------------
+  // HOST ONLY: UNDO LAST PICK
+  // -------------------------------------------------
   async function handleUndo() {
     try {
       const res = await fetch("/api/lobby/undo", {
@@ -413,9 +426,7 @@ export default function CharacterDraftApp() {
         return;
       }
 
-      // server undo should recompute draftedIds
       setLobby((prev) => ({
-        draftedIds: prev.draftedIds ?? [],
         ...data,
         draftedIds: data.draftedIds ?? prev.draftedIds ?? [],
       }));
@@ -424,7 +435,9 @@ export default function CharacterDraftApp() {
     }
   }
 
-  // ---------- export ----------
+  // -------------------------------------------------
+  // EXPORT ROSTERS (DOWNLOAD JSON)
+  // -------------------------------------------------
   function handleExport() {
     const data = { lobby };
     const blob = new Blob([JSON.stringify(data, null, 2)], {
@@ -437,21 +450,23 @@ export default function CharacterDraftApp() {
     a.click();
   }
 
-  // ---------- filtered pool (excludes drafted chars, sticky filters UI handled below) ----------
+  // -------------------------------------------------
+  // FILTERED POOL (EXCLUDES ALREADY-DRAFTED CHARACTERS)
+  // -------------------------------------------------
   const filteredLocalPool = useMemo(() => {
     const draftedSet = new Set(lobby.draftedIds || []);
 
     return characters.filter((c) => {
-      // don't show characters that are already drafted
+      // hide any character already drafted
       if (draftedSet.has(c.id)) return false;
 
-      // gender filter
+      // gender
       const genderOK =
         filters.gender === "All" ||
         (c.gender &&
           c.gender.toLowerCase().includes(filters.gender.toLowerCase()));
 
-      // text filter
+      // text
       const textOK = `${c.name.full} ${c.name.native}`
         .toLowerCase()
         .includes(filters.searchText.toLowerCase());
@@ -460,7 +475,9 @@ export default function CharacterDraftApp() {
     });
   }, [characters, filters, lobby.draftedIds]);
 
-  // ---------- loading skeleton during first pool load ----------
+  // -------------------------------------------------
+  // LOADING SCREEN WHILE GRABBING FIRST POOL
+  // -------------------------------------------------
   if (loadingChars) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-neutral-900 text-neutral-400 text-lg">
@@ -473,7 +490,9 @@ export default function CharacterDraftApp() {
     );
   }
 
-  // ---------- PRE-DRAFT LOBBY FULLSCREEN ----------
+  // -------------------------------------------------
+  // PRE-DRAFT LOBBY SCREEN
+  // -------------------------------------------------
   if (!lobby.draftActive) {
     const joinedCount = lobby.players.length;
     const target = lobby.targetPlayers;
@@ -487,7 +506,7 @@ export default function CharacterDraftApp() {
             Anime Character Draft Lobby
           </h1>
 
-          {/* host info */}
+          {/* Host info */}
           <div className="text-center text-[11px] text-neutral-400 mb-4">
             {lobby.hostName ? (
               <>
@@ -506,7 +525,7 @@ export default function CharacterDraftApp() {
             )}
           </div>
 
-          {/* Number of drafters row */}
+          {/* Number of drafters */}
           <div className="mb-6">
             <div className="text-xs uppercase text-neutral-500 font-semibold mb-2 text-center">
               Number of Drafters
@@ -540,9 +559,9 @@ export default function CharacterDraftApp() {
             </div>
           </div>
 
-          {/* join + lobby list */}
+          {/* Join + lobby list */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            {/* left: join box */}
+            {/* Join box */}
             <div className="bg-neutral-800/40 border border-neutral-700 rounded-xl p-4 min-h-[150px] flex flex-col justify-between">
               <div>
                 <div className="text-xs uppercase text-neutral-500 font-semibold mb-2">
@@ -581,7 +600,7 @@ export default function CharacterDraftApp() {
               </div>
             </div>
 
-            {/* right: joined lobby list */}
+            {/* Joined lobby list */}
             <div className="bg-neutral-800/40 border border-neutral-700 rounded-xl p-4 min-h-[150px]">
               <div className="text-xs uppercase text-neutral-500 font-semibold mb-2">
                 Joined Lobby
@@ -636,7 +655,7 @@ export default function CharacterDraftApp() {
             </div>
           </div>
 
-          {/* start button */}
+          {/* Start Draft */}
           <div className="flex justify-center">
             <button
               onClick={startDraft}
@@ -655,7 +674,9 @@ export default function CharacterDraftApp() {
     );
   }
 
-  // ---------- RECONNECT STRIP (draft is active, but browser isn't identified) ----------
+  // -------------------------------------------------
+  // RECONNECT STRIP (DRAFT ACTIVE BUT THIS TAB ISN'T IDENTIFIED)
+  // -------------------------------------------------
   const needReconnect = lobby.draftActive && !iAmJoined;
   const reconnectStrip = needReconnect ? (
     <div className="bg-neutral-800 border border-neutral-700 rounded-lg p-2 text-xs text-neutral-300 flex flex-wrap items-center gap-2 justify-between">
@@ -671,7 +692,7 @@ export default function CharacterDraftApp() {
       <button
         className="bg-neutral-900 border border-neutral-700 rounded px-2 py-1 text-[11px] hover:bg-neutral-700 text-white"
         onClick={() => {
-          // just setting meName is enough; server already has us
+          // just setting meName puts you "back in your seat"
         }}
       >
         Set
@@ -679,13 +700,15 @@ export default function CharacterDraftApp() {
     </div>
   ) : null;
 
-  // ---------- MAIN DRAFT UI ----------
+  // -------------------------------------------------
+  // MAIN DRAFT UI
+  // -------------------------------------------------
   return (
     <div className="min-h-screen bg-neutral-900 text-neutral-100 p-4 font-sans">
       <header className="mb-4 flex flex-col gap-3">
         {reconnectStrip}
 
-        {/* row: On the Clock pill + Last Pick */}
+        {/* CLOCK + LAST PICK ROW */}
         <div className="flex flex-wrap items-start justify-between gap-3">
           {/* CLOCK PILL */}
           <div
@@ -734,7 +757,7 @@ export default function CharacterDraftApp() {
           </div>
         </div>
 
-        {/* row: host controls / export */}
+        {/* HOST CONTROLS / EXPORT */}
         <div className="flex flex-wrap items-start justify-between gap-3">
           {iAmHost && (
             <button
@@ -755,7 +778,7 @@ export default function CharacterDraftApp() {
       </header>
 
       <main className="grid xl:grid-cols-[1fr_1fr] gap-4">
-        {/* LEFT: Rosters */}
+        {/* LEFT: ROSTERS */}
         <aside className="space-y-4 overflow-y-auto max-h-[80vh] pr-1">
           {lobby.players.map((p, i) => {
             const col = colorStyleForPlayer(p);
@@ -790,13 +813,13 @@ export default function CharacterDraftApp() {
                               alt={char.name.full}
                               className="w-full h-full object-cover"
                             />
-                            {/* slot ribbon */}
+                            {/* ribbon w/slot name */}
                             <div
                               className={`absolute bottom-0 left-0 right-0 bg-black/70 text-[11px] font-semibold text-center py-[3px] ${col.text}`}
                             >
                               {slotName}
                             </div>
-                            {/* hover tooltip with char name */}
+                            {/* hover overlay w/ char name */}
                             <div className="absolute inset-0 bg-black/80 text-[11px] text-white font-semibold flex items-center justify-center px-2 text-center opacity-0 group-hover:opacity-100 transition-opacity">
                               {char.name.full}
                             </div>
@@ -815,13 +838,21 @@ export default function CharacterDraftApp() {
           })}
         </aside>
 
-        {/* RIGHT: Filters + Deep Cut + Pool */}
-        {/* We break this into a sticky header bar and a scrollable pool below */}
+        {/* RIGHT: STICKY FILTER BAR + POOL BELOW */}
         <section className="flex flex-col bg-neutral-900/0">
-          {/* sticky filters / search / deep cut */}
-          <div className="bg-neutral-800/40 border border-neutral-700 rounded-xl p-3 mb-3 sticky top-0 z-20 shadow-[0_10px_20px_rgba(0,0,0,0.6)]">
+          {/* sticky header with filters / search / deep cut */}
+          <div
+            className="bg-neutral-800/40 border border-neutral-700 rounded-xl p-3 mb-3 shadow-[0_10px_20px_rgba(0,0,0,0.6)]"
+            style={{
+              position: "sticky",
+              top: 0,
+              zIndex: 20,
+              backgroundColor: "rgb(23 23 23 / 0.9)", // ~neutral-900/90
+              backdropFilter: "blur(4px)",
+            }}
+          >
             <div className="flex flex-wrap gap-4 items-start justify-between">
-              {/* gender */}
+              {/* gender filter */}
               <div className="flex flex-col">
                 <label className="text-[10px] uppercase text-neutral-500 font-semibold">
                   Gender
@@ -841,7 +872,7 @@ export default function CharacterDraftApp() {
                 </select>
               </div>
 
-              {/* search */}
+              {/* text search */}
               <div className="flex flex-col min-w-[180px] flex-1 max-w-[220px]">
                 <label className="text-[10px] uppercase text-neutral-500 font-semibold">
                   Search
@@ -859,7 +890,7 @@ export default function CharacterDraftApp() {
                 />
               </div>
 
-              {/* deep cut */}
+              {/* deep cut search trigger */}
               <div className="flex flex-col">
                 <label className="text-[10px] uppercase text-neutral-500 font-semibold">
                   Can't Find Them?
@@ -876,7 +907,7 @@ export default function CharacterDraftApp() {
                 </button>
               </div>
 
-              {/* counts / debug */}
+              {/* pool counts */}
               <div className="text-[10px] text-neutral-500 leading-tight">
                 {filteredLocalPool.length} matches in local pool
                 <br />
@@ -885,7 +916,7 @@ export default function CharacterDraftApp() {
             </div>
           </div>
 
-          {/* scrollable pool below sticky filters */}
+          {/* scrollable pool list */}
           <div className="overflow-y-auto max-h-[70vh] pr-1 grid grid-cols-1 md:grid-cols-2 gap-3">
             {filteredLocalPool.map((c, idx) => (
               <div
