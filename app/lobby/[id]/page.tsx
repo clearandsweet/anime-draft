@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
@@ -33,10 +33,15 @@ type LobbyState = {
   targetPlayers: number;
   draftActive: boolean;
   hostName: string | null;
+
+  // server should maintain this list:
   draftedIds?: number[];
 };
 
-const COLOR_MAP: Record<string, { glow: string; text: string; border: string; ring: string }> = {
+const COLOR_MAP: Record<
+  string,
+  { glow: string; text: string; border: string; ring: string }
+> = {
   rose: {
     glow: "shadow-[0_0_10px_rgba(244,63,94,0.5)]",
     text: "text-rose-400",
@@ -98,23 +103,34 @@ function colorStyleForPlayer(p: Player | null) {
   return COLOR_MAP[p.color] || COLOR_MAP["default"];
 }
 
-export default function LobbyDraftPage() {
+export default function CharacterDraftApp() {
   const params = useParams<{ id: string }>();
   const lobbyId = String(params.id);
 
-  const [meName, setMeName] = useState("");
-  const [characters, setCharacters] = useState<Character[]>([]);
-  const [loadingChars, setLoadingChars] = useState(true);
-  const [filters, setFilters] = useState<{ searchText: string; gender: string }>({ searchText: "", gender: "All" });
+  // local identity: user types their name locally
+  const [meName, setMeName] = useState<string>("");
 
-  const [showDeepSearchModal, setShowDeepSearchModal] = useState(false);
-  const [deepSearchQuery, setDeepSearchQuery] = useState("");
-  const [deepSearchLoading, setDeepSearchLoading] = useState(false);
+  // local giant character pool
+  const [characters, setCharacters] = useState<Character[]>([]);
+  const [loadingChars, setLoadingChars] = useState<boolean>(true);
+
+  // search / gender filters
+  const [filters, setFilters] = useState<{ searchText: string; gender: string }>(
+    { searchText: "", gender: "All" }
+  );
+
+  // deep cut modal
+  const [showDeepSearchModal, setShowDeepSearchModal] =
+    useState<boolean>(false);
+  const [deepSearchQuery, setDeepSearchQuery] = useState<string>("");
+  const [deepSearchLoading, setDeepSearchLoading] = useState<boolean>(false);
   const [deepSearchResults, setDeepSearchResults] = useState<Character[]>([]);
 
-  const [showSlotModal, setShowSlotModal] = useState(false);
+  // slot selection modal (after you click Pick)
+  const [showSlotModal, setShowSlotModal] = useState<boolean>(false);
   const [pendingPick, setPendingPick] = useState<Character | null>(null);
 
+  // lobby state fetched from server (who joined, whose turn, etc.)
   const [lobby, setLobby] = useState<LobbyState>({
     players: [],
     round: 1,
@@ -130,11 +146,21 @@ export default function LobbyDraftPage() {
 
   const currentPlayer = lobby.players[lobby.currentPlayerIndex] || null;
   const onClockColor = colorStyleForPlayer(currentPlayer);
-  const clockDisplay = `${String(Math.floor(lobby.timerSeconds / 60)).padStart(2, "0")}:${String(lobby.timerSeconds % 60).padStart(2, "0")}`;
 
-  const iAmJoined = lobby.players.some((p) => p.name.toLowerCase() === meName.trim().toLowerCase());
-  const iAmHost = lobby.hostName && meName.trim().toLowerCase() === lobby.hostName.toLowerCase();
+  const clockDisplay = `${String(
+    Math.floor(lobby.timerSeconds / 60)
+  ).padStart(2, "0")}:${String(lobby.timerSeconds % 60).padStart(2, "0")}`;
 
+  // am I in the lobby already?
+  const iAmJoined = lobby.players.some(
+    (p) => p.name.toLowerCase() === meName.trim().toLowerCase()
+  );
+  // am I host
+  const iAmHost =
+    lobby.hostName &&
+    meName.trim().toLowerCase() === lobby.hostName.toLowerCase();
+
+  // load character pool
   useEffect(() => {
     async function loadSomePages() {
       setLoadingChars(true);
@@ -165,16 +191,14 @@ export default function LobbyDraftPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // poll lobby
   useEffect(() => {
     const id = setInterval(async () => {
       try {
         const res = await fetch(`/api/lobby/${lobbyId}/state`, { cache: "no-store" });
         if (!res.ok) return;
         const data: LobbyState = await res.json();
-        setLobby((prev) => ({
-          ...data,
-          draftedIds: data.draftedIds ?? prev.draftedIds ?? [],
-        }));
+        setLobby((prev) => ({ draftedIds: prev.draftedIds ?? [], ...data, draftedIds: data.draftedIds ?? prev.draftedIds ?? [] }));
       } catch {}
     }, 1000);
     return () => clearInterval(id);
@@ -190,10 +214,8 @@ export default function LobbyDraftPage() {
       });
       const data = await res.json();
       if (!res.ok) alert(data.error || "Join failed");
-      else setLobby((prev) => ({ ...data, draftedIds: data.draftedIds ?? prev.draftedIds ?? [] }));
-    } catch (err) {
-      console.error("join lobby failed", err);
-    }
+      else setLobby((prev) => ({ draftedIds: prev.draftedIds ?? [], ...data, draftedIds: data.draftedIds ?? prev.draftedIds ?? [] }));
+    } catch {}
   }
 
   async function setTargetPlayers(n: number) {
@@ -204,10 +226,8 @@ export default function LobbyDraftPage() {
         body: JSON.stringify({ targetPlayers: n, meName: meName.trim() }),
       });
       const data = await res.json();
-      if (res.ok) setLobby((prev) => ({ ...data, draftedIds: data.draftedIds ?? prev.draftedIds ?? [] }));
-    } catch (err) {
-      console.error("setTargetPlayers failed", err);
-    }
+      if (res.ok) setLobby((prev) => ({ draftedIds: prev.draftedIds ?? [], ...data, draftedIds: data.draftedIds ?? prev.draftedIds ?? [] }));
+    } catch {}
   }
 
   async function startDraft() {
@@ -219,10 +239,8 @@ export default function LobbyDraftPage() {
       });
       const data = await res.json();
       if (!res.ok) alert(data.error || "Cannot start draft");
-      else setLobby((prev) => ({ ...data, draftedIds: data.draftedIds ?? prev.draftedIds ?? [] }));
-    } catch (err) {
-      console.error("startDraft failed", err);
-    }
+      else setLobby((prev) => ({ draftedIds: prev.draftedIds ?? [], ...data, draftedIds: data.draftedIds ?? prev.draftedIds ?? [] }));
+    } catch {}
   }
 
   async function runDeepSearch() {
@@ -233,8 +251,7 @@ export default function LobbyDraftPage() {
       const data = await res.json();
       if (Array.isArray(data.characters)) setDeepSearchResults(data.characters);
       else setDeepSearchResults([]);
-    } catch (err) {
-      console.error("deep search failed:", err);
+    } catch {
       setDeepSearchResults([]);
     } finally {
       setDeepSearchLoading(false);
@@ -246,24 +263,15 @@ export default function LobbyDraftPage() {
     if (typeof charOrId === "number") chosen = characters.find((c) => c.id === charOrId);
     else chosen = charOrId;
     if (!chosen) return;
-    if (!lobby.draftActive) {
-      alert("Draft hasn't started yet.");
-      return;
-    }
-    if (!currentPlayer || currentPlayer.name.toLowerCase() !== meName.trim().toLowerCase()) {
-      alert("It's not your turn.");
-      return;
-    }
+    if (!lobby.draftActive) { alert("Draft hasn't started yet."); return; }
+    if (!currentPlayer || currentPlayer.name.toLowerCase() !== meName.trim().toLowerCase()) { alert("It's not your turn."); return; }
     setPendingPick(chosen);
     setShowSlotModal(true);
   }
 
   async function confirmSlot(slotName: string) {
     if (!pendingPick) return;
-    if (!meName.trim()) {
-      alert("Reconnect with your joined name first.");
-      return;
-    }
+    if (!meName.trim()) { alert("Reconnect with your joined name first."); return; }
     try {
       const res = await fetch(`/api/lobby/${lobbyId}/pick`, {
         method: "POST",
@@ -271,15 +279,11 @@ export default function LobbyDraftPage() {
         body: JSON.stringify({ actingName: meName.trim(), slotName, chosen: pendingPick }),
       });
       const data = await res.json();
-      if (!res.ok) {
-        alert(data.error || "Pick failed");
-        return;
-      }
-      setLobby((prev) => ({ ...data, draftedIds: data.draftedIds ?? prev.draftedIds ?? [] }));
+      if (!res.ok) { alert(data.error || "Pick failed"); return; }
+      setLobby((prev) => ({ draftedIds: prev.draftedIds ?? [], ...data, draftedIds: data.draftedIds ?? prev.draftedIds ?? [] }));
       setPendingPick(null);
       setShowSlotModal(false);
-    } catch (err) {
-      console.error("confirmSlot failed", err);
+    } catch {
       alert("Server error when drafting");
     }
   }
@@ -292,14 +296,9 @@ export default function LobbyDraftPage() {
         body: JSON.stringify({ meName: meName.trim() }),
       });
       const data = await res.json();
-      if (!res.ok) {
-        alert(data.error || "Undo failed");
-        return;
-      }
-      setLobby((prev) => ({ ...data, draftedIds: data.draftedIds ?? prev.draftedIds ?? [] }));
-    } catch (err) {
-      console.error("undo failed", err);
-    }
+      if (!res.ok) { alert(data.error || "Undo failed"); return; }
+      setLobby((prev) => ({ draftedIds: prev.draftedIds ?? [], ...data, draftedIds: data.draftedIds ?? prev.draftedIds ?? [] }));
+    } catch {}
   }
 
   function handleExport() {
@@ -358,12 +357,7 @@ export default function LobbyDraftPage() {
                 const active = n === lobby.targetPlayers;
                 const canClick = isHost && !lobby.draftActive;
                 return (
-                  <button
-                    key={n}
-                    onClick={() => canClick && setTargetPlayers(n)}
-                    disabled={!canClick}
-                    className={`px-3 py-2 rounded-lg text-sm border ${active ? "border-fuchsia-500 text-white bg-fuchsia-600/20 shadow-[0_0_10px_rgba(217,70,239,0.6)]" : "border-neutral-700 text-neutral-300 bg-neutral-800"} ${canClick ? "hover:bg-neutral-700" : "opacity-50 cursor-not-allowed"}`}
-                  >
+                  <button key={n} onClick={() => canClick && setTargetPlayers(n)} disabled={!canClick} className={`px-3 py-2 rounded-lg text-sm border ${active ? "border-fuchsia-500 text-white bg-fuchsia-600/20 shadow-[0_0_10px_rgba(217,70,239,0.6)]" : "border-neutral-700 text-neutral-300 bg-neutral-800"} ${canClick ? "hover:bg-neutral-700" : "opacity-50 cursor-not-allowed"}`}>
                     {n}
                   </button>
                 );
@@ -458,61 +452,81 @@ export default function LobbyDraftPage() {
             return (
               <div key={p.id} className={`rounded-xl border p-3 bg-neutral-900 ${isOnClock ? col.border : "border-neutral-700"}`}>
                 <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${col.text}`} />
-                    <div className="text-white font-semibold">{p.name}</div>
-                  </div>
-                  <div className={`text-[11px] ${isOnClock ? col.text : "text-neutral-400"}`}>{isOnClock ? "On the Clock" : "Waiting"}</div>
+                  <span className="font-semibold">{p.name}</span>
+                  <span className="text-xs text-neutral-500">{p.popularityTotal.toLocaleString()} ❤</span>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-                  {Object.entries(p.slots).map(([slotName, val]) => (
-                    <div key={slotName} className="bg-neutral-900 border border-neutral-700 rounded-lg p-2 min-h-[120px] flex flex-col">
-                      <div className="text-[10px] uppercase tracking-wide text-neutral-500 mb-1">{slotName}</div>
-                      {val ? (
-                        <div className="flex items-center gap-2">
-                          <img src={val.image.large} alt={val.name.full} className="w-10 h-12 object-cover rounded" />
-                          <div className="min-w-0">
-                            <div className="text-xs font-semibold text-neutral-200 truncate">{val.name.full}</div>
-                            <div className="text-[10px] text-neutral-500 truncate">{val.name.native}</div>
-                            <div className="text-[10px] text-neutral-500">{val.gender} · {val.favourites.toLocaleString()}</div>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="text-[11px] text-neutral-600 italic">Empty</div>
-                      )}
-                    </div>
-                  ))}
+                <div className="grid grid-cols-5 gap-2">
+                  {Object.entries(p.slots).map(([slotName, charValue]) => {
+                    const char = charValue as Character | null;
+                    return (
+                      <div key={slotName} className={`relative w-[90px] h-[120px] rounded border overflow-hidden ${col.glow} group`}>
+                        {char ? (
+                          <>
+                            <img src={char.image.large} alt={char.name.full} className="w-full h-full object-cover" />
+                            <div className={`absolute bottom-0 left-0 right-0 bg-black/70 text-[11px] font-semibold text-center py-[3px] ${col.text}`}>{slotName}</div>
+                            <div className="absolute inset-0 bg-black/80 text-[11px] text-white font-semibold flex items-center justify-center px-2 text-center opacity-0 group-hover:opacity-100 transition-opacity">{char.name.full}</div>
+                          </>
+                        ) : (
+                          <div className="flex items-center justify-center w-full h-full text-[11px] font-semibold text-neutral-600 text-center leading-tight px-1">{slotName}</div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
-                <div className="mt-2 text-[11px] text-neutral-400">Popularity: {p.popularityTotal.toLocaleString()}</div>
               </div>
             );
           })}
         </aside>
-        <section className="space-y-3">
-          <div className="flex items-center gap-2">
-            <input className="flex-1 bg-neutral-900 border border-neutral-700 rounded px-3 py-2 text-sm text-white" placeholder="Search text" value={filters.searchText} onChange={(e) => setFilters({ ...filters, searchText: e.target.value })} />
-            <select className="bg-neutral-900 border border-neutral-700 rounded px-2 py-2 text-sm text-white" value={filters.gender} onChange={(e) => setFilters({ ...filters, gender: e.target.value })}>
-              {(["All", "Male", "Female", "Non-binary", "Other"] as const).map((g) => (
-                <option key={g} value={g}>{g}</option>
-              ))}
-            </select>
-            <button onClick={() => setShowDeepSearchModal(true)} className="bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm hover:bg-neutral-700">Deep Cut</button>
+        <section className="flex flex-col bg-neutral-900/0">
+          <div className="bg-neutral-800/40 border border-neutral-700 rounded-xl p-3 mb-3 shadow-[0_10px_20px_rgba(0,0,0,0.6)]" style="position: sticky; top: 0; z-index: 20; background-color: rgba(23,23,23,0.9); backdrop-filter: blur(4px);">
+            <div className="flex flex-wrap gap-4 items-start justify-between">
+              <div className="flex flex-col">
+                <label className="text-[10px] uppercase text-neutral-500 font-semibold">Gender</label>
+                <select value={filters.gender} onChange={(e) => setFilters((f) => ({ ...f, gender: e.target.value }))} className="bg-neutral-900 border border-neutral-700 rounded px-2 py-1 text-sm text-white">
+                  <option>All</option>
+                  <option>Male</option>
+                  <option>Female</option>
+                  <option>Non-binary</option>
+                  <option>Unknown</option>
+                </select>
+              </div>
+              <div className="flex flex-col min-w-[180px] flex-1 max-w-[220px]">
+                <label className="text-[10px] uppercase text-neutral-500 font-semibold">Search</label>
+                <input value={filters.searchText} onChange={(e) => setFilters((f) => ({ ...f, searchText: e.target.value }))} placeholder="Character name" className="bg-neutral-900 border border-neutral-700 rounded px-2 py-1 text-sm text-white w-full" />
+              </div>
+              <div className="flex flex-col">
+                <label className="text-[10px] uppercase text-neutral-500 font-semibold">Can't Find Them?</label>
+                <button onClick={() => { setShowDeepSearchModal(true); setDeepSearchQuery(""); setDeepSearchResults([]); }} className="text-[11px] font-semibold bg-gradient-to-r from-indigo-600/30 to-fuchsia-600/30 border border-fuchsia-500/40 text-fuchsia-300 rounded px-2 py-1 hover:from-indigo-600/40 hover:to-fuchsia-600/40 hover:text-white shadow-[0_0_10px_rgba(217,70,239,0.6)]">Deep Cut Search</button>
+              </div>
+              <div className="text-[10px] text-neutral-500 leading-tight">
+                {filteredLocalPool.length} matches in local pool
+                <br />
+                total loaded: {characters.length}
+              </div>
+            </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-            {filteredLocalPool.slice(0, 60).map((c, idx) => (
+          <div className="overflow-y-auto max-h-[70vh] pr-1 grid grid-cols-1 md:grid-cols-2 gap-3">
+            {filteredLocalPool.map((c, idx) => (
               <div key={c.id} className="bg-neutral-900 border border-neutral-700 rounded-xl p-3 flex gap-3">
-                <img src={c.image.large} alt={c.name.full} className="w-16 h-20 object-cover rounded" />
+                <img src={c.image.large} alt={c.name.full} className="w-20 h-28 object-cover rounded" />
                 <div className="flex-1 min-w-0">
                   <div className="font-semibold text-neutral-100 truncate">{c.name.full}</div>
                   <div className="text-xs text-neutral-400 truncate">{c.name.native}</div>
-                  <div className="text-xs text-neutral-500 mt-1">{c.gender} · {c.favourites.toLocaleString()}</div>
-                  <button onClick={() => beginDraftPick(c)} className="mt-2 text-[11px] bg-neutral-800 border border-neutral-700 rounded px-2 py-1 hover:bg-neutral-700">Pick #{idx + 1}</button>
+                  <div className="text-xs text-neutral-500 mt-1">{c.gender} • ❤ {c.favourites.toLocaleString()}</div>
+                  <button onClick={() => beginDraftPick(c.id)} className="mt-2 text-[11px] bg-neutral-800 border border-neutral-700 rounded px-2 py-1 hover:bg-neutral-700">Pick #{idx + 1}</button>
                 </div>
               </div>
             ))}
+            {filteredLocalPool.length === 0 && (
+              <div className="col-span-full text-center text-neutral-500 text-sm py-12">
+                No local matches.
+                <div className="mt-2 text-[11px] text-neutral-600">Try Deep Cut Search → to pull from AniList directly.</div>
+              </div>
+            )}
           </div>
         </section>
       </main>
+
       {showSlotModal && pendingPick && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
           <div className="bg-neutral-900 border border-neutral-700 rounded-2xl p-6 w-[500px] max-w-[90vw]">
@@ -526,6 +540,7 @@ export default function LobbyDraftPage() {
           </div>
         </div>
       )}
+
       {showDeepSearchModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
           <div className="bg-neutral-900 border border-neutral-700 rounded-2xl p-6 w-[500px] max-w-[90vw] max-h-[80vh] flex flex-col">
@@ -546,7 +561,7 @@ export default function LobbyDraftPage() {
                       <div className="flex-1 min-w-0">
                         <div className="font-semibold text-neutral-100 truncate">{c.name.full}</div>
                         <div className="text-xs text-neutral-400 truncate">{c.name.native}</div>
-                        <div className="text-xs text-neutral-500 mt-1">{c.gender} · {c.favourites.toLocaleString()}</div>
+                        <div className="text-xs text-neutral-500 mt-1">{c.gender} • ❤ {c.favourites.toLocaleString()}</div>
                         <button onClick={() => { beginDraftPick(c); setShowDeepSearchModal(false); }} className="mt-2 text-[11px] bg-neutral-800 border border-neutral-700 rounded px-2 py-1 hover:bg-neutral-700">Pick #{idx + 1}</button>
                       </div>
                     </div>
@@ -561,4 +576,3 @@ export default function LobbyDraftPage() {
     </div>
   );
 }
-
