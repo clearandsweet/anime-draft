@@ -198,7 +198,7 @@ export default function CharacterDraftApp() {
         const res = await fetch(`/api/lobby/${lobbyId}/state`, { cache: "no-store" });
         if (!res.ok) return;
         const data: LobbyState = await res.json();
-        setLobby((prev) => ({ draftedIds: prev.draftedIds ?? [], ...data, draftedIds: data.draftedIds ?? prev.draftedIds ?? [] }));
+        setLobby((prev) => ({ ...data, draftedIds: data.draftedIds ?? prev.draftedIds ?? [] }));
       } catch {}
     }, 1000);
     return () => clearInterval(id);
@@ -214,7 +214,7 @@ export default function CharacterDraftApp() {
       });
       const data = await res.json();
       if (!res.ok) alert(data.error || "Join failed");
-      else setLobby((prev) => ({ draftedIds: prev.draftedIds ?? [], ...data, draftedIds: data.draftedIds ?? prev.draftedIds ?? [] }));
+      else setLobby((prev) => ({ ...data, draftedIds: data.draftedIds ?? prev.draftedIds ?? [] }));
     } catch {}
   }
 
@@ -226,7 +226,7 @@ export default function CharacterDraftApp() {
         body: JSON.stringify({ targetPlayers: n, meName: meName.trim() }),
       });
       const data = await res.json();
-      if (res.ok) setLobby((prev) => ({ draftedIds: prev.draftedIds ?? [], ...data, draftedIds: data.draftedIds ?? prev.draftedIds ?? [] }));
+      if (res.ok) setLobby((prev) => ({ ...data, draftedIds: data.draftedIds ?? prev.draftedIds ?? [] }));
     } catch {}
   }
 
@@ -239,7 +239,7 @@ export default function CharacterDraftApp() {
       });
       const data = await res.json();
       if (!res.ok) alert(data.error || "Cannot start draft");
-      else setLobby((prev) => ({ draftedIds: prev.draftedIds ?? [], ...data, draftedIds: data.draftedIds ?? prev.draftedIds ?? [] }));
+      else setLobby((prev) => ({ ...data, draftedIds: data.draftedIds ?? prev.draftedIds ?? [] }));
     } catch {}
   }
 
@@ -280,7 +280,7 @@ export default function CharacterDraftApp() {
       });
       const data = await res.json();
       if (!res.ok) { alert(data.error || "Pick failed"); return; }
-      setLobby((prev) => ({ draftedIds: prev.draftedIds ?? [], ...data, draftedIds: data.draftedIds ?? prev.draftedIds ?? [] }));
+      setLobby((prev) => ({ ...data, draftedIds: data.draftedIds ?? prev.draftedIds ?? [] }));
       setPendingPick(null);
       setShowSlotModal(false);
     } catch {
@@ -297,7 +297,7 @@ export default function CharacterDraftApp() {
       });
       const data = await res.json();
       if (!res.ok) { alert(data.error || "Undo failed"); return; }
-      setLobby((prev) => ({ draftedIds: prev.draftedIds ?? [], ...data, draftedIds: data.draftedIds ?? prev.draftedIds ?? [] }));
+      setLobby((prev) => ({ ...data, draftedIds: data.draftedIds ?? prev.draftedIds ?? [] }));
     } catch {}
   }
 
@@ -325,7 +325,7 @@ export default function CharacterDraftApp() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-neutral-900 text-neutral-400 text-lg">
         <div className="w-8 h-8 rounded-full border-2 border-neutral-700 border-t-neutral-200 animate-spin" />
-        <div>Fetching character pool…</div>
+        <div>Fetching character poolâ€¦</div>
         <div className="text-xs text-neutral-600">(Pulling top pages from AniList)</div>
       </div>
     );
@@ -347,7 +347,7 @@ export default function CharacterDraftApp() {
                 {isHost && <span className="text-emerald-400 font-semibold ml-1">(You are Host)</span>}
               </>
             ) : (
-              "Waiting for first player to join…"
+              "Waiting for first player to joinâ€¦"
             )}
           </div>
           <div className="mb-6">
@@ -453,7 +453,7 @@ export default function CharacterDraftApp() {
               <div key={p.id} className={`rounded-xl border p-3 bg-neutral-900 ${isOnClock ? col.border : "border-neutral-700"}`}>
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-semibold">{p.name}</span>
-                  <span className="text-xs text-neutral-500">{p.popularityTotal.toLocaleString()} ❤</span>
+                  <span className="text-xs text-neutral-500">{p.popularityTotal.toLocaleString()} â¤</span>
                 </div>
                 <div className="grid grid-cols-5 gap-2">
                   {Object.entries(p.slots).map(([slotName, charValue]) => {
@@ -478,7 +478,10 @@ export default function CharacterDraftApp() {
           })}
         </aside>
         <section className="flex flex-col bg-neutral-900/0">
-          <div className="bg-neutral-800/40 border border-neutral-700 rounded-xl p-3 mb-3 shadow-[0_10px_20px_rgba(0,0,0,0.6)]" style="position: sticky; top: 0; z-index: 20; background-color: rgba(23,23,23,0.9); backdrop-filter: blur(4px);">
+          <div
+            className="bg-neutral-800/40 border border-neutral-700 rounded-xl p-3 mb-3 shadow-[0_10px_20px_rgba(0,0,0,0.6)]"
+            style={{ position: "sticky", top: 0, zIndex: 20, backgroundColor: "rgba(23,23,23,0.9)", backdropFilter: "blur(4px)" }}
+          >
             <div className="flex flex-wrap gap-4 items-start justify-between">
               <div className="flex flex-col">
                 <label className="text-[10px] uppercase text-neutral-500 font-semibold">Gender</label>
@@ -520,7 +523,7 @@ export default function CharacterDraftApp() {
             {filteredLocalPool.length === 0 && (
               <div className="col-span-full text-center text-neutral-500 text-sm py-12">
                 No local matches.
-                <div className="mt-2 text-[11px] text-neutral-600">Try Deep Cut Search → to pull from AniList directly.</div>
+                <div className="mt-2 text-[11px] text-neutral-600">Try Deep Cut Search â†’ to pull from AniList directly.</div>
               </div>
             )}
           </div>
@@ -551,7 +554,7 @@ export default function CharacterDraftApp() {
               <button onClick={runDeepSearch} className="bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm hover:bg-neutral-700 text-white">Search</button>
             </div>
             <div className="flex-1 overflow-y-auto border border-neutral-800 rounded p-2 bg-neutral-950/50">
-              {deepSearchLoading && <div className="text-neutral-500 text-sm italic">Searching…</div>}
+              {deepSearchLoading && <div className="text-neutral-500 text-sm italic">Searchingâ€¦</div>}
               {!deepSearchLoading && deepSearchResults.length === 0 && (<div className="text-neutral-600 text-sm italic">No results yet.</div>)}
               {!deepSearchLoading && deepSearchResults.length > 0 && (
                 <div className="grid gap-2">
@@ -576,3 +579,8 @@ export default function CharacterDraftApp() {
     </div>
   );
 }
+
+
+
+
+
