@@ -8,7 +8,9 @@ function getClientIp(req: NextRequest): string {
   if (header) {
     return header.split(",")[0]?.trim() || "unknown";
   }
-  return req.ip ?? "unknown";
+  const cfIp = req.headers.get("cf-connecting-ip");
+  if (cfIp) return cfIp.trim();
+  return "unknown";
 }
 
 function buildFingerprintSource(req: NextRequest): string {

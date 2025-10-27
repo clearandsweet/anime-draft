@@ -1,4 +1,4 @@
-import fs from "fs/promises";
+﻿import fs from "fs/promises";
 import path from "path";
 import os from "os";
 import {
@@ -29,6 +29,11 @@ const ROOT = process.env.LOBBIES_DIR
   ? path.resolve(process.env.LOBBIES_DIR)
   : path.join(os.tmpdir(), "anime-draft", "lobbies");
 const INDEX = path.join(ROOT, "index.json");
+
+function lobbyPath(id: string) {
+  return path.join(ROOT, `${id}.json`);
+}
+
 
 async function ensureStorage() {
   await fs.mkdir(ROOT, { recursive: true });
@@ -201,6 +206,7 @@ export async function withLobby(
   await saveLobby(id, state);
   return state;
 }
+
 
 
 

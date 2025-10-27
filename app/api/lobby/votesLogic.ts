@@ -1,5 +1,4 @@
-﻿import { randomUUID } from "crypto";
-
+﻿
 export type VoteRecord = {
   id: string;
   ipHash: string;
@@ -34,7 +33,7 @@ export function normalizeVotesState(data?: Partial<VotesState> | null): VotesSta
       )
       .map((entry) => ({
         ...entry,
-        id: entry.id || randomUUID(),
+        id: entry.id || cryptoRandomId(),
         createdAt: entry.createdAt || new Date().toISOString(),
       })),
   };
@@ -64,6 +63,13 @@ export function tallyVotes(
 
   return { totals, ballots: records.length };
 }
-import { randomUUID } from "crypto";
 
+function cryptoRandomId(): string {
+  const globalRef = globalThis as { crypto?: { randomUUID?: () => string } };
+  const maybeCrypto = globalRef.crypto;
+  if (maybeCrypto?.randomUUID) {
+    return maybeCrypto.randomUUID();
+  }
+  return Math.random().toString(36).slice(2);
+}
 

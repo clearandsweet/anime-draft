@@ -12,7 +12,8 @@
                          "react":  "19.2.0",
                          "react-dom":  "19.2.0",
                          "next":  "16.0.0",
-                         "@vercel/kv":  "^1.0.1"
+                         "@vercel/kv":  "^1.0.1",
+                         "html-to-image": "^1.11.11"
                      },
     "devDependencies":  {
                             "typescript":  "^5",
