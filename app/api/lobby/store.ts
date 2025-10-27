@@ -21,6 +21,8 @@ export type HistoryEntry = {
   playerIndex: number;
   char: Character;
   slot: string;
+  previousRound?: number;
+  previousCurrentPlayerIndex?: number;
 };
 
 export type LobbyState = {
@@ -282,6 +284,8 @@ export function draftPick(args: {
     playerIndex: curIndex,
     char: chosen,
     slot: slotName,
+    previousRound: lobby.round,
+    previousCurrentPlayerIndex: curIndex,
   });
 
   // mark drafted
@@ -332,7 +336,12 @@ export function undoLastPick(requesterName: string): {
 
   // reverse one step of turn logic:
   // we want to rewind currentPlayerIndex / round / timer so the undone picker's turn is restored
-  rewindSnakeTurnTo(playerIndex);
+  const roundBefore = last.previousRound ?? lobby.round;
+  const indexBefore = last.previousCurrentPlayerIndex ?? playerIndex;
+  lobby.round = roundBefore;
+  rewindSnakeTurnTo(indexBefore);
+  lobby.draftActive = true;
+  lobby.completedAt = null;
 
   // recompute draftedIds from board so that character comes back
   recomputeDraftedIds();

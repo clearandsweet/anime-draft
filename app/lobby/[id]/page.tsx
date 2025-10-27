@@ -378,7 +378,7 @@ export default function CharacterDraftApp() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-neutral-900 text-neutral-400 text-lg">
         <div className="w-8 h-8 rounded-full border-2 border-neutral-700 border-t-neutral-200 animate-spin" />
-        <div>Fetching character poolâ€¦</div>
+        <div>Fetching character pool...</div>
         <div className="text-xs text-neutral-600">(Pulling top pages from AniList)</div>
       </div>
     );
@@ -400,7 +400,7 @@ export default function CharacterDraftApp() {
                 {isHost && <span className="text-emerald-400 font-semibold ml-1">(You are Host)</span>}
               </>
             ) : (
-              "Waiting for first player to joinâ€¦"
+              "Waiting for first player to join..."
             )}
           </div>
           <div className="mb-6">
@@ -612,7 +612,9 @@ export default function CharacterDraftApp() {
               <div key={p.id} className={`rounded-xl border p-3 bg-neutral-900 ${isOnClock ? col.border : "border-neutral-700"}`}>
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-semibold">{p.name}</span>
-                  <span className="text-xs text-neutral-500">{p.popularityTotal.toLocaleString()} â¤</span>
+                  <span className="text-xs text-neutral-500">
+                    {p.popularityTotal.toLocaleString()} {"\u2665"}
+                  </span>
                 </div>
                 <div className="grid grid-cols-5 gap-2">
                   {Object.entries(p.slots).map(([slotName, charValue]) => {
@@ -674,7 +676,9 @@ export default function CharacterDraftApp() {
                 <div className="flex-1 min-w-0">
                   <div className="font-semibold text-neutral-100 truncate">{c.name.full}</div>
                   <div className="text-xs text-neutral-400 truncate">{c.name.native}</div>
-                  <div className="text-xs text-neutral-500 mt-1">{c.gender} • ❤ {c.favourites.toLocaleString()}</div>
+                  <div className="text-xs text-neutral-500 mt-1">
+                    {c.gender} {"\u2022"} {"\u2764"} {c.favourites.toLocaleString()}
+                  </div>
                   <button onClick={() => beginDraftPick(c.id)} className="mt-2 text-[11px] bg-neutral-800 border border-neutral-700 rounded px-2 py-1 hover:bg-neutral-700">Pick #{idx + 1}</button>
                 </div>
               </div>
@@ -682,7 +686,9 @@ export default function CharacterDraftApp() {
             {filteredLocalPool.length === 0 && (
               <div className="col-span-full text-center text-neutral-500 text-sm py-12">
                 No local matches.
-                <div className="mt-2 text-[11px] text-neutral-600">Try Deep Cut Search â†’ to pull from AniList directly.</div>
+                <div className="mt-2 text-[11px] text-neutral-600">
+                  Try Deep Cut Search {"\u2192"} to pull from AniList directly.
+                </div>
               </div>
             )}
           </div>
@@ -713,7 +719,7 @@ export default function CharacterDraftApp() {
               <button onClick={runDeepSearch} className="bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm hover:bg-neutral-700 text-white">Search</button>
             </div>
             <div className="flex-1 overflow-y-auto border border-neutral-800 rounded p-2 bg-neutral-950/50">
-              {deepSearchLoading && <div className="text-neutral-500 text-sm italic">Searchingâ€¦</div>}
+              {deepSearchLoading && <div className="text-neutral-500 text-sm italic">Searching...</div>}
               {!deepSearchLoading && deepSearchResults.length === 0 && (<div className="text-neutral-600 text-sm italic">No results yet.</div>)}
               {!deepSearchLoading && deepSearchResults.length > 0 && (
                 <div className="grid gap-2">
@@ -723,7 +729,9 @@ export default function CharacterDraftApp() {
                       <div className="flex-1 min-w-0">
                         <div className="font-semibold text-neutral-100 truncate">{c.name.full}</div>
                         <div className="text-xs text-neutral-400 truncate">{c.name.native}</div>
-                        <div className="text-xs text-neutral-500 mt-1">{c.gender} • ❤ {c.favourites.toLocaleString()}</div>
+                        <div className="text-xs text-neutral-500 mt-1">
+                          {c.gender} {"\u2022"} {"\u2764"} {c.favourites.toLocaleString()}
+                        </div>
                         <button onClick={() => { beginDraftPick(c); setShowDeepSearchModal(false); }} className="mt-2 text-[11px] bg-neutral-800 border border-neutral-700 rounded px-2 py-1 hover:bg-neutral-700">Pick #{idx + 1}</button>
                       </div>
                     </div>

@@ -22,6 +22,8 @@ export type HistoryEntry = {
   playerIndex: number;
   char: Character;
   slot: string;
+  previousRound?: number;
+  previousCurrentPlayerIndex?: number;
 };
 
 export type LobbyState = {
@@ -173,6 +175,7 @@ export function pick(
   const { actingName, slotName, chosen } = args;
   const actingLower = actingName.trim().toLowerCase();
   const curIndex = state.currentPlayerIndex;
+  const roundBeforePick = state.round;
   const drafter = state.players[curIndex];
   if (!drafter || drafter.name.toLowerCase() !== actingLower)
     return { ok: false, error: "It's not your turn." };
@@ -183,7 +186,13 @@ export function pick(
   drafter.slots[slotName] = chosen;
   drafter.popularityTotal += chosen.favourites || 0;
   state.lastPick = { playerName: drafter.name, char: chosen, slot: slotName };
-  state.history.push({ playerIndex: curIndex, char: chosen, slot: slotName });
+  state.history.push({
+    playerIndex: curIndex,
+    char: chosen,
+    slot: slotName,
+    previousRound: roundBeforePick,
+    previousCurrentPlayerIndex: curIndex,
+  });
   if (!state.draftedIds.includes(chosen.id)) state.draftedIds.push(chosen.id);
   if (allSlotsFilled(state)) {
     state.draftActive = false;
@@ -207,7 +216,10 @@ export function undo(state: LobbyState, requesterName: string) {
     pl.popularityTotal = Math.max(0, pl.popularityTotal - (char.favourites || 0));
   }
   state.lastPick = null;
-  rewindSnakeTurnTo(state, playerIndex);
+  const roundBefore = last.previousRound ?? state.round;
+  const indexBefore = last.previousCurrentPlayerIndex ?? playerIndex;
+  state.round = roundBefore;
+  rewindSnakeTurnTo(state, indexBefore);
   state.draftActive = true;
   state.completedAt = null;
   recomputeDraftedIds(state);
