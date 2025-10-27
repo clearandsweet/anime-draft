@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 
 type Character = {
   id: number;
@@ -36,10 +36,7 @@ type LobbyState = {
   draftedIds?: number[];
 };
 
-const COLOR_MAP: Record<
-  string,
-  { glow: string; text: string; border: string; ring: string }
-> = {
+const COLOR_MAP: Record<string, { glow: string; text: string; border: string; ring: string }> = {
   rose: {
     glow: "shadow-[0_0_10px_rgba(244,63,94,0.5)]",
     text: "text-rose-400",
@@ -103,33 +100,21 @@ function colorStyleForPlayer(p: Player | null) {
 
 export default function LobbyDraftPage() {
   const params = useParams<{ id: string }>();
-  const router = useRouter();
   const lobbyId = String(params.id);
 
-  // local identity: user types their name locally
-  const [meName, setMeName] = useState<string>("");
-
-  // local giant character pool
+  const [meName, setMeName] = useState("");
   const [characters, setCharacters] = useState<Character[]>([]);
-  const [loadingChars, setLoadingChars] = useState<boolean>(true);
+  const [loadingChars, setLoadingChars] = useState(true);
+  const [filters, setFilters] = useState<{ searchText: string; gender: string }>({ searchText: "", gender: "All" });
 
-  // search / gender filters
-  const [filters, setFilters] = useState<{ searchText: string; gender: string }>(
-    { searchText: "", gender: "All" }
-  );
-
-  // deep cut modal
-  const [showDeepSearchModal, setShowDeepSearchModal] =
-    useState<boolean>(false);
-  const [deepSearchQuery, setDeepSearchQuery] = useState<string>("");
-  const [deepSearchLoading, setDeepSearchLoading] = useState<boolean>(false);
+  const [showDeepSearchModal, setShowDeepSearchModal] = useState(false);
+  const [deepSearchQuery, setDeepSearchQuery] = useState("");
+  const [deepSearchLoading, setDeepSearchLoading] = useState(false);
   const [deepSearchResults, setDeepSearchResults] = useState<Character[]>([]);
 
-  // slot selection modal (after you click Pick)
-  const [showSlotModal, setShowSlotModal] = useState<boolean>(false);
+  const [showSlotModal, setShowSlotModal] = useState(false);
   const [pendingPick, setPendingPick] = useState<Character | null>(null);
 
-  // lobby state fetched from server (who joined, whose turn, etc.)
   const [lobby, setLobby] = useState<LobbyState>({
     players: [],
     round: 1,
@@ -145,19 +130,11 @@ export default function LobbyDraftPage() {
 
   const currentPlayer = lobby.players[lobby.currentPlayerIndex] || null;
   const onClockColor = colorStyleForPlayer(currentPlayer);
+  const clockDisplay = `${String(Math.floor(lobby.timerSeconds / 60)).padStart(2, "0")}:${String(lobby.timerSeconds % 60).padStart(2, "0")}`;
 
-  const clockDisplay = `${String(
-    Math.floor(lobby.timerSeconds / 60)
-  ).padStart(2, "0")}:${String(lobby.timerSeconds % 60).padStart(2, "0")}`;
+  const iAmJoined = lobby.players.some((p) => p.name.toLowerCase() === meName.trim().toLowerCase());
+  const iAmHost = lobby.hostName && meName.trim().toLowerCase() === lobby.hostName.toLowerCase();
 
-  const iAmJoined = lobby.players.some(
-    (p) => p.name.toLowerCase() === meName.trim().toLowerCase()
-  );
-  const iAmHost =
-    lobby.hostName &&
-    meName.trim().toLowerCase() === lobby.hostName.toLowerCase();
-
-  // load character pool
   useEffect(() => {
     async function loadSomePages() {
       setLoadingChars(true);
@@ -172,9 +149,7 @@ export default function LobbyDraftPage() {
           if (!chunk.length) break;
           gathered.push(...chunk);
           sawAny = true;
-        } catch {
-          continue;
-        }
+        } catch {}
       }
       if (sawAny) {
         const byId = new Map<number, Character>();
@@ -190,7 +165,6 @@ export default function LobbyDraftPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // poll lobby state
   useEffect(() => {
     const id = setInterval(async () => {
       try {
@@ -215,14 +189,8 @@ export default function LobbyDraftPage() {
         body: JSON.stringify({ name: meName.trim() }),
       });
       const data = await res.json();
-      if (!res.ok) {
-        alert(data.error || "Join failed");
-      } else {
-        setLobby((prev) => ({
-          ...data,
-          draftedIds: data.draftedIds ?? prev.draftedIds ?? [],
-        }));
-      }
+      if (!res.ok) alert(data.error || "Join failed");
+      else setLobby((prev) => ({ ...data, draftedIds: data.draftedIds ?? prev.draftedIds ?? [] }));
     } catch (err) {
       console.error("join lobby failed", err);
     }
@@ -236,12 +204,7 @@ export default function LobbyDraftPage() {
         body: JSON.stringify({ targetPlayers: n, meName: meName.trim() }),
       });
       const data = await res.json();
-      if (res.ok) {
-        setLobby((prev) => ({
-          ...data,
-          draftedIds: data.draftedIds ?? prev.draftedIds ?? [],
-        }));
-      }
+      if (res.ok) setLobby((prev) => ({ ...data, draftedIds: data.draftedIds ?? prev.draftedIds ?? [] }));
     } catch (err) {
       console.error("setTargetPlayers failed", err);
     }
@@ -255,14 +218,8 @@ export default function LobbyDraftPage() {
         body: JSON.stringify({ meName: meName.trim() }),
       });
       const data = await res.json();
-      if (!res.ok) {
-        alert(data.error || "Cannot start draft");
-      } else {
-        setLobby((prev) => ({
-          ...data,
-          draftedIds: data.draftedIds ?? prev.draftedIds ?? [],
-        }));
-      }
+      if (!res.ok) alert(data.error || "Cannot start draft");
+      else setLobby((prev) => ({ ...data, draftedIds: data.draftedIds ?? prev.draftedIds ?? [] }));
     } catch (err) {
       console.error("startDraft failed", err);
     }
@@ -272,10 +229,7 @@ export default function LobbyDraftPage() {
     if (!deepSearchQuery.trim()) return;
     try {
       setDeepSearchLoading(true);
-      const res = await fetch(
-        `/api/searchCharacterByName?q=${encodeURIComponent(deepSearchQuery.trim())}`,
-        { cache: "no-store" }
-      );
+      const res = await fetch(`/api/searchCharacterByName?q=${encodeURIComponent(deepSearchQuery.trim())}`, { cache: "no-store" });
       const data = await res.json();
       if (Array.isArray(data.characters)) setDeepSearchResults(data.characters);
       else setDeepSearchResults([]);
@@ -321,10 +275,7 @@ export default function LobbyDraftPage() {
         alert(data.error || "Pick failed");
         return;
       }
-      setLobby((prev) => ({
-        ...data,
-        draftedIds: data.draftedIds ?? prev.draftedIds ?? [],
-      }));
+      setLobby((prev) => ({ ...data, draftedIds: data.draftedIds ?? prev.draftedIds ?? [] }));
       setPendingPick(null);
       setShowSlotModal(false);
     } catch (err) {
@@ -345,10 +296,7 @@ export default function LobbyDraftPage() {
         alert(data.error || "Undo failed");
         return;
       }
-      setLobby((prev) => ({
-        ...data,
-        draftedIds: data.draftedIds ?? prev.draftedIds ?? [],
-      }));
+      setLobby((prev) => ({ ...data, draftedIds: data.draftedIds ?? prev.draftedIds ?? [] }));
     } catch (err) {
       console.error("undo failed", err);
     }
@@ -368,11 +316,8 @@ export default function LobbyDraftPage() {
     const draftedSet = new Set(lobby.draftedIds || []);
     return characters.filter((c) => {
       if (draftedSet.has(c.id)) return false;
-      const genderOK =
-        filters.gender === "All" || (c.gender && c.gender.toLowerCase().includes(filters.gender.toLowerCase()));
-      const textOK = `${c.name.full} ${c.name.native}`
-        .toLowerCase()
-        .includes(filters.searchText.toLowerCase());
+      const genderOK = filters.gender === "All" || (c.gender && c.gender.toLowerCase().includes(filters.gender.toLowerCase()));
+      const textOK = `${c.name.full} ${c.name.native}`.toLowerCase().includes(filters.searchText.toLowerCase());
       return genderOK && textOK;
     });
   }, [characters, filters, lobby.draftedIds]);
@@ -392,29 +337,22 @@ export default function LobbyDraftPage() {
     const target = lobby.targetPlayers;
     const readyToStart = joinedCount === target && joinedCount >= 2;
     const isHost = iAmHost;
-
     return (
       <div className="min-h-screen bg-neutral-900 text-neutral-100 flex items-center justify-center p-4 font-sans">
         <div className="bg-neutral-900 border border-neutral-700 rounded-2xl w-full max-w-4xl p-6 shadow-[0_0_30px_rgba(0,0,0,0.8)] relative">
           <h1 className="text-xl font-bold text-white text-center mb-4">Anime Character Draft Lobby #{lobbyId}</h1>
-
           <div className="text-center text-[11px] text-neutral-400 mb-4">
             {lobby.hostName ? (
               <>
                 Host: <span className="text-white font-semibold">{lobby.hostName}</span>
-                {isHost && (
-                  <span className="text-emerald-400 font-semibold ml-1">(You are Host)</span>
-                )}
+                {isHost && <span className="text-emerald-400 font-semibold ml-1">(You are Host)</span>}
               </>
             ) : (
               "Waiting for first player to join…"
             )}
           </div>
-
           <div className="mb-6">
-            <div className="text-xs uppercase text-neutral-500 font-semibold mb-2 text-center">
-              Number of Drafters
-            </div>
+            <div className="text-xs uppercase text-neutral-500 font-semibold mb-2 text-center">Number of Drafters</div>
             <div className="flex justify-center gap-2 flex-wrap">
               {[2, 4, 8, 12].map((n) => {
                 const active = n === lobby.targetPlayers;
@@ -424,11 +362,7 @@ export default function LobbyDraftPage() {
                     key={n}
                     onClick={() => canClick && setTargetPlayers(n)}
                     disabled={!canClick}
-                    className={`px-3 py-2 rounded-lg text-sm border ${
-                      active
-                        ? "border-fuchsia-500 text-white bg-fuchsia-600/20 shadow-[0_0_10px_rgba(217,70,239,0.6)]"
-                        : "border-neutral-700 text-neutral-300 bg-neutral-800"
-                    } ${canClick ? "hover:bg-neutral-700" : "opacity-50 cursor-not-allowed"}`}
+                    className={`px-3 py-2 rounded-lg text-sm border ${active ? "border-fuchsia-500 text-white bg-fuchsia-600/20 shadow-[0_0_10px_rgba(217,70,239,0.6)]" : "border-neutral-700 text-neutral-300 bg-neutral-800"} ${canClick ? "hover:bg-neutral-700" : "opacity-50 cursor-not-allowed"}`}
                   >
                     {n}
                   </button>
@@ -437,25 +371,14 @@ export default function LobbyDraftPage() {
             </div>
             <div className="text-[11px] text-neutral-500 text-center mt-2">Joined {joinedCount}/{target}</div>
           </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <div className="bg-neutral-800/40 border border-neutral-700 rounded-xl p-4 min-h-[150px] flex flex-col justify-between">
               <div>
                 <div className="text-xs uppercase text-neutral-500 font-semibold mb-2">Enter Your Name</div>
                 {!iAmJoined ? (
                   <>
-                    <input
-                      className="w-full bg-neutral-900 border border-neutral-700 rounded px-3 py-2 text-sm text-white"
-                      placeholder="e.g. Kira"
-                      value={meName}
-                      onChange={(e) => setMeName(e.target.value)}
-                    />
-                    <button
-                      onClick={tryJoin}
-                      className="mt-2 bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm hover:bg-neutral-700"
-                    >
-                      Join Lobby
-                    </button>
+                    <input className="w-full bg-neutral-900 border border-neutral-700 rounded px-3 py-2 text-sm text-white" placeholder="e.g. Kira" value={meName} onChange={(e) => setMeName(e.target.value)} />
+                    <button onClick={tryJoin} className="mt-2 bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm hover:bg-neutral-700">Join Lobby</button>
                   </>
                 ) : (
                   <div className="text-sm text-emerald-400">Joined as {meName}</div>
@@ -463,7 +386,6 @@ export default function LobbyDraftPage() {
               </div>
               <div className="text-[11px] text-neutral-500">Lobby Code: {lobbyId}</div>
             </div>
-
             <div className="bg-neutral-800/40 border border-neutral-700 rounded-xl p-4">
               <div className="text-xs uppercase text-neutral-500 font-semibold mb-2">Players</div>
               <div className="space-y-1">
@@ -473,23 +395,12 @@ export default function LobbyDraftPage() {
                     <span className="text-[11px] text-neutral-500">{p.color}</span>
                   </div>
                 ))}
-                {!lobby.players.length && (
-                  <div className="text-xs text-neutral-600">No players yet</div>
-                )}
+                {!lobby.players.length && <div className="text-xs text-neutral-600">No players yet</div>}
               </div>
             </div>
           </div>
-
           <div className="flex items-center justify-center">
-            <button
-              onClick={startDraft}
-              disabled={!iAmHost || !readyToStart}
-              className={`px-4 py-2 rounded-lg border ${
-                iAmHost && readyToStart
-                  ? "bg-emerald-600/20 border-emerald-500 text-emerald-300 hover:bg-emerald-600/30"
-                  : "bg-neutral-800 border-neutral-700 text-neutral-400 opacity-60"
-              }`}
-            >
+            <button onClick={startDraft} disabled={!iAmHost || !readyToStart} className={`px-4 py-2 rounded-lg border ${iAmHost && readyToStart ? "bg-emerald-600/20 border-emerald-500 text-emerald-300 hover:bg-emerald-600/30" : "bg-neutral-800 border-neutral-700 text-neutral-400 opacity-60"}`}>
               Start Draft
             </button>
           </div>
@@ -502,12 +413,7 @@ export default function LobbyDraftPage() {
   const reconnectStrip = needReconnect ? (
     <div className="bg-neutral-800 border border-neutral-700 rounded-lg p-2 text-xs text-neutral-300 flex flex-wrap items-center gap-2 justify-between">
       <div className="flex-1">Reconnect: enter the exact name you used to join.</div>
-      <input
-        className="bg-neutral-900 border border-neutral-700 rounded px-2 py-1 text-[11px] text-white w-[120px]"
-        placeholder="Your name"
-        value={meName}
-        onChange={(e) => setMeName(e.target.value)}
-      />
+      <input className="bg-neutral-900 border border-neutral-700 rounded px-2 py-1 text-[11px] text-white w-[120px]" placeholder="Your name" value={meName} onChange={(e) => setMeName(e.target.value)} />
       <button className="bg-neutral-900 border border-neutral-700 rounded px-2 py-1 text-[11px] hover:bg-neutral-700 text-white">Set</button>
     </div>
   ) : null;
@@ -516,14 +422,8 @@ export default function LobbyDraftPage() {
     <div className="min-h-screen bg-neutral-900 text-neutral-100 p-4 font-sans">
       <header className="mb-4 flex flex-col gap-3">
         {reconnectStrip}
-
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <div
-            className={[
-              "flex-1 min-w-[200px] text-center border rounded-xl px-4 py-3 bg-neutral-900 ring-2",
-              onClockColor.ring,
-            ].join(" ")}
-          >
+          <div className={["flex-1 min-w-[200px] text-center border rounded-xl px-4 py-3 bg-neutral-900 ring-2", onClockColor.ring].join(" ")}>
             <div className="text-sm font-bold text-white leading-tight flex flex-wrap items-center justify-center gap-2">
               <span className="uppercase text-[10px] tracking-wide text-neutral-500 font-semibold">On the Clock:</span>
               <span className="text-lg font-extrabold text-white">{currentPlayer ? currentPlayer.name : "(nobody)"}</span>
@@ -531,19 +431,18 @@ export default function LobbyDraftPage() {
               <span className="font-mono text-white text-[13px] bg-neutral-800/60 border border-neutral-700 rounded px-2 py-[2px]">{clockDisplay}</span>
             </div>
           </div>
-
           <div className="text-right flex-1 min-w-[200px]">
             <div className="text-[10px] uppercase tracking-wide text-neutral-500 font-semibold">Last Pick</div>
             {lobby.lastPick ? (
-              <div className="text-[11px] text-neutral-400 leading-tight">
-                <span className="text-neutral-200 font-semibold">{lobby.lastPick.playerName}</span> took <span className="text-neutral-200 font-semibold">{lobby.lastPick.char.name.full}</span> as {lobby.lastPick.slot}
+              <div className="text-xs text-neutral-300 leading-tight">
+                <span className="text-white font-semibold">{lobby.lastPick.playerName}</span>{" "}took{" "}
+                <span className="text-white font-semibold">{lobby.lastPick.char.name.full}</span>{" "}as {lobby.lastPick.slot}
               </div>
             ) : (
               <div className="text-xs text-neutral-600 leading-tight">(none yet)</div>
             )}
           </div>
         </div>
-
         <div className="flex flex-wrap items-start justify-between gap-3">
           {iAmHost && (
             <button onClick={handleUndo} className="bg-neutral-800 px-3 py-1 rounded border border-neutral-700 hover:bg-neutral-700 text-sm">Undo (Host)</button>
@@ -551,7 +450,6 @@ export default function LobbyDraftPage() {
           <button onClick={handleExport} className="bg-neutral-800 px-3 py-1 rounded border border-neutral-700 hover:bg-neutral-700 text-sm ml-auto">Export</button>
         </div>
       </header>
-
       <main className="grid xl:grid-cols-[1fr_1fr] gap-4">
         <aside className="space-y-4 overflow-y-auto max-h-[80vh] pr-1">
           {lobby.players.map((p, i) => {
@@ -590,32 +488,16 @@ export default function LobbyDraftPage() {
             );
           })}
         </aside>
-
         <section className="space-y-3">
           <div className="flex items-center gap-2">
-            <input
-              className="flex-1 bg-neutral-900 border border-neutral-700 rounded px-3 py-2 text-sm text-white"
-              placeholder="Search text"
-              value={filters.searchText}
-              onChange={(e) => setFilters({ ...filters, searchText: e.target.value })}
-            />
-            <select
-              className="bg-neutral-900 border border-neutral-700 rounded px-2 py-2 text-sm text-white"
-              value={filters.gender}
-              onChange={(e) => setFilters({ ...filters, gender: e.target.value })}
-            >
+            <input className="flex-1 bg-neutral-900 border border-neutral-700 rounded px-3 py-2 text-sm text-white" placeholder="Search text" value={filters.searchText} onChange={(e) => setFilters({ ...filters, searchText: e.target.value })} />
+            <select className="bg-neutral-900 border border-neutral-700 rounded px-2 py-2 text-sm text-white" value={filters.gender} onChange={(e) => setFilters({ ...filters, gender: e.target.value })}>
               {(["All", "Male", "Female", "Non-binary", "Other"] as const).map((g) => (
                 <option key={g} value={g}>{g}</option>
               ))}
             </select>
-            <button
-              onClick={() => setShowDeepSearchModal(true)}
-              className="bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm hover:bg-neutral-700"
-            >
-              Deep Cut
-            </button>
+            <button onClick={() => setShowDeepSearchModal(true)} className="bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm hover:bg-neutral-700">Deep Cut</button>
           </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
             {filteredLocalPool.slice(0, 60).map((c, idx) => (
               <div key={c.id} className="bg-neutral-900 border border-neutral-700 rounded-xl p-3 flex gap-3">
@@ -631,43 +513,31 @@ export default function LobbyDraftPage() {
           </div>
         </section>
       </main>
-
       {showSlotModal && pendingPick && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
           <div className="bg-neutral-900 border border-neutral-700 rounded-2xl p-6 w-[500px] max-w-[90vw]">
             <h2 className="text-lg font-bold mb-2 text-white">Choose Slot for {pendingPick.name.full}</h2>
             <div className="grid grid-cols-2 gap-2">
               {Object.keys(lobby.players[lobby.currentPlayerIndex]?.slots || {}).map((slotName) => (
-                <button
-                  key={slotName}
-                  onClick={() => confirmSlot(slotName)}
-                  className="bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm hover:bg-neutral-700 text-left"
-                >
-                  {slotName}
-                </button>
+                <button key={slotName} onClick={() => confirmSlot(slotName)} className="bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm hover:bg-neutral-700 text-left">{slotName}</button>
               ))}
             </div>
             <button onClick={() => { setShowSlotModal(false); setPendingPick(null); }} className="mt-4 text-xs text-neutral-500 hover:text-neutral-300">Cancel</button>
           </div>
         </div>
       )}
-
       {showDeepSearchModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
           <div className="bg-neutral-900 border border-neutral-700 rounded-2xl p-6 w-[500px] max-w-[90vw] max-h-[80vh] flex flex-col">
             <h2 className="text-lg font-bold mb-2 text-white">Deep Cut Character Search</h2>
-            <p className="text-sm text-neutral-400 mb-3 leading-snug">
-              Type part of their name. We'll query AniList directly, even if they're super obscure.
-            </p>
+            <p className="text-sm text-neutral-400 mb-3 leading-snug">Type part of their name. We'll query AniList directly, even if they're super obscure.</p>
             <div className="flex gap-2 mb-3">
               <input className="flex-1 bg-neutral-800 border border-neutral-700 rounded px-2 py-2 text-sm text-white" placeholder="e.g. Rakushun" value={deepSearchQuery} onChange={(e) => setDeepSearchQuery(e.target.value)} />
               <button onClick={runDeepSearch} className="bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm hover:bg-neutral-700 text-white">Search</button>
             </div>
             <div className="flex-1 overflow-y-auto border border-neutral-800 rounded p-2 bg-neutral-950/50">
               {deepSearchLoading && <div className="text-neutral-500 text-sm italic">Searching…</div>}
-              {!deepSearchLoading && deepSearchResults.length === 0 && (
-                <div className="text-neutral-600 text-sm italic">No results yet.</div>
-              )}
+              {!deepSearchLoading && deepSearchResults.length === 0 && (<div className="text-neutral-600 text-sm italic">No results yet.</div>)}
               {!deepSearchLoading && deepSearchResults.length > 0 && (
                 <div className="grid gap-2">
                   {deepSearchResults.map((c, idx) => (
