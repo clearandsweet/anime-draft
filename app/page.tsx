@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -65,7 +65,16 @@ export default function Landing() {
 
   async function handleDelete(id: string) {
     if (!confirm(`Delete lobby ${id}?`)) return;
-    await fetch(`/api/lobbies/${id}`, { method: "DELETE" });
+    const password = prompt("Enter password to delete this lobby:");
+    if (password !== "Cynthia5") {
+      alert("Incorrect password.");
+      return;
+    }
+    await fetch(`/api/lobbies/${id}`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password }),
+    });
     refreshLobbies();
   }
 
@@ -124,7 +133,7 @@ export default function Landing() {
             <button onClick={refreshLobbies} className="text-xs text-neutral-400 hover:text-neutral-200">Refresh</button>
           </div>
           {loading ? (
-            <div className="text-xs text-neutral-500">Loading…</div>
+            <div className="text-xs text-neutral-500">Loadingâ€¦</div>
           ) : lobbies.length === 0 ? (
             <div className="text-xs text-neutral-600">No lobbies yet</div>
           ) : (
@@ -138,7 +147,21 @@ export default function Landing() {
                     {m.hostName && <span className="text-neutral-500 text-xs ml-2">host: {m.hostName}</span>}
                   </div>
                   <div className="flex items-center gap-2">
-                    <button onClick={() => router.push(`/lobby/${m.id}`)} className="text-xs bg-neutral-800 border border-neutral-700 rounded px-2 py-1 hover:bg-neutral-700">Open</button>
+                    {m.status === "completed" ? (
+                      <button
+                        onClick={() => router.push(`/lobby/${m.id}/vote`)}
+                        className="text-xs font-semibold px-3 py-1 rounded border bg-gradient-to-r from-fuchsia-500 via-amber-400 to-emerald-400 text-black shadow-[0_0_12px_rgba(168,85,247,0.5)] hover:shadow-[0_0_16px_rgba(168,85,247,0.7)]"
+                      >
+                        Vote
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => router.push(`/lobby/${m.id}`)}
+                        className="text-xs bg-neutral-800 border border-neutral-700 rounded px-2 py-1 hover:bg-neutral-700"
+                      >
+                        Open
+                      </button>
+                    )}
                     <button onClick={() => handleDelete(m.id)} className="text-xs text-red-400 hover:text-red-300">Delete</button>
                   </div>
                 </div>
@@ -150,4 +173,5 @@ export default function Landing() {
     </div>
   );
 }
+
 

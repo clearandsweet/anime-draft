@@ -1,10 +1,11 @@
-﻿import fs from "fs/promises";
+import fs from "fs/promises";
 import path from "path";
 import os from "os";
 import {
   LobbyState,
   makeFreshLobby,
   recomputeDraftedIds,
+  finishDraft as finishDraftState,
 } from "./logic";
 import { VotesState, VoteRecord, normalizeVotesState } from "./votesLogic";
 
@@ -197,6 +198,14 @@ export async function deleteLobby(id: string) {
   await writeIndex(idx);
 }
 
+export async function finishLobby(id: string, requesterName: string) {
+  let result: { ok: boolean; error?: string } = { ok: true };
+  const state = await withLobby(id, async (state) => {
+    result = finishDraftState(state, requesterName);
+  });
+  return { state, result };
+}
+
 export async function withLobby(
   id: string,
   mutate: (state: LobbyState) => void | Promise<void>
@@ -206,6 +215,7 @@ export async function withLobby(
   await saveLobby(id, state);
   return state;
 }
+
 
 
 

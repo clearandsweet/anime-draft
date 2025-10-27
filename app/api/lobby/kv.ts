@@ -4,6 +4,7 @@ import {
   LobbyState,
   makeFreshLobby,
   recomputeDraftedIds,
+  finishDraft,
 } from "./logic";
 import { VotesState, VoteRecord, normalizeVotesState, tallyVotes } from "./votesLogic";
 
@@ -173,6 +174,18 @@ export async function summarizeVotesFor(id: string, playerIds: string[]) {
   return { ...summary, records: state.records };
 }
 
+export async function completeLobby(id: string, requesterName: string) {
+  if (!hasKVEnv()) {
+    return fsStore.finishLobby(id, requesterName);
+  }
+  let result: { ok: boolean; error?: string } = { ok: true };
+  const state = await withLobby(id, (s) => {
+    const outcome = finishDraft(s, requesterName);
+    result = outcome;
+  });
+  return { state, result };
+}
+
 export async function deleteLobby(id: string) {
   if (!hasKVEnv()) {
     return fsStore.deleteLobby(id);
@@ -196,6 +209,8 @@ export async function withLobby(
   await saveLobby(id, state);
   return state;
 }
+
+
 
 
 

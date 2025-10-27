@@ -196,7 +196,6 @@ export function pick(
   if (!state.draftedIds.includes(chosen.id)) state.draftedIds.push(chosen.id);
   if (allSlotsFilled(state)) {
     state.draftActive = false;
-    state.completedAt = new Date().toISOString();
     state.timerSeconds = 0;
     state.currentPlayerIndex = 0;
   } else {
@@ -256,8 +255,43 @@ export function rewindSnakeTurnTo(state: LobbyState, playerIndex: number) {
 }
 
 export function doAutopick(state: LobbyState) {
-  // placeholder: just reset timer so draft doesn't freeze
+  if (!state.draftActive) return;
+  const roundBefore = state.round;
+  const indexBefore = state.currentPlayerIndex;
+  state.lastPick = null;
+  if (allSlotsFilled(state)) {
+    state.draftActive = false;
+    state.timerSeconds = 0;
+    state.currentPlayerIndex = 0;
+    return;
+  }
+  advanceSnakeTurn(state);
   state.timerSeconds = 180;
+  state.history.push({
+    playerIndex: indexBefore,
+    char: {
+      id: -1,
+      name: { full: "Turn Skipped", native: "" },
+      gender: "",
+      image: { large: "" },
+      favourites: 0,
+    },
+    slot: "AUTO_SKIP",
+    previousRound: roundBefore,
+    previousCurrentPlayerIndex: indexBefore,
+  });
+}
+
+export function finishDraft(state: LobbyState, requesterName: string) {
+  if (!isHost(state, requesterName))
+    return { ok: false, error: "Only host can finish the draft." };
+  if (!allSlotsFilled(state))
+    return { ok: false, error: "Draft still has open slots." };
+  state.draftActive = false;
+  state.completedAt = new Date().toISOString();
+  state.timerSeconds = 0;
+  state.currentPlayerIndex = 0;
+  return { ok: true };
 }
 
 function shuffle<T>(arr: T[]): T[] {

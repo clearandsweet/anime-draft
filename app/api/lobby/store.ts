@@ -349,6 +349,21 @@ export function undoLastPick(requesterName: string): {
   return { ok: true };
 }
 
+
+export function finishDraft(requesterName: string): { ok: boolean; error?: string } {
+  if (!isHost(requesterName)) {
+    return { ok: false, error: "Only host can finish the draft." };
+  }
+  if (!allSlotsFilledInLobby()) {
+    return { ok: false, error: "Draft still has open slots." };
+  }
+  lobby.draftActive = false;
+  lobby.completedAt = new Date().toISOString();
+  lobby.timerSeconds = 0;
+  lobby.currentPlayerIndex = 0;
+  return { ok: true };
+}
+
 // expose tick logic for a 1s interval in /state polling
 // this decreases timerSeconds and autopicks if it hits 0
 export function tickTimerAndMaybeAutopick() {
@@ -409,8 +424,31 @@ function rewindSnakeTurnTo(playerIndex: number) {
 // "topAvailableCharacter" from client or persist server-side pool.
 // For safety we just reset timer so draft doesn't freeze.
 function doAutopickForCurrentPlayer() {
-  // no-op autopick placeholder
+  if (!lobby.draftActive) return;
+  const roundBefore = lobby.round;
+  const indexBefore = lobby.currentPlayerIndex;
+  lobby.lastPick = null;
+  if (allSlotsFilledInLobby()) {
+    lobby.draftActive = false;
+    lobby.timerSeconds = 0;
+    lobby.currentPlayerIndex = 0;
+    return;
+  }
+  advanceSnakeTurn();
   lobby.timerSeconds = 180;
+  lobby.history.push({
+    playerIndex: indexBefore,
+    char: {
+      id: -1,
+      name: { full: "Turn Skipped", native: "" },
+      gender: "",
+      image: { large: "" },
+      favourites: 0,
+    },
+    slot: "AUTO_SKIP",
+    previousRound: roundBefore,
+    previousCurrentPlayerIndex: indexBefore,
+  });
 }
 
 // general helpers
@@ -427,6 +465,7 @@ function shuffle<T>(arr: T[]): T[] {
   }
   return a;
 }
+
 
 
 

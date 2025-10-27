@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
@@ -73,6 +73,8 @@ export default function CharacterDraftApp() {
   const [downloadingBoards, setDownloadingBoards] = useState<Record<string, boolean>>({});
   const [pollCopied, setPollCopied] = useState(false);
   const [pollLink, setPollLink] = useState<string>("");
+  const [completionDismissed, setCompletionDismissed] = useState(false);
+  const [finishingDraft, setFinishingDraft] = useState(false);
   const [lobby, setLobby] = useState<LobbyState>({
     players: [],
     round: 1,
@@ -130,6 +132,15 @@ export default function CharacterDraftApp() {
     );
   }, [lobby.players]);
 
+  const canPromptFinish = useMemo(() => everyoneFull && !lobby.completedAt, [everyoneFull, lobby.completedAt]);
+  const showCompletionModal = iAmHost && canPromptFinish && !completionDismissed;
+
+
+  useEffect(() => {
+    if (!everyoneFull) {
+      setCompletionDismissed(false);
+    }
+  }, [everyoneFull]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -320,6 +331,43 @@ export default function CharacterDraftApp() {
     a.href = url;
     a.download = `lobby-${lobbyId}.json`;
     a.click();
+  }
+
+  function handleCancelFinishPrompt() {
+    setCompletionDismissed(true);
+  }
+
+  async function handleFinishDraft() {
+    if (!iAmHost) return;
+    if (!meName.trim()) {
+      alert("Enter your host name first.");
+      return;
+    }
+    try {
+      setFinishingDraft(true);
+      const res = await fetch(`/api/lobby/${lobbyId}/finish`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ meName: meName.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || "Unable to finish draft");
+        return;
+      }
+      setLobby((prev) => ({
+        ...prev,
+        ...data,
+        draftedIds: data.draftedIds ?? prev.draftedIds ?? [],
+        startedAt: data.startedAt ?? prev.startedAt ?? null,
+        completedAt: data.completedAt ?? prev.completedAt ?? null,
+      }));
+      setCompletionDismissed(true);
+    } catch {
+      alert("Server error finishing draft");
+    } finally {
+      setFinishingDraft(false);
+    }
   }
 
   async function downloadBoardPng(playerId: string) {
@@ -575,6 +623,11 @@ export default function CharacterDraftApp() {
     <div className="min-h-screen bg-neutral-900 text-neutral-100 p-4 font-sans">
       <header className="mb-4 flex flex-col gap-3">
         {reconnectStrip}
+        {canPromptFinish && !iAmHost && !lobby.completedAt && (
+          <div className="text-xs text-amber-300 bg-amber-500/10 border border-amber-400/30 rounded px-3 py-2">
+            Waiting for host {lobby.hostName ?? "(host)"} to finish the draft.
+          </div>
+        )}
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className={["flex-1 min-w-[200px] text-center border rounded-xl px-4 py-3 bg-neutral-900 ring-2", onClockColor.ring].join(" ")}>
             <div className="text-sm font-bold text-white leading-tight flex flex-wrap items-center justify-center gap-2">
@@ -597,10 +650,22 @@ export default function CharacterDraftApp() {
           </div>
         </div>
         <div className="flex flex-wrap items-start justify-between gap-3">
-          {iAmHost && (
-            <button onClick={handleUndo} className="bg-neutral-800 px-3 py-1 rounded border border-neutral-700 hover:bg-neutral-700 text-sm">Undo (Host)</button>
-          )}
-          <button onClick={handleExport} className="bg-neutral-800 px-3 py-1 rounded border border-neutral-700 hover:bg-neutral-700 text-sm ml-auto">Export</button>
+          <div className="flex items-center gap-2">
+            {iAmHost && (
+              <button onClick={handleUndo} className="bg-neutral-800 px-3 py-1 rounded border border-neutral-700 hover:bg-neutral-700 text-sm">Undo (Host)</button>
+            )}
+            {iAmHost && canPromptFinish && (
+              <button
+                onClick={() => {
+                  setCompletionDismissed(false);
+                }}
+                className="px-3 py-1 rounded border border-emerald-500 text-sm text-emerald-300 bg-emerald-600/20 hover:bg-emerald-600/30"
+              >
+                Finish Draft
+              </button>
+            )}
+          </div>
+          <button onClick={handleExport} className="bg-neutral-800 px-3 py-1 rounded border border-neutral-700 hover:bg-neutral-700 text-sm">Export</button>
         </div>
       </header>
       <main className="grid xl:grid-cols-[1fr_1fr] gap-4">
@@ -695,6 +760,32 @@ export default function CharacterDraftApp() {
         </section>
       </main>
 
+      {showCompletionModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-neutral-900 border border-neutral-700 rounded-2xl p-6 w-[420px] max-w-[90vw] text-center">
+            <h2 className="text-lg font-bold text-white">All Slots Filled</h2>
+            <p className="text-sm text-neutral-400 mt-2">
+              Ready to move this lobby into post-draft voting?
+            </p>
+            {!iAmHost && (
+              <p className="text-xs text-neutral-500 mt-3">Waiting for host {lobby.hostName ?? "(unknown)"} to finish the draft.</p>
+            )}
+            <div className="flex items-center justify-end gap-3 mt-6">
+              <button onClick={handleCancelFinishPrompt} className="px-3 py-2 text-sm border border-neutral-700 rounded hover:bg-neutral-800">
+                Go Back
+              </button>
+              <button
+                onClick={handleFinishDraft}
+                disabled={!iAmHost || finishingDraft}
+                className={`px-3 py-2 text-sm rounded border ${iAmHost && !finishingDraft ? "border-emerald-500 text-emerald-300 bg-emerald-600/20 hover:bg-emerald-600/30" : "border-neutral-700 text-neutral-500 bg-neutral-800 cursor-not-allowed"}`}
+              >
+                {finishingDraft ? "Finishing..." : "Finish Draft"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showSlotModal && pendingPick && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
           <div className="bg-neutral-900 border border-neutral-700 rounded-2xl p-6 w-[500px] max-w-[90vw]">
@@ -746,6 +837,16 @@ export default function CharacterDraftApp() {
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
 
 
 
