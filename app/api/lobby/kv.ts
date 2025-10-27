@@ -96,10 +96,12 @@ export async function saveLobby(id: string, state: LobbyState) {
 
 export async function listLobbies(filter?: { status?: "active" | "completed" }) {
   // newest first
-  const ids = await kv.zrange<string>(INDEX_KEY, 0, -1, { rev: true });
+  const ids = (await kv.zrange(INDEX_KEY, 0, -1, { rev: true })) as string[];
   if (!ids.length) return [];
-  const metas = await kv.mget<LobbyMeta>(...ids.map((id) => metaKey(id)));
-  const list: LobbyMeta[] = metas.filter(Boolean) as LobbyMeta[];
+  const metas = (await kv.mget(
+    ...ids.map((id) => metaKey(id))
+  )) as (LobbyMeta | null)[];
+  const list: LobbyMeta[] = metas.filter((m): m is LobbyMeta => !!m);
   return filter?.status ? list.filter((m) => m.status === filter.status) : list;
 }
 
