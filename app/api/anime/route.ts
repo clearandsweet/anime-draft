@@ -27,7 +27,51 @@ const QUERY = `
   }
 `;
 
-async function fetchPage(page: number, perPage = 50) {
+type AniListMedia = {
+  id: number;
+  title?: {
+    english?: string | null;
+    romaji?: string | null;
+    native?: string | null;
+  };
+  coverImage?: {
+    large?: string | null;
+    medium?: string | null;
+    color?: string | null;
+  };
+  seasonYear?: number | null;
+  format?: string | null;
+  popularity?: number | null;
+  episodes?: number | null;
+  genres?: string[] | null;
+};
+
+type AniListResponse = {
+  data?: {
+    Page?: {
+      media?: AniListMedia[];
+    };
+  };
+};
+
+type NormalizedAnime = {
+  id: number;
+  title: {
+    english: string;
+    romaji: string;
+    native: string;
+  };
+  coverImage: {
+    large: string;
+  };
+  seasonYear: number;
+  format: string;
+  popularity: number;
+  episodes: number;
+  genres: string[];
+};
+
+async function fetchPage(page: number, perPage = 50): Promise<AniListMedia[]> {
   const res = await fetch(ANILIST_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -41,20 +85,20 @@ async function fetchPage(page: number, perPage = 50) {
     throw new Error(`AniList fetch failed ${res.status}`);
   }
 
-  const data = await res.json();
+  const data = (await res.json()) as AniListResponse;
   return data?.data?.Page?.media ?? [];
 }
 
-function normalize(media: any[]) {
-  return media.map((m: any) => ({
+function normalize(media: AniListMedia[]): NormalizedAnime[] {
+  return media.map((m) => ({
     id: m.id,
     title: {
-      english: m.title.english ?? "",
-      romaji: m.title.romaji ?? "",
-      native: m.title.native ?? "",
+      english: m.title?.english ?? "",
+      romaji: m.title?.romaji ?? "",
+      native: m.title?.native ?? "",
     },
     coverImage: {
-      large: m.coverImage.large,
+      large: m.coverImage?.large ?? "",
     },
     seasonYear: m.seasonYear ?? 0,
     format: m.format ?? "",
@@ -88,10 +132,12 @@ export async function GET() {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const message =
+      err instanceof Error ? err.message : "AniList fetch failed";
     return new Response(
       JSON.stringify({
-        error: err?.message ?? "AniList fetch failed",
+        error: message,
       }),
       {
         status: 500,

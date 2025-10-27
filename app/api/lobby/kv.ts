@@ -5,6 +5,7 @@ import {
   makeFreshLobby,
   recomputeDraftedIds,
 } from "./logic";
+import { VotesState, VoteRecord, normalizeVotesState, tallyVotes } from "./votesLogic";
 
 type LobbyMeta = {
   id: string;
@@ -17,6 +18,7 @@ type LobbyMeta = {
 };
 
 function computeStatus(state: LobbyState): "active" | "completed" {
+  if (state.completedAt) return "completed";
   const allFilled = state.players.every((p) =>
     Object.values(p.slots).every((v) => v !== null)
   );
@@ -32,6 +34,10 @@ function stateKey(id: string) {
 function metaKey(id: string) {
   return `lobby:meta:${id}`;
 }
+function votesKey(id: string) {
+  return `lobby:votes:${id}`;
+}
+
 
 function hasKVEnv() {
   const vercelKV = process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN;
@@ -83,6 +89,8 @@ export async function loadLobby(id: string): Promise<LobbyState> {
   }
   const state = (await kv.get<LobbyState>(stateKey(id))) || makeFreshLobby();
   if (!state.draftedIds) state.draftedIds = [];
+  if (state.startedAt === undefined) state.startedAt = null;
+  if (state.completedAt === undefined) state.completedAt = null;
   return state;
 }
 
@@ -112,7 +120,7 @@ export async function saveLobby(id: string, state: LobbyState) {
 
 export async function listLobbies(filter?: { status?: "active" | "completed" }) {
   if (!hasKVEnv()) {
-    return fsStore.listLobbies(filter as any);
+    return fsStore.listLobbies(filter);
   }
   // newest first
   const ids = (await kv.zrange(INDEX_KEY, 0, -1, { rev: true })) as string[];
@@ -122,6 +130,47 @@ export async function listLobbies(filter?: { status?: "active" | "completed" }) 
   )) as (LobbyMeta | null)[];
   const list: LobbyMeta[] = metas.filter((m): m is LobbyMeta => !!m);
   return filter?.status ? list.filter((m) => m.status === filter.status) : list;
+}
+
+export async function getVotesState(id: string): Promise<VotesState> {
+  if (!hasKVEnv()) {
+    return fsStore.getVotesState(id);
+  }
+  const raw = await kv.get<VotesState>(votesKey(id));
+  return normalizeVotesState(raw || null);
+}
+
+async function saveVotesState(id: string, state: VotesState) {
+  if (!hasKVEnv()) {
+    await fsStore.saveVotesState(id, state);
+    return;
+  }
+  await kv.set(votesKey(id), state);
+}
+
+export async function recordVote(
+  id: string,
+  record: VoteRecord
+): Promise<{ ok: boolean; already?: boolean; error?: string }> {
+  if (!record.ipHash) {
+    return { ok: false, error: "Missing vote fingerprint." };
+  }
+  if (!hasKVEnv()) {
+    return fsStore.recordVote(id, record);
+  }
+  const current = await getVotesState(id);
+  if (current.records.some((r) => r.ipHash === record.ipHash)) {
+    return { ok: false, already: true, error: "Duplicate vote." };
+  }
+  current.records.push(record);
+  await saveVotesState(id, current);
+  return { ok: true };
+}
+
+export async function summarizeVotesFor(id: string, playerIds: string[]) {
+  const state = await getVotesState(id);
+  const summary = tallyVotes(state.records, playerIds);
+  return { ...summary, records: state.records };
 }
 
 export async function deleteLobby(id: string) {
@@ -147,3 +196,10 @@ export async function withLobby(
   await saveLobby(id, state);
   return state;
 }
+
+
+
+
+
+
+

@@ -38,6 +38,8 @@ export type LobbyState = {
   targetPlayers: number;
   draftActive: boolean;
   hostName: string | null;
+  startedAt: string | null;
+  completedAt: string | null;
   draftedIds: number[];
 };
 
@@ -76,6 +78,8 @@ export function makeFreshLobby(): LobbyState {
     targetPlayers: 4,
     draftActive: false,
     hostName: null,
+    startedAt: null,
+    completedAt: null,
     draftedIds: [],
   };
 }
@@ -99,6 +103,11 @@ export function recomputeDraftedIds(state: LobbyState) {
     for (const val of Object.values(p.slots)) if (val?.id != null) all.push(val.id);
   }
   state.draftedIds = Array.from(new Set(all));
+}
+
+function allSlotsFilled(state: LobbyState): boolean {
+  if (!state.players.length) return false;
+  return state.players.every((p) => Object.values(p.slots).every((slot) => !!slot));
 }
 
 export function isHost(state: LobbyState, name: string | null | undefined): boolean {
@@ -150,6 +159,8 @@ export function start(state: LobbyState, requesterName: string) {
   state.currentPlayerIndex = 0;
   state.timerSeconds = 180;
   state.draftActive = true;
+  state.startedAt = new Date().toISOString();
+  state.completedAt = null;
   recomputeDraftedIds(state);
   return { ok: true };
 }
@@ -174,7 +185,14 @@ export function pick(
   state.lastPick = { playerName: drafter.name, char: chosen, slot: slotName };
   state.history.push({ playerIndex: curIndex, char: chosen, slot: slotName });
   if (!state.draftedIds.includes(chosen.id)) state.draftedIds.push(chosen.id);
-  advanceSnakeTurn(state);
+  if (allSlotsFilled(state)) {
+    state.draftActive = false;
+    state.completedAt = new Date().toISOString();
+    state.timerSeconds = 0;
+    state.currentPlayerIndex = 0;
+  } else {
+    advanceSnakeTurn(state);
+  }
   return { ok: true };
 }
 
@@ -190,6 +208,8 @@ export function undo(state: LobbyState, requesterName: string) {
   }
   state.lastPick = null;
   rewindSnakeTurnTo(state, playerIndex);
+  state.draftActive = true;
+  state.completedAt = null;
   recomputeDraftedIds(state);
   return { ok: true };
 }
@@ -236,4 +256,3 @@ function shuffle<T>(arr: T[]): T[] {
   }
   return a;
 }
-

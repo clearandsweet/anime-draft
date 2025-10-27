@@ -2,6 +2,35 @@
 
 export const dynamic = "force-dynamic";
 
+type AniListCharacter = {
+  id: number;
+  name?: {
+    full?: string | null;
+    native?: string | null;
+  };
+  gender?: string | null;
+  image?: {
+    large?: string | null;
+  };
+  favourites?: number | null;
+};
+
+type AniListCharacterResponse = {
+  data?: {
+    Page?: {
+      characters?: AniListCharacter[];
+    };
+  };
+};
+
+type NormalizedCharacter = {
+  id: number;
+  name: { full: string; native: string };
+  gender: string;
+  image: { large: string };
+  favourites: number;
+};
+
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const pageParam = searchParams.get("page") || "1";
@@ -53,11 +82,11 @@ export async function GET(req: Request) {
       );
     }
 
-    const json = await result.json();
+    const json = (await result.json()) as AniListCharacterResponse;
 
     // <- THIS IS IMPORTANT: shape must match what page.tsx expects
-    const characters =
-      json?.data?.Page?.characters?.map((c: any) => ({
+    const characters: NormalizedCharacter[] =
+      json?.data?.Page?.characters?.map((c) => ({
         id: c.id,
         name: {
           full: c?.name?.full ?? "",
@@ -74,11 +103,13 @@ export async function GET(req: Request) {
       JSON.stringify({ characters }),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const message =
+      err instanceof Error ? err.message : "AniList fetch threw";
     return new Response(
       JSON.stringify({
         error: "AniList fetch threw",
-        message: err?.message || String(err),
+        message,
       }),
       { status: 500, headers: { "Content-Type": "application/json" } }
     );

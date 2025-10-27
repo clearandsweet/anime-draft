@@ -6,6 +6,7 @@ import {
   makeFreshLobby,
   recomputeDraftedIds,
 } from "./logic";
+import { VotesState, VoteRecord, normalizeVotesState } from "./votesLogic";
 
 type LobbyMeta = {
   id: string;
@@ -49,11 +50,12 @@ async function writeIndex(idx: IndexFile) {
   await fs.writeFile(INDEX, JSON.stringify(idx, null, 2), "utf8");
 }
 
-function lobbyPath(id: string) {
-  return path.join(ROOT, `${id}.json`);
+function votesPath(id: string) {
+  return path.join(ROOT, `${id}-votes.json`);
 }
 
 function computeStatus(state: LobbyState): "active" | "completed" {
+  if (state.completedAt) return "completed";
   // completed when every slot is filled for every player
   const allFilled = state.players.every((p) =>
     Object.values(p.slots).every((v) => v !== null)
@@ -103,8 +105,10 @@ export async function loadLobby(id: string): Promise<LobbyState> {
     const buf = await fs.readFile(p, "utf8");
     const state = JSON.parse(buf) as LobbyState;
     if (!state.draftedIds) state.draftedIds = [];
+    if (state.startedAt === undefined) state.startedAt = null;
+    if (state.completedAt === undefined) state.completedAt = null;
     return state;
-  } catch (err: any) {
+  } catch {
     // If not found (e.g., another instance handled creation), start a fresh lobby
     const fresh = makeFreshLobby();
     return fresh;
@@ -150,9 +154,39 @@ export async function listLobbies(filter?: { status?: "active" | "completed" }) 
   return [...list].sort((a, b) => (a.id < b.id ? 1 : -1));
 }
 
+export async function getVotesState(id: string): Promise<VotesState> {
+  await ensureStorage();
+  try {
+    const buf = await fs.readFile(votesPath(id), "utf8");
+    const parsed = JSON.parse(buf) as VotesState;
+    return normalizeVotesState(parsed);
+  } catch {
+    return normalizeVotesState(null);
+  }
+}
+
+export async function saveVotesState(id: string, state: VotesState) {
+  await ensureStorage();
+  await fs.writeFile(votesPath(id), JSON.stringify(state, null, 2), "utf8");
+}
+
+export async function recordVote(
+  id: string,
+  record: VoteRecord
+): Promise<{ ok: boolean; already?: boolean; error?: string }> {
+  const state = await getVotesState(id);
+  if (state.records.some((r) => r.ipHash === record.ipHash)) {
+    return { ok: false, already: true, error: "Duplicate vote." };
+  }
+  state.records.push(record);
+  await saveVotesState(id, state);
+  return { ok: true };
+}
+
 export async function deleteLobby(id: string) {
   await ensureStorage();
   try { await fs.unlink(lobbyPath(id)); } catch {}
+  try { await fs.unlink(votesPath(id)); } catch {}
   const idx = await readIndex();
   idx.list = idx.list.filter((m) => m.id !== id);
   await writeIndex(idx);
@@ -167,3 +201,11 @@ export async function withLobby(
   await saveLobby(id, state);
   return state;
 }
+
+
+
+
+
+
+
+

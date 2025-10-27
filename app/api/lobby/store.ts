@@ -37,6 +37,8 @@ export type LobbyState = {
   targetPlayers: number;
   draftActive: boolean;
   hostName: string | null;
+  startedAt: string | null;
+  completedAt: string | null;
   draftedIds: number[]; // NEW
 };
 
@@ -67,7 +69,7 @@ const PLAYER_COLORS = [
 ];
 
 // internal mutable singleton lobby
-let lobby: LobbyState = makeFreshLobby();
+const lobby: LobbyState = makeFreshLobby();
 
 function makeFreshLobby(): LobbyState {
   return {
@@ -80,6 +82,8 @@ function makeFreshLobby(): LobbyState {
     targetPlayers: 4,
     draftActive: false,
     hostName: null,
+    startedAt: null,
+    completedAt: null,
     draftedIds: [],
   };
 }
@@ -114,6 +118,11 @@ function recomputeDraftedIds() {
     }
   }
   lobby.draftedIds = Array.from(new Set(all));
+}
+
+function allSlotsFilledInLobby(): boolean {
+  if (!lobby.players.length) return false;
+  return lobby.players.every((p) => Object.values(p.slots).every((slot) => !!slot));
 }
 
 // ------ exposed helpers for routes ------
@@ -280,8 +289,14 @@ export function draftPick(args: {
     lobby.draftedIds.push(chosen.id);
   }
 
-  // advance turn snake-style
-  advanceSnakeTurn();
+  if (allSlotsFilledInLobby()) {
+    lobby.draftActive = false;
+    lobby.completedAt = new Date().toISOString();
+    lobby.timerSeconds = 0;
+    lobby.currentPlayerIndex = 0;
+  } else {
+    advanceSnakeTurn();
+  }
 
   return { ok: true };
 }
@@ -403,3 +418,7 @@ function shuffle<T>(arr: T[]): T[] {
   }
   return a;
 }
+
+
+
+

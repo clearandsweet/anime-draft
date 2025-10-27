@@ -1,7 +1,8 @@
-﻿"use client";
+"use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
+import { colorStyleForColor } from "../../lib/colors";
 
 type Character = {
   id: number;
@@ -33,75 +34,12 @@ type LobbyState = {
   targetPlayers: number;
   draftActive: boolean;
   hostName: string | null;
+  startedAt: string | null;
+  completedAt: string | null;
 
   // server should maintain this list:
   draftedIds?: number[];
 };
-
-const COLOR_MAP: Record<
-  string,
-  { glow: string; text: string; border: string; ring: string }
-> = {
-  rose: {
-    glow: "shadow-[0_0_10px_rgba(244,63,94,0.5)]",
-    text: "text-rose-400",
-    border: "border-rose-500",
-    ring: "ring-rose-500/60 shadow-[0_0_16px_rgba(244,63,94,0.5)]",
-  },
-  sky: {
-    glow: "shadow-[0_0_10px_rgba(14,165,233,0.5)]",
-    text: "text-sky-400",
-    border: "border-sky-500",
-    ring: "ring-sky-500/60 shadow-[0_0_16px_rgba(14,165,233,0.5)]",
-  },
-  emerald: {
-    glow: "shadow-[0_0_10px_rgba(16,185,129,0.5)]",
-    text: "text-emerald-400",
-    border: "border-emerald-500",
-    ring: "ring-emerald-500/60 shadow-[0_0_16px_rgba(16,185,129,0.5)]",
-  },
-  amber: {
-    glow: "shadow-[0_0_10px_rgba(251,191,36,0.5)]",
-    text: "text-amber-400",
-    border: "border-amber-500",
-    ring: "ring-amber-400/60 shadow-[0_0_16px_rgba(251,191,36,0.5)]",
-  },
-  fuchsia: {
-    glow: "shadow-[0_0_10px_rgba(217,70,239,0.5)]",
-    text: "text-fuchsia-400",
-    border: "border-fuchsia-500",
-    ring: "ring-fuchsia-500/60 shadow-[0_0_16px_rgba(217,70,239,0.5)]",
-  },
-  indigo: {
-    glow: "shadow-[0_0_10px_rgba(99,102,241,0.5)]",
-    text: "text-indigo-400",
-    border: "border-indigo-500",
-    ring: "ring-indigo-500/60 shadow-[0_0_16px_rgba(99,102,241,0.5)]",
-  },
-  lime: {
-    glow: "shadow-[0_0_10px_rgba(163,230,53,0.5)]",
-    text: "text-lime-400",
-    border: "border-lime-500",
-    ring: "ring-lime-500/60 shadow-[0_0_16px_rgba(163,230,53,0.5)]",
-  },
-  cyan: {
-    glow: "shadow-[0_0_10px_rgba(34,211,238,0.5)]",
-    text: "text-cyan-400",
-    border: "border-cyan-500",
-    ring: "ring-cyan-500/60 shadow-[0_0_16px_rgba(34,211,238,0.5)]",
-  },
-  default: {
-    glow: "shadow-[0_0_10px_rgba(255,255,255,0.15)]",
-    text: "text-neutral-300",
-    border: "border-neutral-500",
-    ring: "ring-neutral-500/60 shadow-[0_0_16px_rgba(255,255,255,0.15)]",
-  },
-};
-
-function colorStyleForPlayer(p: Player | null) {
-  if (!p) return COLOR_MAP["default"];
-  return COLOR_MAP[p.color] || COLOR_MAP["default"];
-}
 
 export default function CharacterDraftApp() {
   const params = useParams<{ id: string }>();
@@ -131,6 +69,10 @@ export default function CharacterDraftApp() {
   const [pendingPick, setPendingPick] = useState<Character | null>(null);
 
   // lobby state fetched from server (who joined, whose turn, etc.)
+  const boardRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const [downloadingBoards, setDownloadingBoards] = useState<Record<string, boolean>>({});
+  const [pollCopied, setPollCopied] = useState(false);
+  const [pollLink, setPollLink] = useState<string>("");
   const [lobby, setLobby] = useState<LobbyState>({
     players: [],
     round: 1,
@@ -141,11 +83,13 @@ export default function CharacterDraftApp() {
     targetPlayers: 4,
     draftActive: false,
     hostName: null,
+    startedAt: null,
+    completedAt: null,
     draftedIds: [],
   });
 
   const currentPlayer = lobby.players[lobby.currentPlayerIndex] || null;
-  const onClockColor = colorStyleForPlayer(currentPlayer);
+  const onClockColor = colorStyleForColor(currentPlayer?.color);
 
   const clockDisplay = `${String(
     Math.floor(lobby.timerSeconds / 60)
@@ -160,6 +104,37 @@ export default function CharacterDraftApp() {
     lobby.hostName &&
     meName.trim().toLowerCase() === lobby.hostName.toLowerCase();
 
+  const hasStarted = useMemo(
+    () => Boolean(lobby.startedAt || lobby.draftActive),
+    [lobby.startedAt, lobby.draftActive]
+  );
+
+  const isCompleted = useMemo(
+    () => Boolean(lobby.completedAt && !lobby.draftActive),
+    [lobby.completedAt, lobby.draftActive]
+  );
+
+  const completedAtDisplay = useMemo(() => {
+    if (!lobby.completedAt) return null;
+    try {
+      return new Date(lobby.completedAt).toLocaleString();
+    } catch {
+      return lobby.completedAt;
+    }
+  }, [lobby.completedAt]);
+
+  const everyoneFull = useMemo(() => {
+    if (!lobby.players.length) return false;
+    return lobby.players.every((p) =>
+      Object.values(p.slots).every((slot) => slot)
+    );
+  }, [lobby.players]);
+
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    setPollLink(`${window.location.origin}/lobby/${lobbyId}/vote`);
+  }, [lobbyId]);
   // load character pool
   useEffect(() => {
     async function loadSomePages() {
@@ -198,7 +173,13 @@ export default function CharacterDraftApp() {
         const res = await fetch(`/api/lobby/${lobbyId}/state`, { cache: "no-store" });
         if (!res.ok) return;
         const data: LobbyState = await res.json();
-        setLobby((prev) => ({ ...data, draftedIds: data.draftedIds ?? prev.draftedIds ?? [] }));
+        setLobby((prev) => ({
+        ...prev,
+        ...data,
+        draftedIds: data.draftedIds ?? prev.draftedIds ?? [],
+        startedAt: data.startedAt ?? prev.startedAt ?? null,
+        completedAt: data.completedAt ?? prev.completedAt ?? null,
+      }));
       } catch {}
     }, 1000);
     return () => clearInterval(id);
@@ -214,7 +195,13 @@ export default function CharacterDraftApp() {
       });
       const data = await res.json();
       if (!res.ok) alert(data.error || "Join failed");
-      else setLobby((prev) => ({ ...data, draftedIds: data.draftedIds ?? prev.draftedIds ?? [] }));
+      else setLobby((prev) => ({
+        ...prev,
+        ...data,
+        draftedIds: data.draftedIds ?? prev.draftedIds ?? [],
+        startedAt: data.startedAt ?? prev.startedAt ?? null,
+        completedAt: data.completedAt ?? prev.completedAt ?? null,
+      }));
     } catch {}
   }
 
@@ -226,7 +213,13 @@ export default function CharacterDraftApp() {
         body: JSON.stringify({ targetPlayers: n, meName: meName.trim() }),
       });
       const data = await res.json();
-      if (res.ok) setLobby((prev) => ({ ...data, draftedIds: data.draftedIds ?? prev.draftedIds ?? [] }));
+      if (res.ok) setLobby((prev) => ({
+        ...prev,
+        ...data,
+        draftedIds: data.draftedIds ?? prev.draftedIds ?? [],
+        startedAt: data.startedAt ?? prev.startedAt ?? null,
+        completedAt: data.completedAt ?? prev.completedAt ?? null,
+      }));
     } catch {}
   }
 
@@ -239,7 +232,13 @@ export default function CharacterDraftApp() {
       });
       const data = await res.json();
       if (!res.ok) alert(data.error || "Cannot start draft");
-      else setLobby((prev) => ({ ...data, draftedIds: data.draftedIds ?? prev.draftedIds ?? [] }));
+      else setLobby((prev) => ({
+        ...prev,
+        ...data,
+        draftedIds: data.draftedIds ?? prev.draftedIds ?? [],
+        startedAt: data.startedAt ?? prev.startedAt ?? null,
+        completedAt: data.completedAt ?? prev.completedAt ?? null,
+      }));
     } catch {}
   }
 
@@ -263,7 +262,7 @@ export default function CharacterDraftApp() {
     if (typeof charOrId === "number") chosen = characters.find((c) => c.id === charOrId);
     else chosen = charOrId;
     if (!chosen) return;
-    if (!lobby.draftActive) { alert("Draft hasn't started yet."); return; }
+    if (!hasStarted) { alert("Draft hasn't started yet."); return; }
     if (!currentPlayer || currentPlayer.name.toLowerCase() !== meName.trim().toLowerCase()) { alert("It's not your turn."); return; }
     setPendingPick(chosen);
     setShowSlotModal(true);
@@ -280,7 +279,13 @@ export default function CharacterDraftApp() {
       });
       const data = await res.json();
       if (!res.ok) { alert(data.error || "Pick failed"); return; }
-      setLobby((prev) => ({ ...data, draftedIds: data.draftedIds ?? prev.draftedIds ?? [] }));
+      setLobby((prev) => ({
+        ...prev,
+        ...data,
+        draftedIds: data.draftedIds ?? prev.draftedIds ?? [],
+        startedAt: data.startedAt ?? prev.startedAt ?? null,
+        completedAt: data.completedAt ?? prev.completedAt ?? null,
+      }));
       setPendingPick(null);
       setShowSlotModal(false);
     } catch {
@@ -297,7 +302,13 @@ export default function CharacterDraftApp() {
       });
       const data = await res.json();
       if (!res.ok) { alert(data.error || "Undo failed"); return; }
-      setLobby((prev) => ({ ...data, draftedIds: data.draftedIds ?? prev.draftedIds ?? [] }));
+      setLobby((prev) => ({
+        ...prev,
+        ...data,
+        draftedIds: data.draftedIds ?? prev.draftedIds ?? [],
+        startedAt: data.startedAt ?? prev.startedAt ?? null,
+        completedAt: data.completedAt ?? prev.completedAt ?? null,
+      }));
     } catch {}
   }
 
@@ -311,6 +322,48 @@ export default function CharacterDraftApp() {
     a.click();
   }
 
+  async function downloadBoardPng(playerId: string) {
+    const node = boardRefs.current[playerId];
+    if (!node) return;
+    try {
+      setDownloadingBoards((prev) => ({ ...prev, [playerId]: true }));
+      const htmlToImage = await import("html-to-image");
+      const dataUrl = await htmlToImage.toPng(node, {
+        cacheBust: true,
+        pixelRatio: 2,
+        backgroundColor: "#111827",
+      });
+      const player = lobby.players.find((p) => p.id === playerId) || null;
+      const safeName = player
+        ? player.name.toLowerCase().replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "")
+        : playerId;
+      const anchor = document.createElement("a");
+      anchor.href = dataUrl;
+      anchor.download = `draft-${lobbyId}-${safeName || playerId}.png`;
+      anchor.click();
+    } catch (err) {
+      console.error("board export failed", err);
+      alert("Unable to export board image right now.");
+    } finally {
+      setDownloadingBoards((prev) => ({ ...prev, [playerId]: false }));
+    }
+  }
+
+  async function handleCopyPollLink() {
+    if (!pollLink) return;
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(pollLink);
+        setPollCopied(true);
+      } else {
+        const result = window.prompt("Copy this link", pollLink);
+        if (result !== null) setPollCopied(true);
+      }
+    } catch (err) {
+      console.error("copy poll link failed", err);
+      alert("Unable to copy the vote link. You can copy it manually below.");
+    }
+  }
   const filteredLocalPool = useMemo(() => {
     const draftedSet = new Set(lobby.draftedIds || []);
     return characters.filter((c) => {
@@ -331,7 +384,7 @@ export default function CharacterDraftApp() {
     );
   }
 
-  if (!lobby.draftActive) {
+  if (!hasStarted) {
     const joinedCount = lobby.players.length;
     const target = lobby.targetPlayers;
     const readyToStart = joinedCount === target && joinedCount >= 2;
@@ -403,6 +456,112 @@ export default function CharacterDraftApp() {
     );
   }
 
+  if (isCompleted) {
+    const pollButtonLabel = pollCopied ? "Link Copied!" : "Copy Vote Link";
+    return (
+      <div className="min-h-screen bg-neutral-900 text-neutral-100 p-4 font-sans">
+        <header className="max-w-6xl mx-auto flex flex-col gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-white text-center">Draft #{lobbyId} Complete</h1>
+            <p className="text-center text-sm text-neutral-400 mt-1">
+              {completedAtDisplay ? `Finished ${completedAtDisplay}` : "Finished just now"}
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <button
+              onClick={handleCopyPollLink}
+              className={`px-4 py-2 rounded-lg border text-sm transition ${pollCopied ? "border-emerald-500 text-emerald-300 bg-emerald-600/20" : "border-neutral-700 bg-neutral-800 hover:bg-neutral-700"}`}
+            >
+              {pollButtonLabel}
+            </button>
+            <a
+              href={`/lobby/${lobbyId}/vote`}
+              className="px-4 py-2 rounded-lg border border-fuchsia-500/60 text-sm text-fuchsia-300 hover:bg-fuchsia-600/20"
+            >
+              Open Voting Page
+            </a>
+            <button
+              onClick={handleExport}
+              className="px-4 py-2 rounded-lg border border-neutral-700 bg-neutral-800 hover:bg-neutral-700 text-sm"
+            >
+              Download JSON Snapshot
+            </button>
+          </div>
+          <div className="max-w-lg mx-auto w-full">
+            <label className="text-[11px] uppercase text-neutral-500 font-semibold">Shareable vote link</label>
+            <input
+              value={pollLink || `/lobby/${lobbyId}/vote`}
+              readOnly
+              className="w-full mt-1 bg-neutral-900 border border-neutral-700 rounded px-3 py-2 text-sm text-neutral-200"
+            />
+          </div>
+        </header>
+
+        <main className="mt-8 max-w-6xl mx-auto grid gap-6 xl:grid-cols-2">
+          {lobby.players.map((p) => {
+            const col = colorStyleForColor(p.color);
+            const downloading = Boolean(downloadingBoards[p.id]);
+            return (
+              <div
+                key={p.id}
+                className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 flex flex-col gap-4 shadow-[0_0_30px_rgba(0,0,0,0.45)]"
+              >
+                <div
+                  ref={(el) => {
+                    boardRefs.current[p.id] = el;
+                  }}
+                  className="bg-neutral-950 border border-neutral-800 rounded-2xl p-4 flex flex-col gap-4"
+                >
+                  <div className={`flex items-center justify-between border-b pb-2 ${col.border}`}>
+                    <div className="text-lg font-bold text-white">{p.name}</div>
+                    <div className="text-xs text-neutral-400">Popularity: {p.popularityTotal.toLocaleString()}</div>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                    {Object.entries(p.slots).map(([slotName, charValue], index) => {
+                      const char = charValue as Character | null;
+                      return (
+                        <div
+                          key={slotName}
+                          className="flex flex-col bg-neutral-900 border border-neutral-800 rounded-xl overflow-hidden"
+                        >
+                          <div className={`text-[10px] uppercase font-semibold text-center py-1 ${col.overlay} text-white`}>
+                            {slotName}
+                          </div>
+                          <div className="aspect-[3/4] w-full bg-neutral-950 flex items-center justify-center">
+                            {char ? (
+                              <img src={char.image.large} alt={char.name.full} className="w-full h-full object-cover" />
+                            ) : (
+                              <span className="text-[11px] text-neutral-600 px-2 text-center">Undrafted</span>
+                            )}
+                          </div>
+                          <div className="text-xs font-semibold text-neutral-200 text-center px-2 py-2 bg-neutral-900">
+                            {char ? char.name.full : "No pick"}
+                          </div>
+                          <div className="text-[10px] text-neutral-500 text-center pb-2">#{index + 1}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+                <button
+                  onClick={() => downloadBoardPng(p.id)}
+                  className={`px-3 py-2 rounded-lg border text-sm transition ${downloading ? "border-neutral-700 bg-neutral-800 text-neutral-500 cursor-wait" : "border-neutral-700 bg-neutral-800 hover:bg-neutral-700"}`}
+                  disabled={downloading}
+                >
+                  {downloading ? "Rendering..." : "Download PNG"}
+                </button>
+              </div>
+            );
+          })}
+        </main>
+        {!everyoneFull && (
+          <p className="mt-6 text-center text-xs text-amber-400">
+            Some slots are unfilled. PNGs will include placeholders where picks are missing.
+          </p>
+        )}
+      </div>
+    );
+  }
   const needReconnect = lobby.draftActive && !iAmJoined;
   const reconnectStrip = needReconnect ? (
     <div className="bg-neutral-800 border border-neutral-700 rounded-lg p-2 text-xs text-neutral-300 flex flex-wrap items-center gap-2 justify-between">
@@ -447,7 +606,7 @@ export default function CharacterDraftApp() {
       <main className="grid xl:grid-cols-[1fr_1fr] gap-4">
         <aside className="space-y-4 overflow-y-auto max-h-[80vh] pr-1">
           {lobby.players.map((p, i) => {
-            const col = colorStyleForPlayer(p);
+            const col = colorStyleForColor(p.color);
             const isOnClock = i === lobby.currentPlayerIndex;
             return (
               <div key={p.id} className={`rounded-xl border p-3 bg-neutral-900 ${isOnClock ? col.border : "border-neutral-700"}`}>
@@ -498,7 +657,7 @@ export default function CharacterDraftApp() {
                 <input value={filters.searchText} onChange={(e) => setFilters((f) => ({ ...f, searchText: e.target.value }))} placeholder="Character name" className="bg-neutral-900 border border-neutral-700 rounded px-2 py-1 text-sm text-white w-full" />
               </div>
               <div className="flex flex-col">
-                <label className="text-[10px] uppercase text-neutral-500 font-semibold">Can't Find Them?</label>
+                <label className="text-[10px] uppercase text-neutral-500 font-semibold">Can&apos;t Find Them?</label>
                 <button onClick={() => { setShowDeepSearchModal(true); setDeepSearchQuery(""); setDeepSearchResults([]); }} className="text-[11px] font-semibold bg-gradient-to-r from-indigo-600/30 to-fuchsia-600/30 border border-fuchsia-500/40 text-fuchsia-300 rounded px-2 py-1 hover:from-indigo-600/40 hover:to-fuchsia-600/40 hover:text-white shadow-[0_0_10px_rgba(217,70,239,0.6)]">Deep Cut Search</button>
               </div>
               <div className="text-[10px] text-neutral-500 leading-tight">
@@ -548,7 +707,7 @@ export default function CharacterDraftApp() {
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
           <div className="bg-neutral-900 border border-neutral-700 rounded-2xl p-6 w-[500px] max-w-[90vw] max-h-[80vh] flex flex-col">
             <h2 className="text-lg font-bold mb-2 text-white">Deep Cut Character Search</h2>
-            <p className="text-sm text-neutral-400 mb-3 leading-snug">Type part of their name. We'll query AniList directly, even if they're super obscure.</p>
+            <p className="text-sm text-neutral-400 mb-3 leading-snug">Type part of their name. We&apos;ll query AniList directly, even if they&apos;re super obscure.</p>
             <div className="flex gap-2 mb-3">
               <input className="flex-1 bg-neutral-800 border border-neutral-700 rounded px-2 py-2 text-sm text-white" placeholder="e.g. Rakushun" value={deepSearchQuery} onChange={(e) => setDeepSearchQuery(e.target.value)} />
               <button onClick={runDeepSearch} className="bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm hover:bg-neutral-700 text-white">Search</button>
@@ -579,6 +738,28 @@ export default function CharacterDraftApp() {
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

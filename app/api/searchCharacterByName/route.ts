@@ -16,7 +16,31 @@ const SEARCH_QUERY = `
   }
 `;
 
-async function searchAniListByName(term: string) {
+type AniListSearchCharacter = {
+  id: number;
+  name?: { full?: string | null; native?: string | null };
+  gender?: string | null;
+  image?: { large?: string | null; medium?: string | null };
+  favourites?: number | null;
+};
+
+type AniListSearchResponse = {
+  data?: {
+    Page?: {
+      characters?: AniListSearchCharacter[];
+    };
+  };
+};
+
+type NormalizedCharacter = {
+  id: number;
+  name: { full: string; native: string };
+  gender: string;
+  image: { large: string };
+  favourites: number;
+};
+
+async function searchAniListByName(term: string): Promise<NormalizedCharacter[]> {
   const res = await fetch(ANILIST_URL, {
     method: "POST",
     headers: {
@@ -33,10 +57,10 @@ async function searchAniListByName(term: string) {
     throw new Error(`AniList search failed ${res.status}`);
   }
 
-  const data = await res.json();
+  const data = (await res.json()) as AniListSearchResponse;
   const chars = data?.data?.Page?.characters ?? [];
 
-  return chars.map((c: any) => ({
+  return chars.map((c) => ({
     id: c.id,
     name: {
       full: c.name?.full ?? "",
@@ -71,11 +95,13 @@ export async function GET(req: Request) {
         headers: { "Content-Type": "application/json" },
       }
     );
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("searchCharacterByName GET failed:", err);
+    const message =
+      err instanceof Error ? err.message : "search failed";
     return new Response(
         JSON.stringify({
-          error: err?.message ?? "search failed",
+          error: message,
           characters: [],
         }),
         {
