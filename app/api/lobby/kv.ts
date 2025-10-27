@@ -1,4 +1,5 @@
 import { kv } from "@vercel/kv";
+import * as fsStore from "./fs";
 import {
   LobbyState,
   makeFreshLobby,
@@ -32,11 +33,20 @@ function metaKey(id: string) {
   return `lobby:meta:${id}`;
 }
 
+function hasKVEnv() {
+  const vercelKV = process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN;
+  const upstash = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN;
+  return Boolean(vercelKV || upstash);
+}
+
 export async function createLobby(opts?: {
   hostName?: string;
   targetPlayers?: number;
 }): Promise<{ id: string; state: LobbyState }>
 {
+  if (!hasKVEnv()) {
+    return fsStore.createLobby(opts);
+  }
   const next = await kv.incr(NEXT_ID_KEY);
   const id = String(next);
   const now = new Date().toISOString();
@@ -68,12 +78,18 @@ export async function createLobby(opts?: {
 }
 
 export async function loadLobby(id: string): Promise<LobbyState> {
+  if (!hasKVEnv()) {
+    return fsStore.loadLobby(id);
+  }
   const state = (await kv.get<LobbyState>(stateKey(id))) || makeFreshLobby();
   if (!state.draftedIds) state.draftedIds = [];
   return state;
 }
 
 export async function saveLobby(id: string, state: LobbyState) {
+  if (!hasKVEnv()) {
+    return fsStore.saveLobby(id, state);
+  }
   recomputeDraftedIds(state);
   const now = new Date().toISOString();
   const nowScore = Date.now();
@@ -95,6 +111,9 @@ export async function saveLobby(id: string, state: LobbyState) {
 }
 
 export async function listLobbies(filter?: { status?: "active" | "completed" }) {
+  if (!hasKVEnv()) {
+    return fsStore.listLobbies(filter as any);
+  }
   // newest first
   const ids = (await kv.zrange(INDEX_KEY, 0, -1, { rev: true })) as string[];
   if (!ids.length) return [];
@@ -106,6 +125,9 @@ export async function listLobbies(filter?: { status?: "active" | "completed" }) 
 }
 
 export async function deleteLobby(id: string) {
+  if (!hasKVEnv()) {
+    return fsStore.deleteLobby(id);
+  }
   await Promise.all([
     kv.del(stateKey(id)),
     kv.del(metaKey(id)),
@@ -117,6 +139,9 @@ export async function withLobby(
   id: string,
   mutate: (state: LobbyState) => void | Promise<void>
 ): Promise<LobbyState> {
+  if (!hasKVEnv()) {
+    return fsStore.withLobby(id, mutate);
+  }
   const state = await loadLobby(id);
   await mutate(state);
   await saveLobby(id, state);
