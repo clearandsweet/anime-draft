@@ -1,12 +1,13 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
+export const runtime = "nodejs";
 import { deleteLobby } from "../../lobby/fs";
 
 export async function DELETE(
-  _request: Request,
-  { params }: { params: { id: string } }
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     await deleteLobby(id);
     return NextResponse.json({ ok: true }, { status: 200 });
   } catch (err) {
@@ -14,4 +15,3 @@ export async function DELETE(
     return NextResponse.json({ error: "Server error." }, { status: 500 });
   }
 }
-

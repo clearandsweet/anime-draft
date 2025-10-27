@@ -1,13 +1,14 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
+export const runtime = "nodejs";
 import { withLobby } from "../../../lobby/fs";
 import { LobbyState, Character, pick as pickFn } from "../../../lobby/logic";
 
 export async function POST(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
     const actingName = body.actingName as string;
     const slotName = body.slotName as string;
@@ -30,4 +31,3 @@ export async function POST(
     return NextResponse.json({ error: "Server error." }, { status: 500 });
   }
 }
-

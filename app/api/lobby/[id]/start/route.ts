@@ -1,13 +1,14 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
+export const runtime = "nodejs";
 import { withLobby } from "../../../lobby/fs";
 import { LobbyState, start } from "../../../lobby/logic";
 
 export async function POST(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const { meName } = await request.json();
     let result: { ok: boolean; error?: string } = { ok: true };
     const state = await withLobby(id, (s) => {
@@ -26,4 +27,3 @@ export async function POST(
     return NextResponse.json({ error: "Server error." }, { status: 500 });
   }
 }
-

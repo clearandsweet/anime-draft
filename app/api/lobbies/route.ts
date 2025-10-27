@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+export const runtime = "nodejs";
 import { createLobby, listLobbies } from "../lobby/fs";
 import { LobbyState } from "../lobby/logic";
 
@@ -22,4 +23,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Server error." }, { status: 500 });
   }
 }
-
