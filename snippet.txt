@@ -166,7 +166,7 @@ export default function VoteDraftBoards() {
       <div className="min-h-screen bg-neutral-950 text-neutral-200 flex items-center justify-center">
         <div className="flex flex-col items-center gap-2 text-sm">
           <div className="w-8 h-8 border-2 border-neutral-700 border-t-neutral-200 rounded-full animate-spin" />
-          <span>Loading draft boards…</span>
+          <span>Loading draft boardsâ€¦</span>
         </div>
       </div>
     );
@@ -217,7 +217,7 @@ export default function VoteDraftBoards() {
                 : "border-neutral-700 bg-neutral-900 text-neutral-500 cursor-not-allowed"
             }`}
           >
-            {submitting ? "Submitting…" : alreadyVoted ? "Vote Submitted" : "Submit Vote"}
+            {submitting ? "Submittingâ€¦" : alreadyVoted ? "Vote Submitted" : "Submit Vote"}
           </button>
         </div>
       </header>
@@ -250,18 +250,18 @@ export default function VoteDraftBoards() {
                       Popularity Shame Demerits: {player.popularityTotal.toLocaleString()}
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 auto-rows-fr">
-                    {Object.entries(player.slots).map(([slotName, charValue]) => {
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                    {Object.entries(player.slots).map(([slotName, charValue], idx) => {
                       const char = charValue as Character | null;
                       return (
                         <div
                           key={slotName}
-                          className="flex flex-col bg-neutral-950 border border-neutral-800 rounded-xl overflow-hidden h-full"
+                          className="flex flex-col bg-neutral-950 border border-neutral-800 rounded-xl overflow-hidden"
                         >
                           <div className="text-[10px] uppercase font-semibold text-center py-1 bg-neutral-900 text-neutral-400">
                             {slotName}
                           </div>
-                          <div className="flex-1 bg-neutral-900 flex items-center justify-center">
+                          <div className="aspect-[3/4] w-full bg-neutral-900 flex items-center justify-center">
                             {char ? (
                               <img
                                 src={char.image.large}
@@ -277,6 +277,7 @@ export default function VoteDraftBoards() {
                           <div className="text-xs text-neutral-200 text-center px-2 py-2 bg-neutral-900">
                             {char ? char.name.full : "No pick"}
                           </div>
+                          <div className="text-[10px] text-neutral-500 text-center pb-2">#{idx + 1}</div>
                         </div>
                       );
                     })}
@@ -340,4 +341,3 @@ export default function VoteDraftBoards() {
     </div>
   );
 }
-

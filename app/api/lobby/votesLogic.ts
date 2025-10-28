@@ -2,9 +2,9 @@
 export type VoteRecord = {
   id: string;
   ipHash: string;
-  first: string;
-  second: string;
-  third: string;
+  first: string | null;
+  second: string | null;
+  third: string | null;
   createdAt: string;
 };
 
@@ -27,9 +27,9 @@ export function normalizeVotesState(data?: Partial<VotesState> | null): VotesSta
         (entry): entry is VoteRecord =>
           !!entry &&
           typeof entry.ipHash === "string" &&
-          typeof entry.first === "string" &&
-          typeof entry.second === "string" &&
-          typeof entry.third === "string"
+          (typeof entry.first === "string" || entry.first === null) &&
+          (typeof entry.second === "string" || entry.second === null) &&
+          (typeof entry.third === "string" || entry.third === null)
       )
       .map((entry) => ({
         ...entry,

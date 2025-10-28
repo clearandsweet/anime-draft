@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 export const runtime = "nodejs";
 import { loadLobby, getVotesState, recordVote, summarizeVotesFor } from "../../../lobby/kv";
 import { randomUUID, createHash } from "crypto";
@@ -65,25 +65,34 @@ export async function POST(
       );
     }
     const body = await request.json().catch(() => ({}));
-    const first = (body?.first as string | undefined) ?? "";
-    const second = (body?.second as string | undefined) ?? "";
-    const third = (body?.third as string | undefined) ?? "";
-    const picks = [first, second, third];
-    if (picks.some((v) => !v || typeof v !== "string")) {
+    const parsePick = (value: unknown): string | null =>
+      typeof value === "string" && value.trim() ? value : null;
+    const first = parsePick(body?.first);
+    const second = parsePick(body?.second);
+    const third = parsePick(body?.third);
+    const picks: (string | null)[] = [first, second, third];
+    const chosen = picks.filter((v): v is string => !!v);
+    const requiredSelections = lobby.players.length === 2 ? 1 : 3;
+    if (chosen.length < requiredSelections) {
       return NextResponse.json(
-        { error: "All three selections are required." },
+        {
+          error:
+            requiredSelections === 1
+              ? "Select at least one board before submitting."
+              : "Select three distinct boards before submitting.",
+        },
         { status: 400 }
       );
     }
-    const unique = new Set(picks);
-    if (unique.size !== 3) {
+    const unique = new Set(chosen);
+    if (unique.size !== chosen.length) {
       return NextResponse.json(
-        { error: "Selections must be three distinct boards." },
+        { error: "Selections must be distinct." },
         { status: 400 }
       );
     }
     const validIds = new Set(lobby.players.map((p) => p.id));
-    if (picks.some((idValue) => !validIds.has(idValue))) {
+    if (chosen.some((idValue) => !validIds.has(idValue))) {
       return NextResponse.json(
         { error: "One or more selections are invalid." },
         { status: 400 }
@@ -119,4 +128,5 @@ export async function POST(
     return NextResponse.json({ error: "Server error." }, { status: 500 });
   }
 }
+
 
