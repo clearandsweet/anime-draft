@@ -2,6 +2,8 @@
 // Copied and adapted from app/api/lobby/store.ts to be id-agnostic and side-effect free
 // so it can be reused with different persistence backends (e.g., filesystem).
 
+import { CATEGORY_POOL, DEFAULT_SLOTS } from "./categories";
+
 export type Character = {
   id: number;
   name: { full: string; native: string };
@@ -37,26 +39,19 @@ export type LobbyState = {
     slot: string;
   };
   history: HistoryEntry[];
-  targetPlayers: number;
+
+  targetPlayers: number; // Deprecated but kept for type compat, effectively unused for limits now
   draftActive: boolean;
   hostName: string | null;
   startedAt: string | null;
   completedAt: string | null;
   draftedIds: number[];
+  categoryMode: "default" | "random";
+  slotNames: string[];
+  version: number;
 };
 
-const SLOT_NAMES = [
-  "Waifu",
-  "Husbando",
-  "Not Human",
-  "Not Alive or Artifical",
-  "Old",
-  "Minor Character",
-  "Evil",
-  "Child",
-  "Comic Relief",
-  "Wildcard",
-];
+
 
 const PLAYER_COLORS = [
   "rose",
@@ -77,19 +72,22 @@ export function makeFreshLobby(): LobbyState {
     timerSeconds: 180,
     lastPick: null,
     history: [],
-    targetPlayers: 4,
+    targetPlayers: 100, // unlimited effectively
     draftActive: false,
     hostName: null,
     startedAt: null,
     completedAt: null,
     draftedIds: [],
+    categoryMode: "default",
+    slotNames: [...DEFAULT_SLOTS],
+    version: 0,
   };
 }
 
-export function createPlayer(name: string, index: number): Player {
+export function createPlayer(name: string, index: number, slotNames: string[]): Player {
   const color = PLAYER_COLORS[index % PLAYER_COLORS.length] || "rose";
   const slots: Record<string, Character | null> = {};
-  for (const slotName of SLOT_NAMES) slots[slotName] = null;
+  for (const slotName of slotNames) slots[slotName] = null;
   return {
     id: `p${index + 1}`,
     name,
@@ -130,31 +128,56 @@ export function join(state: LobbyState, name: string): { ok: boolean; error?: st
   const exists = state.players.find((p) => p.name.toLowerCase() === trimmed.toLowerCase());
   if (exists) return { ok: true };
 
-  if (state.players.length >= state.targetPlayers) {
-    return { ok: false, error: "Lobby is already full." };
-  }
+  // Removed targetPlayers check to allow variable count
+  // if (state.players.length >= state.targetPlayers) { ... }
 
-  const newPlayer = createPlayer(trimmed, state.players.length);
+  const newPlayer = createPlayer(trimmed, state.players.length, state.slotNames);
   state.players.push(newPlayer);
   if (!state.hostName) state.hostName = trimmed;
+  state.version += 1;
+  return { ok: true };
+}
+
+export function setCategoryMode(state: LobbyState, requesterName: string, mode: "default" | "random") {
+  if (!isHost(state, requesterName)) return { ok: false, error: "Only host can change settings." };
+  if (state.draftActive) return { ok: false, error: "Draft already started." };
+
+  state.categoryMode = mode;
+
+  if (mode === "default") {
+    state.slotNames = [...DEFAULT_SLOTS];
+  } else {
+    // Pick 10 random
+    state.slotNames = shuffle([...CATEGORY_POOL]).slice(0, 10);
+  }
+
+  // Update existing players to have these new slots
+  // Since draft hasn't started, all slots are empty anyway.
+  for (const p of state.players) {
+    const newSlots: Record<string, Character | null> = {};
+    for (const s of state.slotNames) {
+      newSlots[s] = null;
+    }
+    p.slots = newSlots;
+  }
+  state.version += 1;
   return { ok: true };
 }
 
 export function setTarget(state: LobbyState, requesterName: string, newTarget: number) {
+  // No-op or deprecated, we just allow it to return ok to not break existing clients immediately
+  // but we don't enforce limits anymore.
   if (!isHost(state, requesterName)) return { ok: false, error: "Only host can change draft size." };
-  if (state.draftActive) return { ok: false, error: "Draft already started." };
-  if (![2, 4, 8, 12].includes(newTarget)) return { ok: false, error: "Invalid target size." };
-  if (newTarget < state.players.length)
-    return { ok: false, error: "Too few slots: players already joined more than that." };
   state.targetPlayers = newTarget;
+  state.version += 1;
   return { ok: true };
 }
 
 export function start(state: LobbyState, requesterName: string) {
   if (!isHost(state, requesterName)) return { ok: false, error: "Only host can start the draft." };
   if (state.draftActive) return { ok: false, error: "Draft already started." };
-  if (state.players.length !== state.targetPlayers || state.players.length < 2)
-    return { ok: false, error: "Lobby isn't full yet (or too small)." };
+  if (state.players.length < 1)
+    return { ok: false, error: "Need at least 1 player to start." };
 
   state.players = shuffle(state.players);
   state.round = 1;
@@ -164,6 +187,7 @@ export function start(state: LobbyState, requesterName: string) {
   state.startedAt = new Date().toISOString();
   state.completedAt = null;
   recomputeDraftedIds(state);
+  state.version += 1;
   return { ok: true };
 }
 
@@ -201,6 +225,7 @@ export function pick(
   } else {
     advanceSnakeTurn(state);
   }
+  state.version += 1;
   return { ok: true };
 }
 
@@ -222,6 +247,7 @@ export function undo(state: LobbyState, requesterName: string) {
   state.draftActive = true;
   state.completedAt = null;
   recomputeDraftedIds(state);
+  state.version += 1;
   return { ok: true };
 }
 
@@ -280,6 +306,7 @@ export function doAutopick(state: LobbyState) {
     previousRound: roundBefore,
     previousCurrentPlayerIndex: indexBefore,
   });
+  state.version += 1;
 }
 
 export function finishDraft(state: LobbyState, requesterName: string) {
@@ -291,6 +318,7 @@ export function finishDraft(state: LobbyState, requesterName: string) {
   state.completedAt = new Date().toISOString();
   state.timerSeconds = 0;
   state.currentPlayerIndex = 0;
+  state.version += 1;
   return { ok: true };
 }
 

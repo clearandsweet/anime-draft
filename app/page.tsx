@@ -16,7 +16,6 @@ type LobbyMeta = {
 export default function Landing() {
   const router = useRouter();
   const [hostName, setHostName] = useState("");
-  const [targetPlayers, setTargetPlayers] = useState<number>(4);
   const [joinCode, setJoinCode] = useState("");
   const [lobbies, setLobbies] = useState<LobbyMeta[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,7 +43,7 @@ export default function Landing() {
       const res = await fetch("/api/lobbies", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ hostName: hostName.trim() || undefined, targetPlayers }),
+        body: JSON.stringify({ hostName: hostName.trim() || undefined }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -92,22 +91,11 @@ export default function Landing() {
               value={hostName}
               onChange={(e) => setHostName(e.target.value)}
             />
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-xs text-neutral-400">Players:</span>
-              {[2, 4, 8, 12].map((n) => (
-                <button
-                  key={n}
-                  onClick={() => setTargetPlayers(n)}
-                  className={`px-2 py-1 rounded border text-xs ${
-                    targetPlayers === n ? "border-fuchsia-500" : "border-neutral-700"
-                  }`}
-                >
-                  {n}
-                </button>
-              ))}
-            </div>
-            <button onClick={handleCreate} className="bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm hover:bg-neutral-700">
-              Create
+            <button
+              onClick={handleCreate}
+              className="w-full bg-fuchsia-600 hover:bg-fuchsia-500 text-white font-bold py-2 rounded transition"
+            >
+              Create New Lobby
             </button>
           </div>
 

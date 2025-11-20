@@ -49,8 +49,7 @@ function hasKVEnv() {
 export async function createLobby(opts?: {
   hostName?: string;
   targetPlayers?: number;
-}): Promise<{ id: string; state: LobbyState }>
-{
+}): Promise<{ id: string; state: LobbyState }> {
   if (!hasKVEnv()) {
     return fsStore.createLobby(opts);
   }
@@ -60,7 +59,7 @@ export async function createLobby(opts?: {
   const nowScore = Date.now();
 
   const state = makeFreshLobby();
-  if (opts?.targetPlayers && [2,4,8,12].includes(opts.targetPlayers)) {
+  if (opts?.targetPlayers && [2, 4, 8, 12].includes(opts.targetPlayers)) {
     state.targetPlayers = opts.targetPlayers;
   }
   if (opts?.hostName) state.hostName = opts.hostName.trim() || null;
@@ -92,13 +91,23 @@ export async function loadLobby(id: string): Promise<LobbyState> {
   if (!state.draftedIds) state.draftedIds = [];
   if (state.startedAt === undefined) state.startedAt = null;
   if (state.completedAt === undefined) state.completedAt = null;
+  if (state.version === undefined) state.version = 0;
   return state;
 }
 
-export async function saveLobby(id: string, state: LobbyState) {
+export async function saveLobby(id: string, state: LobbyState, expectedVersion?: number) {
   if (!hasKVEnv()) {
     return fsStore.saveLobby(id, state);
   }
+
+  // Optimistic locking check
+  if (expectedVersion !== undefined) {
+    const current = await kv.get<LobbyState>(stateKey(id));
+    if (current && current.version !== expectedVersion) {
+      throw new Error("Optimistic lock failed: Data has changed since you loaded it.");
+    }
+  }
+
   recomputeDraftedIds(state);
   const now = new Date().toISOString();
   const nowScore = Date.now();
@@ -205,8 +214,9 @@ export async function withLobby(
     return fsStore.withLobby(id, mutate);
   }
   const state = await loadLobby(id);
+  const versionBefore = state.version;
   await mutate(state);
-  await saveLobby(id, state);
+  await saveLobby(id, state, versionBefore);
   return state;
 }
 

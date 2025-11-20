@@ -3,6 +3,9 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { colorStyleForColor } from "../../lib/colors";
+import { DraftTimer } from "./components/DraftTimer";
+import { PlayerList } from "./components/PlayerList";
+import { CharacterPool } from "./components/CharacterPool";
 
 type Character = {
   id: number;
@@ -20,26 +23,7 @@ type Player = {
   popularityTotal: number;
 };
 
-type LobbyState = {
-  players: Player[];
-  round: number;
-  currentPlayerIndex: number;
-  timerSeconds: number;
-  lastPick: null | {
-    playerName: string;
-    char: Character;
-    slot: string;
-  };
-  history: { playerIndex: number; char: Character; slot: string }[];
-  targetPlayers: number;
-  draftActive: boolean;
-  hostName: string | null;
-  startedAt: string | null;
-  completedAt: string | null;
-
-  // server should maintain this list:
-  draftedIds?: number[];
-};
+import { LobbyState } from "../../api/lobby/logic";
 
 export default function CharacterDraftApp() {
   const params = useParams<{ id: string }>();
@@ -88,14 +72,11 @@ export default function CharacterDraftApp() {
     startedAt: null,
     completedAt: null,
     draftedIds: [],
-  });
+    version: 0,
+  } as any);
 
   const currentPlayer = lobby.players[lobby.currentPlayerIndex] || null;
   const onClockColor = colorStyleForColor(currentPlayer?.color);
-
-  const clockDisplay = `${String(
-    Math.floor(lobby.timerSeconds / 60)
-  ).padStart(2, "0")}:${String(lobby.timerSeconds % 60).padStart(2, "0")}`;
 
   // am I in the lobby already?
   const iAmJoined = lobby.players.some(
@@ -146,34 +127,62 @@ export default function CharacterDraftApp() {
     if (typeof window === "undefined") return;
     setPollLink(`${window.location.origin}/lobby/${lobbyId}/vote`);
   }, [lobbyId]);
-  // load character pool
+  // load character pool incrementally
   useEffect(() => {
-    async function loadSomePages() {
+    let active = true;
+    async function loadIncremental() {
       setLoadingChars(true);
-      const gathered: Character[] = [];
-      let sawAny = false;
-      for (let page = 1; page <= 100; page++) {
-        try {
-          const res = await fetch(`/api/characters?page=${page}`, { cache: "no-store" });
-          if (!res.ok) continue;
-          const data = await res.json();
-          const chunk: Character[] = data?.characters || [];
-          if (!chunk.length) break;
-          gathered.push(...chunk);
-          sawAny = true;
-        } catch {}
-      }
-      if (sawAny) {
-        const byId = new Map<number, Character>();
-        for (const ch of gathered) if (!byId.has(ch.id)) byId.set(ch.id, ch);
+      const byId = new Map<number, Character>();
+
+      // Helper to update state safely
+      const updateState = () => {
+        if (!active) return;
         const finalList = Array.from(byId.values()).sort((a, b) => b.favourites - a.favourites);
         setCharacters(finalList);
-      } else {
-        if (characters.length === 0) setCharacters([]);
+      };
+
+      for (let page = 1; page <= 200; page++) {
+        if (!active) break;
+        try {
+          const res = await fetch(`/api/characters?page=${page}`, { cache: "no-store" });
+          if (!res.ok) {
+            // If rate limited or error, wait a bit longer then continue or break
+            await new Promise((r) => setTimeout(r, 2000));
+            continue;
+          }
+          const data = await res.json();
+          const chunk: Character[] = data?.characters || [];
+
+          if (!chunk.length) break; // No more characters
+
+          let newOnes = 0;
+          for (const ch of chunk) {
+            if (!byId.has(ch.id)) {
+              byId.set(ch.id, ch);
+              newOnes++;
+            }
+          }
+
+          // Update UI every page
+          if (newOnes > 0) updateState();
+
+          // First page loaded? Turn off "loading" spinner so user can start interacting
+          if (page === 1) setLoadingChars(false);
+
+          // Rate limit protection: wait 800ms between requests
+          // AniList limit is 90/min, so ~666ms minimum. 800ms is safe.
+          await new Promise((r) => setTimeout(r, 800));
+
+        } catch (e) {
+          console.error("Fetch error page", page, e);
+          await new Promise((r) => setTimeout(r, 2000));
+        }
       }
-      setLoadingChars(false);
+      if (active) setLoadingChars(false);
     }
-    loadSomePages();
+
+    loadIncremental();
+    return () => { active = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -185,13 +194,13 @@ export default function CharacterDraftApp() {
         if (!res.ok) return;
         const data: LobbyState = await res.json();
         setLobby((prev) => ({
-        ...prev,
-        ...data,
-        draftedIds: data.draftedIds ?? prev.draftedIds ?? [],
-        startedAt: data.startedAt ?? prev.startedAt ?? null,
-        completedAt: data.completedAt ?? prev.completedAt ?? null,
-      }));
-      } catch {}
+          ...prev,
+          ...data,
+          draftedIds: data.draftedIds ?? prev.draftedIds ?? [],
+          startedAt: data.startedAt ?? prev.startedAt ?? null,
+          completedAt: data.completedAt ?? prev.completedAt ?? null,
+        }));
+      } catch { }
     }, 1000);
     return () => clearInterval(id);
   }, [lobbyId]);
@@ -213,7 +222,7 @@ export default function CharacterDraftApp() {
         startedAt: data.startedAt ?? prev.startedAt ?? null,
         completedAt: data.completedAt ?? prev.completedAt ?? null,
       }));
-    } catch {}
+    } catch { }
   }
 
   async function setTargetPlayers(n: number) {
@@ -231,7 +240,25 @@ export default function CharacterDraftApp() {
         startedAt: data.startedAt ?? prev.startedAt ?? null,
         completedAt: data.completedAt ?? prev.completedAt ?? null,
       }));
-    } catch {}
+    } catch { }
+  }
+
+  async function setCategoryMode(mode: "default" | "random") {
+    try {
+      const res = await fetch(`/api/lobby/${lobbyId}/category`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode, meName: meName.trim() }),
+      });
+      const data = await res.json();
+      if (res.ok) setLobby((prev) => ({
+        ...prev,
+        ...data,
+        draftedIds: data.draftedIds ?? prev.draftedIds ?? [],
+        startedAt: data.startedAt ?? prev.startedAt ?? null,
+        completedAt: data.completedAt ?? prev.completedAt ?? null,
+      }));
+    } catch { }
   }
 
   async function startDraft() {
@@ -250,7 +277,7 @@ export default function CharacterDraftApp() {
         startedAt: data.startedAt ?? prev.startedAt ?? null,
         completedAt: data.completedAt ?? prev.completedAt ?? null,
       }));
-    } catch {}
+    } catch { }
   }
 
   async function runDeepSearch() {
@@ -320,7 +347,7 @@ export default function CharacterDraftApp() {
         startedAt: data.startedAt ?? prev.startedAt ?? null,
         completedAt: data.completedAt ?? prev.completedAt ?? null,
       }));
-    } catch {}
+    } catch { }
   }
 
   function handleExport() {
@@ -434,8 +461,7 @@ export default function CharacterDraftApp() {
 
   if (!hasStarted) {
     const joinedCount = lobby.players.length;
-    const target = lobby.targetPlayers;
-    const readyToStart = joinedCount === target && joinedCount >= 2;
+    const readyToStart = joinedCount >= 1;
     const isHost = iAmHost;
     return (
       <div className="min-h-screen bg-neutral-900 text-neutral-100 flex items-center justify-center p-4 font-sans">
@@ -451,20 +477,38 @@ export default function CharacterDraftApp() {
               "Waiting for first player to join..."
             )}
           </div>
-          <div className="mb-6">
-            <div className="text-xs uppercase text-neutral-500 font-semibold mb-2 text-center">Number of Drafters</div>
-            <div className="flex justify-center gap-2 flex-wrap">
-              {[2, 4, 8, 12].map((n) => {
-                const active = n === lobby.targetPlayers;
-                const canClick = isHost && !lobby.draftActive;
-                return (
-                  <button key={n} onClick={() => canClick && setTargetPlayers(n)} disabled={!canClick} className={`px-3 py-2 rounded-lg text-sm border ${active ? "border-fuchsia-500 text-white bg-fuchsia-600/20 shadow-[0_0_10px_rgba(217,70,239,0.6)]" : "border-neutral-700 text-neutral-300 bg-neutral-800"} ${canClick ? "hover:bg-neutral-700" : "opacity-50 cursor-not-allowed"}`}>
-                    {n}
-                  </button>
-                );
-              })}
+          <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-neutral-800/40 border border-neutral-700 rounded-xl p-4">
+              <div className="text-xs uppercase text-neutral-500 font-semibold mb-2 text-center">Categories</div>
+              <div className="flex justify-center gap-2 mb-3">
+                <button
+                  onClick={() => iAmHost && setCategoryMode("default")}
+                  disabled={!iAmHost}
+                  className={`px-3 py-1 rounded text-xs border ${lobby.categoryMode === "default" || !lobby.categoryMode ? "bg-fuchsia-600/20 border-fuchsia-500 text-white" : "bg-neutral-900 border-neutral-700 text-neutral-400"} ${iAmHost ? "hover:bg-neutral-800" : ""}`}
+                >
+                  Default
+                </button>
+                <button
+                  onClick={() => iAmHost && setCategoryMode("random")}
+                  disabled={!iAmHost}
+                  className={`px-3 py-1 rounded text-xs border ${lobby.categoryMode === "random" ? "bg-fuchsia-600/20 border-fuchsia-500 text-white" : "bg-neutral-900 border-neutral-700 text-neutral-400"} ${iAmHost ? "hover:bg-neutral-800" : ""}`}
+                >
+                  Random 10
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-1 justify-center">
+                {(lobby.slotNames || []).map((s) => (
+                  <span key={s} className="text-[10px] px-2 py-1 bg-neutral-900 rounded border border-neutral-800 text-neutral-300">
+                    {s}
+                  </span>
+                ))}
+              </div>
             </div>
-            <div className="text-[11px] text-neutral-500 text-center mt-2">Joined {joinedCount}/{target}</div>
+            <div className="bg-neutral-800/40 border border-neutral-700 rounded-xl p-4 flex flex-col items-center justify-center">
+              <div className="text-xs uppercase text-neutral-500 font-semibold mb-2">Status</div>
+              <div className="text-2xl font-bold text-white mb-1">{joinedCount} Joined</div>
+              <div className="text-xs text-neutral-400">Waiting for host to start...</div>
+            </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <div className="bg-neutral-800/40 border border-neutral-700 rounded-xl p-4 min-h-[150px] flex flex-col justify-between">
@@ -611,32 +655,41 @@ export default function CharacterDraftApp() {
     );
   }
   const needReconnect = lobby.draftActive && !iAmJoined;
-  const reconnectStrip = needReconnect ? (
-    <div className="bg-neutral-800 border border-neutral-700 rounded-lg p-2 text-xs text-neutral-300 flex flex-wrap items-center gap-2 justify-between">
-      <div className="flex-1">Reconnect: enter the exact name you used to join.</div>
-      <input className="bg-neutral-900 border border-neutral-700 rounded px-2 py-1 text-[11px] text-white w-[120px]" placeholder="Your name" value={meName} onChange={(e) => setMeName(e.target.value)} />
-      <button className="bg-neutral-900 border border-neutral-700 rounded px-2 py-1 text-[11px] hover:bg-neutral-700 text-white">Set</button>
+  const reconnectModal = needReconnect ? (
+    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 backdrop-blur-sm">
+      <div className="bg-neutral-900 border border-neutral-700 rounded-2xl p-8 w-full max-w-md text-center shadow-2xl">
+        <h2 className="text-2xl font-bold text-white mb-2">Rejoin Draft</h2>
+        <p className="text-neutral-400 mb-6">
+          You are disconnected. Enter your name exactly as it was to rejoin.
+        </p>
+        <input
+          className="w-full bg-neutral-950 border border-neutral-700 rounded-lg px-4 py-3 text-lg text-white mb-4 focus:border-fuchsia-500 outline-none"
+          placeholder="Your Name"
+          value={meName}
+          onChange={(e) => setMeName(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && tryJoin()}
+        />
+        <button
+          onClick={tryJoin}
+          className="w-full bg-fuchsia-600 hover:bg-fuchsia-500 text-white font-bold py-3 rounded-lg transition"
+        >
+          Rejoin Lobby
+        </button>
+      </div>
     </div>
   ) : null;
 
   return (
     <div className="min-h-screen bg-neutral-900 text-neutral-100 p-4 font-sans">
       <header className="mb-4 flex flex-col gap-3">
-        {reconnectStrip}
+        {reconnectModal}
         {canPromptFinish && !iAmHost && !lobby.completedAt && (
           <div className="text-xs text-amber-300 bg-amber-500/10 border border-amber-400/30 rounded px-3 py-2">
             Waiting for host {lobby.hostName ?? "(host)"} to finish the draft.
           </div>
         )}
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className={["flex-1 min-w-[200px] text-center border rounded-xl px-4 py-3 bg-neutral-900 ring-2", onClockColor.ring].join(" ")}>
-            <div className="text-sm font-bold text-white leading-tight flex flex-wrap items-center justify-center gap-2">
-              <span className="uppercase text-[10px] tracking-wide text-neutral-500 font-semibold">On the Clock:</span>
-              <span className="text-lg font-extrabold text-white">{currentPlayer ? currentPlayer.name : "(nobody)"}</span>
-              <span className="text-[12px] text-neutral-400">R{lobby.round}</span>
-              <span className="font-mono text-white text-[13px] bg-neutral-800/60 border border-neutral-700 rounded px-2 py-[2px]">{clockDisplay}</span>
-            </div>
-          </div>
+          <DraftTimer lobby={lobby} />
           <div className="text-right flex-1 min-w-[200px]">
             <div className="text-[10px] uppercase tracking-wide text-neutral-500 font-semibold">Last Pick</div>
             {lobby.lastPick ? (
@@ -669,95 +722,24 @@ export default function CharacterDraftApp() {
         </div>
       </header>
       <main className="grid xl:grid-cols-[1fr_1fr] gap-4">
-        <aside className="space-y-4 overflow-y-auto max-h-[80vh] pr-1">
-          {lobby.players.map((p, i) => {
-            const col = colorStyleForColor(p.color);
-            const isOnClock = i === lobby.currentPlayerIndex;
-            return (
-              <div key={p.id} className={`rounded-xl border p-3 bg-neutral-900 ${isOnClock ? col.border : "border-neutral-700"}`}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-semibold">{p.name}</span>
-                  <span className="text-xs text-neutral-500">
-                    {p.popularityTotal.toLocaleString()} {"\u2665"}
-                  </span>
-                </div>
-                <div className="grid grid-cols-5 gap-2">
-                  {Object.entries(p.slots).map(([slotName, charValue]) => {
-                    const char = charValue as Character | null;
-                    return (
-                      <div key={slotName} className={`relative w-[90px] h-[120px] rounded border overflow-hidden ${col.glow} group`}>
-                        {char ? (
-                          <>
-                            <img src={char.image.large} alt={char.name.full} className="w-full h-full object-cover" />
-                            <div className={`absolute bottom-0 left-0 right-0 bg-black/70 text-[11px] font-semibold text-center py-[3px] ${col.text}`}>{slotName}</div>
-                            <div className="absolute inset-0 bg-black/80 text-[11px] text-white font-semibold flex items-center justify-center px-2 text-center opacity-0 group-hover:opacity-100 transition-opacity">{char.name.full}</div>
-                          </>
-                        ) : (
-                          <div className="flex items-center justify-center w-full h-full text-[11px] font-semibold text-neutral-600 text-center leading-tight px-1">{slotName}</div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
-        </aside>
-        <section className="flex flex-col bg-neutral-900/0">
-          <div
-            className="bg-neutral-800/40 border border-neutral-700 rounded-xl p-3 mb-3 shadow-[0_10px_20px_rgba(0,0,0,0.6)]"
-            style={{ position: "sticky", top: 0, zIndex: 20, backgroundColor: "rgba(23,23,23,0.9)", backdropFilter: "blur(4px)" }}
-          >
-            <div className="flex flex-wrap gap-4 items-start justify-between">
-              <div className="flex flex-col">
-                <label className="text-[10px] uppercase text-neutral-500 font-semibold">Gender</label>
-                <select value={filters.gender} onChange={(e) => setFilters((f) => ({ ...f, gender: e.target.value }))} className="bg-neutral-900 border border-neutral-700 rounded px-2 py-1 text-sm text-white">
-                  <option>All</option>
-                  <option>Male</option>
-                  <option>Female</option>
-                  <option>Non-binary</option>
-                  <option>Unknown</option>
-                </select>
-              </div>
-              <div className="flex flex-col min-w-[180px] flex-1 max-w-[220px]">
-                <label className="text-[10px] uppercase text-neutral-500 font-semibold">Search</label>
-                <input value={filters.searchText} onChange={(e) => setFilters((f) => ({ ...f, searchText: e.target.value }))} placeholder="Character name" className="bg-neutral-900 border border-neutral-700 rounded px-2 py-1 text-sm text-white w-full" />
-              </div>
-              <div className="flex flex-col">
-                <label className="text-[10px] uppercase text-neutral-500 font-semibold">Can&apos;t Find Them?</label>
-                <button onClick={() => { setShowDeepSearchModal(true); setDeepSearchQuery(""); setDeepSearchResults([]); }} className="text-[11px] font-semibold bg-gradient-to-r from-indigo-600/30 to-fuchsia-600/30 border border-fuchsia-500/40 text-fuchsia-300 rounded px-2 py-1 hover:from-indigo-600/40 hover:to-fuchsia-600/40 hover:text-white shadow-[0_0_10px_rgba(217,70,239,0.6)]">Deep Cut Search</button>
-              </div>
-              <div className="text-[10px] text-neutral-500 leading-tight">
-                {filteredLocalPool.length} matches in local pool
-                <br />
-                total loaded: {characters.length}
-              </div>
-            </div>
-          </div>
-          <div className="overflow-y-auto max-h-[70vh] pr-1 grid grid-cols-1 md:grid-cols-2 gap-3">
-            {filteredLocalPool.map((c, idx) => (
-              <div key={c.id} className="bg-neutral-900 border border-neutral-700 rounded-xl p-3 flex gap-3">
-                <img src={c.image.large} alt={c.name.full} className="w-20 h-28 object-cover rounded" />
-                <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-neutral-100 truncate">{c.name.full}</div>
-                  <div className="text-xs text-neutral-400 truncate">{c.name.native}</div>
-                  <div className="text-xs text-neutral-500 mt-1">
-                    {c.gender} {"\u2022"} {"\u2764"} {c.favourites.toLocaleString()}
-                  </div>
-                  <button onClick={() => beginDraftPick(c.id)} className="mt-2 text-[11px] bg-neutral-800 border border-neutral-700 rounded px-2 py-1 hover:bg-neutral-700">Pick #{idx + 1}</button>
-                </div>
-              </div>
-            ))}
-            {filteredLocalPool.length === 0 && (
-              <div className="col-span-full text-center text-neutral-500 text-sm py-12">
-                No local matches.
-                <div className="mt-2 text-[11px] text-neutral-600">
-                  Try Deep Cut Search {"\u2192"} to pull from AniList directly.
-                </div>
-              </div>
-            )}
-          </div>
-        </section>
+        <PlayerList
+          lobby={lobby}
+          downloadingBoards={downloadingBoards}
+          onDownloadBoard={downloadBoardPng}
+          boardRefs={boardRefs}
+        />
+        <CharacterPool
+          characters={characters}
+          filteredPool={filteredLocalPool}
+          filters={filters}
+          setFilters={setFilters}
+          onPick={beginDraftPick}
+          onDeepSearch={() => {
+            setShowDeepSearchModal(true);
+            setDeepSearchQuery("");
+            setDeepSearchResults([]);
+          }}
+        />
       </main>
 
       {showCompletionModal && (
