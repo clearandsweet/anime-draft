@@ -6,6 +6,7 @@ import { colorStyleForColor } from "../../lib/colors";
 import { DraftTimer } from "./components/DraftTimer";
 import { PlayerList } from "./components/PlayerList";
 import { CharacterPool } from "./components/CharacterPool";
+import { ThanksgivingTheme } from "./components/ThanksgivingTheme";
 
 type Character = {
   id: number;
@@ -137,8 +138,20 @@ export default function CharacterDraftApp() {
       // Helper to update state safely
       const updateState = () => {
         if (!active) return;
-        const finalList = Array.from(byId.values()).sort((a, b) => b.favourites - a.favourites);
-        setCharacters(finalList);
+        setCharacters((prev) => {
+          // Merge new characters with existing ones to avoid overwriting deep search results or other state
+          // Actually, deep search results are separate. But let's be safe.
+          // Wait, setCharacters replaces the whole list.
+          // The issue might be that if deep search runs, it might trigger something?
+          // No, deep search uses `deepSearchResults`.
+          // The user said "stops loading".
+          // Maybe the browser pauses the background fetch if many requests happen?
+          // Let's just make sure we are robust.
+          const combined = new Map<number, Character>();
+          prev.forEach(c => combined.set(c.id, c));
+          byId.forEach(c => combined.set(c.id, c));
+          return Array.from(combined.values()).sort((a, b) => b.favourites - a.favourites);
+        });
       };
 
       for (let page = 1; page <= 200; page++) {
@@ -680,8 +693,9 @@ export default function CharacterDraftApp() {
   ) : null;
 
   return (
-    <div className="min-h-screen bg-neutral-900 text-neutral-100 p-4 font-sans">
-      <header className="mb-4 flex flex-col gap-3">
+    <div className="min-h-screen bg-neutral-900 text-neutral-100 p-4 font-sans relative">
+      <ThanksgivingTheme />
+      <header className="mb-4 flex flex-col gap-3 relative z-10">
         {reconnectModal}
         {canPromptFinish && !iAmHost && !lobby.completedAt && (
           <div className="text-xs text-amber-300 bg-amber-500/10 border border-amber-400/30 rounded px-3 py-2">
