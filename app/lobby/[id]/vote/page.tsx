@@ -364,10 +364,10 @@ export default function VoteDraftBoards() {
       </main>
 
       {/* AI Judge Sidebar */}
-      <div className="fixed right-0 top-20 bottom-0 w-80 bg-neutral-900/90 border-l border-neutral-800 p-4 overflow-y-auto backdrop-blur-md transform transition-transform translate-x-0">
+      <div className="fixed right-0 top-20 bottom-0 w-80 bg-neutral-900/90 border-l border-neutral-800 p-4 overflow-y-auto backdrop-blur-md z-40">
         <h2 className="text-lg font-bold text-white mb-4">AI Judge</h2>
         <div className="space-y-3">
-          {(lobby?.competitions || ["Fight"]).map((comp) => (
+          {(lobby?.competitions?.length ? lobby.competitions : ["Fight"]).map((comp) => (
             <div key={comp} className="bg-neutral-950 border border-neutral-800 rounded-xl p-3">
               <div className="text-sm font-semibold text-neutral-300 mb-2">{comp}</div>
               <button
