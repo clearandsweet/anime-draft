@@ -830,6 +830,7 @@ export default function CharacterDraftApp() {
           </div>
         </div>
       )}
+      <ThanksgivingTheme />
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { colorStyleForColor } from "../../../lib/colors";
+import { ThanksgivingTheme } from "../components/ThanksgivingTheme";
 
 type Character = {
   id: number;
@@ -386,6 +387,7 @@ export default function VoteDraftBoards() {
           ))}
         </div>
       </div>
+      <ThanksgivingTheme />
     </div>
   );
 }
