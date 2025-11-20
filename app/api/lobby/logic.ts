@@ -3,6 +3,7 @@
 // so it can be reused with different persistence backends (e.g., filesystem).
 
 import { CATEGORY_POOL, DEFAULT_SLOTS } from "./categories";
+import { getRandomCompetitions } from "./competitions";
 
 export type Character = {
   id: number;
@@ -49,6 +50,7 @@ export type LobbyState = {
   categoryMode: "default" | "random";
   slotNames: string[];
   version: number;
+  competitions: string[];
 };
 
 
@@ -81,6 +83,7 @@ export function makeFreshLobby(): LobbyState {
     categoryMode: "default",
     slotNames: [...DEFAULT_SLOTS],
     version: 0,
+    competitions: ["Fight", ...getRandomCompetitions(2)],
   };
 }
 

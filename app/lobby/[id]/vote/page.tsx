@@ -21,6 +21,7 @@ type Player = {
 type LobbyState = {
   players: Player[];
   completedAt: string | null;
+  competitions?: string[];
 };
 
 type VoteTotals = Record<
@@ -57,6 +58,9 @@ export default function VoteDraftBoards() {
   const [alreadyVoted, setAlreadyVoted] = useState(false);
   const [totals, setTotals] = useState<VoteTotals>({});
   const [ballots, setBallots] = useState(0);
+  const [judging, setJudging] = useState(false);
+  const [judgeResult, setJudgeResult] = useState<string | null>(null);
+  const [activeCompetition, setActiveCompetition] = useState<string | null>(null);
 
   async function refresh() {
     try {
@@ -73,6 +77,7 @@ export default function VoteDraftBoards() {
         setLobby({
           players: Array.isArray(stateData.players) ? stateData.players : [],
           completedAt: stateData.completedAt ?? null,
+          competitions: stateData.competitions || ["Fight"],
         });
       }
       if (votesRes.ok) {
@@ -161,6 +166,30 @@ export default function VoteDraftBoards() {
     }
   }
 
+  async function handleJudge(competition: string) {
+    if (judging) return;
+    setJudging(true);
+    setJudgeResult(null);
+    setActiveCompetition(competition);
+    try {
+      const res = await fetch("/api/ai/judge", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lobby, competition }),
+      });
+      const data = await res.json();
+      if (data.result) {
+        setJudgeResult(data.result);
+      } else {
+        setJudgeResult("The judge is silent (Error).");
+      }
+    } catch {
+      setJudgeResult("The judge is silent (Network Error).");
+    } finally {
+      setJudging(false);
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-neutral-950 text-neutral-200 flex items-center justify-center">
@@ -211,11 +240,10 @@ export default function VoteDraftBoards() {
           <button
             onClick={handleSubmit}
             disabled={!canSubmit}
-            className={`px-4 py-2 rounded-lg border text-sm transition shadow-sm ${
-              canSubmit
-                ? "border-emerald-500 text-emerald-300 bg-emerald-600/20 hover:bg-emerald-600/30"
-                : "border-neutral-700 bg-neutral-900 text-neutral-500 cursor-not-allowed"
-            }`}
+            className={`px-4 py-2 rounded-lg border text-sm transition shadow-sm ${canSubmit
+              ? "border-emerald-500 text-emerald-300 bg-emerald-600/20 hover:bg-emerald-600/30"
+              : "border-neutral-700 bg-neutral-900 text-neutral-500 cursor-not-allowed"
+              }`}
           >
             {submitting ? "Submitting…" : alreadyVoted ? "Vote Submitted" : "Submit Vote"}
           </button>
@@ -232,20 +260,18 @@ export default function VoteDraftBoards() {
             return (
               <div
                 key={player.id}
-                className={`relative border rounded-2xl overflow-hidden bg-neutral-900/80 backdrop-blur-sm transition ${
-                  label ? col.border : "border-neutral-800"
-                } ${disabled ? "opacity-80" : "cursor-pointer hover:border-fuchsia-500/60"}`}
+                className={`relative border rounded-2xl overflow-hidden bg-neutral-900/80 backdrop-blur-sm transition ${label ? col.border : "border-neutral-800"
+                  } ${disabled ? "opacity-80" : "cursor-pointer hover:border-fuchsia-500/60"}`}
                 onClick={() => !disabled && toggleSelection(player.id)}
               >
                 <div className="p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="text-lg font-semibold text-white">{player.name}</div>
                     <div
-                      className={`text-xs ${
-                        player.popularityTotal === worstDemerit && worstDemerit > 0
-                          ? "text-red-400 font-semibold"
-                          : "text-neutral-500"
-                      }`}
+                      className={`text-xs ${player.popularityTotal === worstDemerit && worstDemerit > 0
+                        ? "text-red-400 font-semibold"
+                        : "text-neutral-500"
+                        }`}
                     >
                       Popularity Shame Demerits: {player.popularityTotal.toLocaleString()}
                     </div>
@@ -316,9 +342,8 @@ export default function VoteDraftBoards() {
                       <div className="flex flex-col">
                         <span className="font-semibold text-white">{player?.name || playerId}</span>
                         <span
-                          className={`text-[11px] ${
-                            isWorst ? "text-red-400 font-semibold" : "text-neutral-500"
-                          }`}
+                          className={`text-[11px] ${isWorst ? "text-red-400 font-semibold" : "text-neutral-500"
+                            }`}
                         >
                           Shame Demerits: {player?.popularityTotal.toLocaleString() ?? "0"}
                         </span>
@@ -337,7 +362,30 @@ export default function VoteDraftBoards() {
           </section>
         )}
       </main>
+
+      {/* AI Judge Sidebar */}
+      <div className="fixed right-0 top-20 bottom-0 w-80 bg-neutral-900/90 border-l border-neutral-800 p-4 overflow-y-auto backdrop-blur-md transform transition-transform translate-x-0">
+        <h2 className="text-lg font-bold text-white mb-4">AI Judge</h2>
+        <div className="space-y-3">
+          {(lobby?.competitions || ["Fight"]).map((comp) => (
+            <div key={comp} className="bg-neutral-950 border border-neutral-800 rounded-xl p-3">
+              <div className="text-sm font-semibold text-neutral-300 mb-2">{comp}</div>
+              <button
+                onClick={() => handleJudge(comp)}
+                disabled={judging}
+                className="w-full py-2 bg-fuchsia-600/20 border border-fuchsia-500/50 text-fuchsia-300 rounded hover:bg-fuchsia-600/30 text-xs transition disabled:opacity-50"
+              >
+                {judging && activeCompetition === comp ? "Judging..." : "Judge Winner"}
+              </button>
+              {activeCompetition === comp && judgeResult && (
+                <div className="mt-3 text-xs text-neutral-400 whitespace-pre-wrap animate-in fade-in slide-in-from-top-2">
+                  {judgeResult}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
-
