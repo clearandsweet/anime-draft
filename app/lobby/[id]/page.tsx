@@ -602,7 +602,7 @@ export default function CharacterDraftApp() {
           </div>
         </header>
 
-        <main className="mt-8 max-w-6xl mx-auto grid gap-6 xl:grid-cols-2">
+        <main className="mt-8 max-w-6xl mx-auto grid gap-6 xl:grid-cols-2 relative z-10">
           {lobby.players.map((p) => {
             const col = colorStyleForColor(p.color);
             const downloading = Boolean(downloadingBoards[p.id]);
@@ -693,9 +693,9 @@ export default function CharacterDraftApp() {
   ) : null;
 
   return (
-    <div className="min-h-screen bg-neutral-900 text-neutral-100 p-4 font-sans relative">
-      <ThanksgivingTheme />
-      <header className="mb-4 flex flex-col gap-3 relative z-10">
+    <div className="min-h-screen bg-neutral-950 text-neutral-200 font-sans selection:bg-fuchsia-900 selection:text-white pb-20 relative">
+      {/* Header */}
+      <header className="border-b border-neutral-800 bg-neutral-950/80 backdrop-blur-md sticky top-0 z-30">
         {reconnectModal}
         {canPromptFinish && !iAmHost && !lobby.completedAt && (
           <div className="text-xs text-amber-300 bg-amber-500/10 border border-amber-400/30 rounded px-3 py-2">

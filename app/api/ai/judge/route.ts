@@ -53,7 +53,7 @@ Format the output as:
     } catch (error) {
         console.error("AI Judge Error:", error);
         return NextResponse.json(
-            { error: "Failed to generate judgment" },
+            { error: error instanceof Error ? error.message : "Failed to generate judgment" },
             { status: 500 }
         );
     }

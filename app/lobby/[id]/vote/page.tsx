@@ -182,10 +182,10 @@ export default function VoteDraftBoards() {
       if (data.result) {
         setJudgeResult(data.result);
       } else {
-        setJudgeResult("The judge is silent (Error).");
+        setJudgeResult(`The judge is silent. (${data.error || "Unknown Error"})`);
       }
-    } catch {
-      setJudgeResult("The judge is silent (Network Error).");
+    } catch (e) {
+      setJudgeResult(`The judge is silent. (Network Error: ${e})`);
     } finally {
       setJudging(false);
     }
@@ -228,7 +228,7 @@ export default function VoteDraftBoards() {
   const rankedTotals = sortByPoints(totals, lobby.players);
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-neutral-100 font-sans">
+    <div className="min-h-screen bg-neutral-950 text-neutral-100 font-sans relative">
       <header className="sticky top-0 z-30 bg-neutral-950/95 backdrop-blur border-b border-neutral-800">
         <div className="max-w-6xl mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-4">
           <div>
@@ -251,7 +251,7 @@ export default function VoteDraftBoards() {
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-4 py-6 space-y-10">
+      <main className="max-w-6xl mx-auto px-4 py-6 space-y-10 relative z-10">
         <section className="grid gap-5 lg:grid-cols-2">
           {lobby.players.map((player) => {
             const col = colorStyleForColor(player.color);
@@ -362,31 +362,33 @@ export default function VoteDraftBoards() {
             </div>
           </section>
         )}
-      </main>
 
-      {/* AI Judge Sidebar */}
-      <div className="fixed right-0 top-20 bottom-0 w-80 bg-neutral-900/90 border-l border-neutral-800 p-4 overflow-y-auto backdrop-blur-md z-40">
-        <h2 className="text-lg font-bold text-white mb-4">AI Judge</h2>
-        <div className="space-y-3">
-          {(lobby?.competitions?.length ? lobby.competitions : ["Fight"]).map((comp) => (
-            <div key={comp} className="bg-neutral-950 border border-neutral-800 rounded-xl p-3">
-              <div className="text-sm font-semibold text-neutral-300 mb-2">{comp}</div>
-              <button
-                onClick={() => handleJudge(comp)}
-                disabled={judging}
-                className="w-full py-2 bg-fuchsia-600/20 border border-fuchsia-500/50 text-fuchsia-300 rounded hover:bg-fuchsia-600/30 text-xs transition disabled:opacity-50"
-              >
-                {judging && activeCompetition === comp ? "Judging..." : "Judge Winner"}
-              </button>
-              {activeCompetition === comp && judgeResult && (
-                <div className="mt-3 text-xs text-neutral-400 whitespace-pre-wrap animate-in fade-in slide-in-from-top-2">
-                  {judgeResult}
+        {/* AI Judge Section */}
+        <section className="space-y-4 pt-8 border-t border-neutral-800">
+          <h2 className="text-xl font-bold text-white">AI Judge</h2>
+          <div className="grid gap-4 md:grid-cols-3">
+            {(lobby?.competitions?.length ? lobby.competitions : ["Fight"]).map((comp) => (
+              <div key={comp} className="bg-neutral-900/50 border border-neutral-800 rounded-xl p-4 flex flex-col gap-3">
+                <div className="font-semibold text-neutral-200 min-h-[3rem] flex items-center">
+                  {comp}
                 </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
+                <button
+                  onClick={() => handleJudge(comp)}
+                  disabled={judging}
+                  className="w-full py-2.5 bg-fuchsia-600/20 border border-fuchsia-500/50 text-fuchsia-300 rounded-lg hover:bg-fuchsia-600/30 text-sm font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {judging && activeCompetition === comp ? "Judging..." : "Judge Winner"}
+                </button>
+                {activeCompetition === comp && judgeResult && (
+                  <div className="mt-2 text-sm text-neutral-300 whitespace-pre-wrap bg-neutral-950 rounded-lg p-3 border border-neutral-800 animate-in fade-in slide-in-from-top-2">
+                    {judgeResult}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      </main>
       <ThanksgivingTheme />
     </div>
   );
