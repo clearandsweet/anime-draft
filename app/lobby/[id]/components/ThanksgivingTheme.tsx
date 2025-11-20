@@ -34,11 +34,11 @@ export function ThanksgivingTheme() {
         }
         /* Custom Cursor - Turkey Leg */
         body {
-          cursor: url('/turkey_leg_cursor.png') 4 24, auto;
+          cursor: url('/turkey_leg_cursor.png'), auto !important;
         }
         /* Fallback if image fails or for pointers */
-        a, button, [role="button"] {
-          cursor: url('/turkey_leg_cursor.png') 4 24, pointer;
+        a, button, [role="button"], input, select, textarea {
+          cursor: url('/turkey_leg_cursor.png'), pointer !important;
         }
       `}</style>
     </div>

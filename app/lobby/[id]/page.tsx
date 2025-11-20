@@ -632,7 +632,7 @@ export default function CharacterDraftApp() {
                           <div className={`text-[10px] uppercase font-semibold text-center py-1 ${col.overlay} text-white`}>
                             {slotName}
                           </div>
-                          <div className="aspect-[3/4] w-full bg-neutral-950 flex items-center justify-center">
+                          <div className="aspect-[3/4] w-full bg-neutral-950 flex items-center justify-center relative z-20">
                             {char ? (
                               <img src={char.image.large} alt={char.name.full} className="w-full h-full object-cover" />
                             ) : (
