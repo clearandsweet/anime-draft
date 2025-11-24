@@ -59,9 +59,7 @@ export default function VoteDraftBoards() {
   const [alreadyVoted, setAlreadyVoted] = useState(false);
   const [totals, setTotals] = useState<VoteTotals>({});
   const [ballots, setBallots] = useState(0);
-  const [judging, setJudging] = useState(false);
-  const [judgeResult, setJudgeResult] = useState<string | null>(null);
-  const [activeCompetition, setActiveCompetition] = useState<string | null>(null);
+
 
   async function refresh() {
     try {
@@ -167,29 +165,7 @@ export default function VoteDraftBoards() {
     }
   }
 
-  async function handleJudge(competition: string) {
-    if (judging) return;
-    setJudging(true);
-    setJudgeResult(null);
-    setActiveCompetition(competition);
-    try {
-      const res = await fetch("/api/ai/judge", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lobby, competition }),
-      });
-      const data = await res.json();
-      if (data.result) {
-        setJudgeResult(data.result);
-      } else {
-        setJudgeResult(`The judge is silent. (${data.error || "Unknown Error"})`);
-      }
-    } catch (e) {
-      setJudgeResult(`The judge is silent. (Network Error: ${e})`);
-    } finally {
-      setJudging(false);
-    }
-  }
+
 
   if (loading) {
     return (
@@ -363,31 +339,7 @@ export default function VoteDraftBoards() {
           </section>
         )}
 
-        {/* AI Judge Section */}
-        <section className="space-y-4 pt-8 border-t border-neutral-800">
-          <h2 className="text-xl font-bold text-white">AI Judge</h2>
-          <div className="grid gap-4 md:grid-cols-3">
-            {(lobby?.competitions?.length ? lobby.competitions : ["Fight"]).map((comp) => (
-              <div key={comp} className="bg-neutral-900/50 border border-neutral-800 rounded-xl p-4 flex flex-col gap-3">
-                <div className="font-semibold text-neutral-200 min-h-[3rem] flex items-center">
-                  {comp}
-                </div>
-                <button
-                  onClick={() => handleJudge(comp)}
-                  disabled={judging}
-                  className="w-full py-2.5 bg-fuchsia-600/20 border border-fuchsia-500/50 text-fuchsia-300 rounded-lg hover:bg-fuchsia-600/30 text-sm font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {judging && activeCompetition === comp ? "Judging..." : "Judge Winner"}
-                </button>
-                {activeCompetition === comp && judgeResult && (
-                  <div className="mt-2 text-sm text-neutral-300 whitespace-pre-wrap bg-neutral-950 rounded-lg p-3 border border-neutral-800 animate-in fade-in slide-in-from-top-2">
-                    {judgeResult}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </section>
+
       </main>
       <ThanksgivingTheme />
     </div>
