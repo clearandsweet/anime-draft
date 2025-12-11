@@ -154,19 +154,30 @@ export default function CharacterDraftApp() {
         });
       };
 
+      let consecutiveFailures = 0;
+
       for (let page = 1; page <= 200; page++) {
         if (!active) break;
         try {
           const res = await fetch(`/api/characters?page=${page}`, { cache: "no-store" });
           if (!res.ok) {
+            consecutiveFailures++;
+            if (consecutiveFailures > 3) {
+              console.warn("Too many fetch failures, stopping character load.");
+              break;
+            }
             // If rate limited or error, wait a bit longer then continue or break
             await new Promise((r) => setTimeout(r, 2000));
             continue;
           }
+
           const data = await res.json();
           const chunk: Character[] = data?.characters || [];
 
           if (!chunk.length) break; // No more characters
+
+          // Reset failures on success
+          consecutiveFailures = 0;
 
           let newOnes = 0;
           for (const ch of chunk) {
@@ -188,6 +199,11 @@ export default function CharacterDraftApp() {
 
         } catch (e) {
           console.error("Fetch error page", page, e);
+          consecutiveFailures++;
+          if (consecutiveFailures > 3) {
+            console.warn("Too many fetch exceptions, stopping character load.");
+            break;
+          }
           await new Promise((r) => setTimeout(r, 2000));
         }
       }

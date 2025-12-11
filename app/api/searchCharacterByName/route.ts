@@ -41,35 +41,51 @@ type NormalizedCharacter = {
 };
 
 async function searchAniListByName(term: string): Promise<NormalizedCharacter[]> {
-  const res = await fetch(ANILIST_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body: JSON.stringify({
-      query: SEARCH_QUERY,
-      variables: { search: term },
-    }),
-  });
+  let attempts = 0;
+  const maxAttempts = 3;
 
-  if (!res.ok) {
-    throw new Error(`AniList search failed ${res.status}`);
+  while (attempts < maxAttempts) {
+    attempts++;
+    const res = await fetch(ANILIST_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({
+        query: SEARCH_QUERY,
+        variables: { search: term },
+      }),
+    });
+
+    if (res.status === 429) {
+      // Rate limited. Wait and retry.
+      if (attempts < maxAttempts) {
+        console.warn(`AniList 429. Retrying attempt ${attempts + 1}...`);
+        await new Promise((r) => setTimeout(r, 1500 * attempts)); // Backoff: 1.5s, 3s
+        continue;
+      }
+    }
+
+    if (!res.ok) {
+      throw new Error(`AniList search failed ${res.status}`);
+    }
+
+    const data = (await res.json()) as AniListSearchResponse;
+    const chars = data?.data?.Page?.characters ?? [];
+
+    return chars.map((c) => ({
+      id: c.id,
+      name: {
+        full: c.name?.full ?? "",
+        native: c.name?.native ?? "",
+      },
+      gender: c.gender ?? "Unknown",
+      image: { large: c.image?.large ?? "" },
+      favourites: c.favourites ?? 0,
+    }));
   }
-
-  const data = (await res.json()) as AniListSearchResponse;
-  const chars = data?.data?.Page?.characters ?? [];
-
-  return chars.map((c) => ({
-    id: c.id,
-    name: {
-      full: c.name?.full ?? "",
-      native: c.name?.native ?? "",
-    },
-    gender: c.gender ?? "Unknown",
-    image: { large: c.image?.large ?? "" },
-    favourites: c.favourites ?? 0,
-  }));
+  throw new Error("AniList search failed after retries");
 }
 
 export async function GET(req: Request) {
@@ -100,14 +116,14 @@ export async function GET(req: Request) {
     const message =
       err instanceof Error ? err.message : "search failed";
     return new Response(
-        JSON.stringify({
-          error: message,
-          characters: [],
-        }),
-        {
-          status: 500,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
+      JSON.stringify({
+        error: message,
+        characters: [],
+      }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   }
 }

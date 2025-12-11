@@ -34,6 +34,7 @@ export type LobbyState = {
   round: number;
   currentPlayerIndex: number;
   timerSeconds: number;
+  lastTickAt: number; // [NEW] Timestamp of last tick to prevent multi-client speedup
   lastPick: null | {
     playerName: string;
     char: Character;
@@ -71,7 +72,8 @@ export function makeFreshLobby(): LobbyState {
     players: [],
     round: 1,
     currentPlayerIndex: 0,
-    timerSeconds: 180,
+    timerSeconds: 300, // [MODIFIED] 5 minutes
+    lastTickAt: Date.now(),
     lastPick: null,
     history: [],
     targetPlayers: 100, // unlimited effectively
@@ -185,7 +187,8 @@ export function start(state: LobbyState, requesterName: string) {
   state.players = shuffle(state.players);
   state.round = 1;
   state.currentPlayerIndex = 0;
-  state.timerSeconds = 180;
+  state.timerSeconds = 300; // [MODIFIED]
+  state.lastTickAt = Date.now(); // [NEW]
   state.draftActive = true;
   state.startedAt = new Date().toISOString();
   state.completedAt = null;
@@ -256,8 +259,30 @@ export function undo(state: LobbyState, requesterName: string) {
 
 export function tick(state: LobbyState) {
   if (!state.draftActive) return;
-  if (state.timerSeconds > 0) state.timerSeconds -= 1;
-  if (state.timerSeconds <= 0) doAutopick(state);
+
+  const now = Date.now();
+  // Initialize lastTickAt if missing (migration)
+  if (!state.lastTickAt) state.lastTickAt = now;
+
+  const deltaMs = now - state.lastTickAt;
+  if (deltaMs < 1000) return; // Not enough time passed
+
+  const secondsPassed = Math.floor(deltaMs / 1000);
+
+  // Only tick if at least 1 second passed
+  if (secondsPassed >= 1) {
+    state.timerSeconds -= secondsPassed;
+    // Advance lastTickAt by the exact seconds consumed to keep alignment, 
+    // or just set to now. Setting to now is safer against drift if we process slowly.
+    // But setting to (lastTickAt + secondsPassed * 1000) is more precise.
+    // Let's just set to now to be robust against clock jumps.
+    state.lastTickAt = now;
+  }
+
+  if (state.timerSeconds <= 0) {
+    state.timerSeconds = 0;
+    doAutopick(state);
+  }
 }
 
 export function isRoundForward(r: number) {
@@ -265,7 +290,8 @@ export function isRoundForward(r: number) {
 }
 
 export function advanceSnakeTurn(state: LobbyState) {
-  state.timerSeconds = 180;
+  state.timerSeconds = 300; // [MODIFIED]
+  state.lastTickAt = Date.now(); // [NEW]
   const n = state.players.length;
   const forward = isRoundForward(state.round);
   const atEndForward = forward && state.currentPlayerIndex === n - 1;
@@ -280,7 +306,8 @@ export function advanceSnakeTurn(state: LobbyState) {
 
 export function rewindSnakeTurnTo(state: LobbyState, playerIndex: number) {
   state.currentPlayerIndex = playerIndex;
-  state.timerSeconds = 180;
+  state.timerSeconds = 300; // [MODIFIED]
+  state.lastTickAt = Date.now(); // [NEW]
 }
 
 export function doAutopick(state: LobbyState) {
@@ -295,7 +322,7 @@ export function doAutopick(state: LobbyState) {
     return;
   }
   advanceSnakeTurn(state);
-  state.timerSeconds = 180;
+  // advanceSnakeTurn resets timer to 300, so we are good.
   state.history.push({
     playerIndex: indexBefore,
     char: {
