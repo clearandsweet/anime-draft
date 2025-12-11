@@ -78,7 +78,7 @@ function makeFreshLobby(): LobbyState {
     players: [],
     round: 1,
     currentPlayerIndex: 0,
-    timerSeconds: 180,
+    timerSeconds: 300,
     lastPick: null,
     history: [],
     targetPlayers: 4,
