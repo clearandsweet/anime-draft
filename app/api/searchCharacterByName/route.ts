@@ -58,10 +58,10 @@ async function searchAniListByName(term: string): Promise<NormalizedCharacter[]>
       }),
     });
 
-    if (res.status === 429) {
-      // Rate limited. Wait and retry.
+    if (res.status === 429 || (res.status >= 500 && res.status < 600)) {
+      // Rate limited or Server Error. Wait and retry.
       if (attempts < maxAttempts) {
-        console.warn(`AniList 429. Retrying attempt ${attempts + 1}...`);
+        console.warn(`AniList ${res.status}. Retrying attempt ${attempts + 1}...`);
         await new Promise((r) => setTimeout(r, 1500 * attempts)); // Backoff: 1.5s, 3s
         continue;
       }

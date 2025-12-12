@@ -35,6 +35,7 @@ export type LobbyState = {
   currentPlayerIndex: number;
   timerSeconds: number;
   lastTickAt: number; // [NEW] Timestamp of last tick to prevent multi-client speedup
+  isPaused: boolean; // [NEW] Pause state
   lastPick: null | {
     playerName: string;
     char: Character;
@@ -74,6 +75,7 @@ export function makeFreshLobby(): LobbyState {
     currentPlayerIndex: 0,
     timerSeconds: 300, // [MODIFIED] 5 minutes
     lastTickAt: Date.now(),
+    isPaused: false,
     lastPick: null,
     history: [],
     targetPlayers: 100, // unlimited effectively
@@ -189,6 +191,7 @@ export function start(state: LobbyState, requesterName: string) {
   state.currentPlayerIndex = 0;
   state.timerSeconds = 300; // [MODIFIED]
   state.lastTickAt = Date.now(); // [NEW]
+  state.isPaused = false;
   state.draftActive = true;
   state.startedAt = new Date().toISOString();
   state.completedAt = null;
@@ -202,6 +205,7 @@ export function pick(
   args: { actingName: string; slotName: string; chosen: Character }
 ) {
   if (!state.draftActive) return { ok: false, error: "Draft has not started." };
+  if (state.isPaused) return { ok: false, error: "Draft is paused." };
   const { actingName, slotName, chosen } = args;
   const actingLower = actingName.trim().toLowerCase();
   const curIndex = state.currentPlayerIndex;
@@ -251,14 +255,29 @@ export function undo(state: LobbyState, requesterName: string) {
   state.round = roundBefore;
   rewindSnakeTurnTo(state, indexBefore);
   state.draftActive = true;
+  state.isPaused = false; // Unpause on undo just in case
   state.completedAt = null;
   recomputeDraftedIds(state);
   state.version += 1;
   return { ok: true };
 }
 
+export function togglePause(state: LobbyState, requesterName: string) {
+  if (!isHost(state, requesterName)) return { ok: false, error: "Only host can pause/resume." };
+  if (!state.draftActive) return { ok: false, error: "Draft not active." };
+
+  state.isPaused = !state.isPaused;
+  // If resuming, reset lastTickAt so we don't jump ahead
+  if (!state.isPaused) {
+    state.lastTickAt = Date.now();
+  }
+  state.version += 1;
+  return { ok: true, isPaused: state.isPaused };
+}
+
 export function tick(state: LobbyState) {
   if (!state.draftActive) return;
+  if (state.isPaused) return; // Do not tick if paused
 
   const now = Date.now();
   // Initialize lastTickAt if missing (migration)
