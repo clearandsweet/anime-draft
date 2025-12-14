@@ -327,12 +327,20 @@ export default function CharacterDraftApp() {
 
   async function runDeepSearch() {
     if (!deepSearchQuery.trim()) return;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+
     try {
       setDeepSearchLoading(true);
       setDeepSearchError(null);
       deepSearchRunningRef.current = true; // Signal background fetch to pause
 
-      const res = await fetch(`/api/searchCharacterByName?q=${encodeURIComponent(deepSearchQuery.trim())}`, { cache: "no-store" });
+      const res = await fetch(`/api/searchCharacterByName?q=${encodeURIComponent(deepSearchQuery.trim())}`, {
+        cache: "no-store",
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+
       const data = await res.json();
 
       if (!res.ok) {
@@ -349,9 +357,14 @@ export default function CharacterDraftApp() {
         }
       }
     } catch (e: any) {
-      setDeepSearchResults([]);
-      setDeepSearchError(e.message || "Network error during search");
+      if (e.name === "AbortError") {
+        setDeepSearchError("Search timed out. Try again.");
+      } else {
+        setDeepSearchResults([]);
+        setDeepSearchError(e.message || "Network error during search");
+      }
     } finally {
+      clearTimeout(timeoutId);
       setDeepSearchLoading(false);
       deepSearchRunningRef.current = false; // Resume background fetch
     }
@@ -834,6 +847,7 @@ export default function CharacterDraftApp() {
             setDeepSearchQuery("");
             setDeepSearchResults([]);
             setDeepSearchError(null);
+            deepSearchRunningRef.current = false; // reset just in case because strict mode might trigger this weirdly
           }}
           onRandom={handleRandomPick}
         />
@@ -843,7 +857,10 @@ export default function CharacterDraftApp() {
             <div className="bg-neutral-900 border border-neutral-700 rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl">
               <div className="p-4 border-b border-neutral-800 flex justify-between items-center">
                 <h3 className="text-lg font-bold text-white">Deep Cut Search</h3>
-                <button onClick={() => setShowDeepSearchModal(false)} className="text-neutral-400 hover:text-white">✕</button>
+                <button onClick={() => {
+                  setShowDeepSearchModal(false);
+                  deepSearchRunningRef.current = false;
+                }} className="text-neutral-400 hover:text-white">✕</button>
               </div>
               <div className="p-4 border-b border-neutral-800 bg-neutral-800/20">
                 <div className="flex gap-2">
@@ -946,40 +963,7 @@ export default function CharacterDraftApp() {
         </div>
       )}
 
-      {showDeepSearchModal && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-          <div className="bg-neutral-900 border border-neutral-700 rounded-2xl p-6 w-[500px] max-w-[90vw] max-h-[80vh] flex flex-col">
-            <h2 className="text-lg font-bold mb-2 text-white">Deep Cut Character Search</h2>
-            <p className="text-sm text-neutral-400 mb-3 leading-snug">Type part of their name. We&apos;ll query AniList directly, even if they&apos;re super obscure.</p>
-            <div className="flex gap-2 mb-3">
-              <input className="flex-1 bg-neutral-800 border border-neutral-700 rounded px-2 py-2 text-sm text-white" placeholder="e.g. Rakushun" value={deepSearchQuery} onChange={(e) => setDeepSearchQuery(e.target.value)} />
-              <button onClick={runDeepSearch} className="bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm hover:bg-neutral-700 text-white">Search</button>
-            </div>
-            <div className="flex-1 overflow-y-auto border border-neutral-800 rounded p-2 bg-neutral-950/50">
-              {deepSearchLoading && <div className="text-neutral-500 text-sm italic">Searching...</div>}
-              {!deepSearchLoading && deepSearchResults.length === 0 && (<div className="text-neutral-600 text-sm italic">No results yet.</div>)}
-              {!deepSearchLoading && deepSearchResults.length > 0 && (
-                <div className="grid gap-2">
-                  {deepSearchResults.map((c, idx) => (
-                    <div key={c.id} className="bg-neutral-900 border border-neutral-700 rounded-xl p-3 flex gap-3">
-                      <img src={c.image.large} alt={c.name.full} className="w-16 h-20 object-cover rounded" />
-                      <div className="flex-1 min-w-0">
-                        <div className="font-semibold text-neutral-100 truncate">{c.name.full}</div>
-                        <div className="text-xs text-neutral-400 truncate">{c.name.native}</div>
-                        <div className="text-xs text-neutral-500 mt-1">
-                          {c.gender} {"\u2022"} {"\u2764"} {c.favourites.toLocaleString()}
-                        </div>
-                        <button onClick={() => { beginDraftPick(c); setShowDeepSearchModal(false); }} className="mt-2 text-[11px] bg-neutral-800 border border-neutral-700 rounded px-2 py-1 hover:bg-neutral-700">Pick #{idx + 1}</button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            <button onClick={() => { setShowDeepSearchModal(false); setDeepSearchResults([]); setDeepSearchQuery(""); }} className="mt-4 text-xs text-neutral-500 hover:text-neutral-300 self-start">Close</button>
-          </div>
-        </div>
-      )}
+
 
       {showRandomModal && randomCharacter && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
