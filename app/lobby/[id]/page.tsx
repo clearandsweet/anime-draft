@@ -62,6 +62,11 @@ export default function CharacterDraftApp() {
   const [downloadingBoards, setDownloadingBoards] = useState<Record<string, boolean>>({});
   const [pollCopied, setPollCopied] = useState(false);
   const [pollLink, setPollLink] = useState<string>("");
+
+  // random character modal
+  const [showRandomModal, setShowRandomModal] = useState<boolean>(false);
+  const [randomCharacter, setRandomCharacter] = useState<Character | null>(null);
+
   const [completionDismissed, setCompletionDismissed] = useState(false);
   const [finishingDraft, setFinishingDraft] = useState(false);
   const [lobby, setLobby] = useState<LobbyState>({
@@ -524,6 +529,16 @@ export default function CharacterDraftApp() {
     });
   }, [characters, filters, lobby.draftedIds]);
 
+  function handleRandomPick() {
+    if (filteredLocalPool.length === 0) {
+      alert("No characters match your current filters.");
+      return;
+    }
+    const idx = Math.floor(Math.random() * filteredLocalPool.length);
+    setRandomCharacter(filteredLocalPool[idx]);
+    setShowRandomModal(true);
+  }
+
   if (loadingChars) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-neutral-900 text-neutral-400 text-lg">
@@ -820,6 +835,7 @@ export default function CharacterDraftApp() {
             setDeepSearchResults([]);
             setDeepSearchError(null);
           }}
+          onRandom={handleRandomPick}
         />
 
         {showDeepSearchModal && (
@@ -961,6 +977,45 @@ export default function CharacterDraftApp() {
               )}
             </div>
             <button onClick={() => { setShowDeepSearchModal(false); setDeepSearchResults([]); setDeepSearchQuery(""); }} className="mt-4 text-xs text-neutral-500 hover:text-neutral-300 self-start">Close</button>
+          </div>
+        </div>
+      )}
+
+      {showRandomModal && randomCharacter && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-neutral-900 border border-neutral-700 rounded-2xl p-6 w-[500px] max-w-[90vw] flex flex-col items-center text-center shadow-[0_0_50px_rgba(16,185,129,0.2)]">
+            <h2 className="text-xl font-bold mb-1 text-white">Random Pick</h2>
+            <p className="text-sm text-neutral-400 mb-6 uppercase tracking-wider font-semibold">From your current view</p>
+
+            <div className="bg-neutral-950 border border-neutral-800 p-4 rounded-xl mb-6 flex flex-col items-center">
+              <img src={randomCharacter.image.large} alt={randomCharacter.name.full} className="w-32 h-44 object-cover rounded shadow-lg mb-3" />
+              <div className="text-lg font-bold text-white max-w-[300px]">{randomCharacter.name.full}</div>
+              <div className="text-xs text-neutral-400">{randomCharacter.name.native}</div>
+              <div className="text-xs text-neutral-500 mt-1">{randomCharacter.gender} • ❤ {randomCharacter.favourites.toLocaleString()}</div>
+            </div>
+
+            <div className="flex w-full gap-3">
+              <button
+                onClick={() => {
+                  // Reroll
+                  const idx = Math.floor(Math.random() * filteredLocalPool.length);
+                  setRandomCharacter(filteredLocalPool[idx]);
+                }}
+                className="flex-1 bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-3 text-white font-semibold hover:bg-neutral-700 transition"
+              >
+                Reroll
+              </button>
+              <button
+                onClick={() => {
+                  setShowRandomModal(false);
+                  beginDraftPick(randomCharacter);
+                }}
+                className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-lg px-4 py-3 shadow-lg shadow-emerald-900/50 transition"
+              >
+                Select
+              </button>
+            </div>
+            <button onClick={() => setShowRandomModal(false)} className="mt-4 text-xs text-neutral-500 hover:text-neutral-300">Cancel</button>
           </div>
         </div>
       )}

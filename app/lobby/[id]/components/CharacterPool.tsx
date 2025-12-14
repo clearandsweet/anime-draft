@@ -10,6 +10,7 @@ type Props = {
     >;
     onPick: (charId: number) => void;
     onDeepSearch: () => void;
+    onRandom: () => void;
 };
 
 export function CharacterPool({
@@ -19,6 +20,7 @@ export function CharacterPool({
     setFilters,
     onPick,
     onDeepSearch,
+    onRandom,
 }: Props) {
     return (
         <section className="flex flex-col bg-neutral-900/0">
@@ -68,12 +70,21 @@ export function CharacterPool({
                         <label className="text-[10px] uppercase text-neutral-500 font-semibold">
                             Can&apos;t Find Them?
                         </label>
-                        <button
-                            onClick={onDeepSearch}
-                            className="text-[11px] font-semibold bg-gradient-to-r from-indigo-600/30 to-fuchsia-600/30 border border-fuchsia-500/40 text-fuchsia-300 rounded px-2 py-1 hover:from-indigo-600/40 hover:to-fuchsia-600/40 hover:text-white shadow-[0_0_10px_rgba(217,70,239,0.6)]"
-                        >
-                            Deep Cut Search
-                        </button>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={onRandom}
+                                className="text-[11px] font-semibold bg-gradient-to-r from-emerald-600/30 to-teal-600/30 border border-emerald-500/40 text-emerald-300 rounded px-2 py-1 hover:from-emerald-600/40 hover:to-teal-600/40 hover:text-white shadow-[0_0_10px_rgba(16,185,129,0.4)]"
+                                title="Pick a random character from the current view"
+                            >
+                                Random 1
+                            </button>
+                            <button
+                                onClick={onDeepSearch}
+                                className="text-[11px] font-semibold bg-gradient-to-r from-indigo-600/30 to-fuchsia-600/30 border border-fuchsia-500/40 text-fuchsia-300 rounded px-2 py-1 hover:from-indigo-600/40 hover:to-fuchsia-600/40 hover:text-white shadow-[0_0_10px_rgba(217,70,239,0.6)]"
+                            >
+                                Deep Cut Search
+                            </button>
+                        </div>
                     </div>
                     <div className="text-[10px] text-neutral-500 leading-tight">
                         {filteredPool.length} matches in local pool
