@@ -1,27 +1,27 @@
-// app/layout.tsx
+﻿// app/layout.tsx
 import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Anime Character Draft",
+  title: "Clearandsweet | Kai Andersen",
   description:
-    "Live snake draft for anime characters. Build your Waifu/Husbando/Not Living/Child/Minor Character lineup and compete with friends.",
+    "Formal critical analysis of anime by Clearandsweet (Kai Andersen): visual storytelling breakdowns, panels, interviews, and long-form discussion.",
   icons: {
     icon: "/favicon.ico",
   },
   openGraph: {
-    title: "Anime Character Draft",
+    title: "Clearandsweet | Kai Andersen",
     description:
-      "Draft anime characters into slots with your friends. Timed snake draft, auto-pick, exportable rosters.",
-    url: "https://animedraft.godisaloli.com",
-    siteName: "Anime Character Draft",
+      "Anime criticism and visual storytelling analysis: Madoka, Haruhi, Utena, convention panels, interviews, and more.",
+    url: "https://godisaloli.com",
+    siteName: "Clearandsweet",
     type: "website",
   },
   twitter: {
-    card: "summary",
-    title: "Anime Character Draft",
+    card: "summary_large_image",
+    title: "Clearandsweet | Kai Andersen",
     description:
-      "Snake draft anime characters into Waifu / Husbando / Not Living / Child / etc. with a timer.",
+      "In-depth anime criticism, visual storytelling essays, and curated projects.",
   },
 };
 
@@ -31,14 +31,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html
-      lang="en"
-      className="bg-neutral-900 text-neutral-100"
-      suppressHydrationWarning
-    >
-      <body className="bg-neutral-900 text-neutral-100 antialiased">
-        {children}
-      </body>
+    <html lang="en" suppressHydrationWarning>
+      <body className="antialiased">{children}</body>
     </html>
   );
 }
+
