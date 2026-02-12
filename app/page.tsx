@@ -1,7 +1,6 @@
 ﻿"use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useMemo, useState } from "react";
 
 type LibraryVideo = {
@@ -479,9 +478,14 @@ export default function HomePage() {
             >
               Open Anime Draft
             </a>
-            <Link className="button ghost" href="/lobby/target">
-              Launch Local Route
-            </Link>
+            <a
+              className="button ghost"
+              href="https://animedraft.godisaloli.com"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Go to Draft Lobby
+            </a>
           </div>
         </article>
       </section>
