@@ -7,6 +7,7 @@ import {
   finishDraft,
 } from "./logic";
 import { VotesState, VoteRecord, normalizeVotesState, tallyVotes } from "./votesLogic";
+import { generateManageKey, hashManageKey, verifyManageKey } from "./manageKey";
 
 type LobbyMeta = {
   id: string;
@@ -16,7 +17,10 @@ type LobbyMeta = {
   status: "active" | "completed";
   playersCount: number;
   lastPickAt: string | null;
+  manageKeyHash?: string;
 };
+
+export type PublicLobbyMeta = Omit<LobbyMeta, "manageKeyHash">;
 
 function computeStatus(state: LobbyState): "active" | "completed" {
   if (state.completedAt) return "completed";
@@ -39,6 +43,9 @@ function votesKey(id: string) {
   return `lobby:votes:${id}`;
 }
 
+const ACTIVE_LOBBY_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
+const COMPLETED_LOBBY_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 30; // 30 days
+
 
 function hasKVEnv() {
   const vercelKV = process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN;
@@ -49,14 +56,16 @@ function hasKVEnv() {
 export async function createLobby(opts?: {
   hostName?: string;
   targetPlayers?: number;
-}): Promise<{ id: string; state: LobbyState }> {
+}): Promise<{ id: string; state: LobbyState; manageKey: string }> {
   if (!hasKVEnv()) {
     return fsStore.createLobby(opts);
   }
+  await cleanupStaleLobbies();
   const next = await kv.incr(NEXT_ID_KEY);
   const id = String(next);
   const now = new Date().toISOString();
   const nowScore = Date.now();
+  const manageKey = generateManageKey();
 
   const state = makeFreshLobby();
   if (opts?.targetPlayers && [2, 4, 8, 12].includes(opts.targetPlayers)) {
@@ -72,6 +81,7 @@ export async function createLobby(opts?: {
     status: computeStatus(state),
     playersCount: state.players.length,
     lastPickAt: null,
+    manageKeyHash: hashManageKey(manageKey),
   };
 
   await Promise.all([
@@ -80,7 +90,7 @@ export async function createLobby(opts?: {
     kv.zadd(INDEX_KEY, { score: nowScore, member: id }),
   ]);
 
-  return { id, state };
+  return { id, state, manageKey };
 }
 
 export async function loadLobby(id: string): Promise<LobbyState> {
@@ -132,13 +142,24 @@ export async function listLobbies(filter?: { status?: "active" | "completed" }) 
   if (!hasKVEnv()) {
     return fsStore.listLobbies(filter);
   }
+  await cleanupStaleLobbies();
   // newest first
   const ids = (await kv.zrange(INDEX_KEY, 0, -1, { rev: true })) as string[];
   if (!ids.length) return [];
   const metas = (await kv.mget(
     ...ids.map((id) => metaKey(id))
   )) as (LobbyMeta | null)[];
-  const list: LobbyMeta[] = metas.filter((m): m is LobbyMeta => !!m);
+  const list: PublicLobbyMeta[] = metas
+    .filter((m): m is LobbyMeta => !!m)
+    .map((meta) => ({
+      id: meta.id,
+      createdAt: meta.createdAt,
+      updatedAt: meta.updatedAt,
+      hostName: meta.hostName,
+      status: meta.status,
+      playersCount: meta.playersCount,
+      lastPickAt: meta.lastPickAt,
+    }));
   return filter?.status ? list.filter((m) => m.status === filter.status) : list;
 }
 
@@ -204,6 +225,44 @@ export async function deleteLobby(id: string) {
     kv.del(metaKey(id)),
     kv.zrem(INDEX_KEY, id),
   ]);
+}
+
+export async function authorizeLobbyDelete(id: string, manageKey: string) {
+  if (!hasKVEnv()) {
+    return fsStore.authorizeLobbyDelete(id, manageKey);
+  }
+  const meta = await kv.get<LobbyMeta>(metaKey(id));
+  if (!meta) return false;
+  return verifyManageKey(manageKey, meta.manageKeyHash);
+}
+
+async function cleanupStaleLobbies() {
+  const ids = (await kv.zrange(INDEX_KEY, 0, -1)) as string[];
+  if (!ids.length) return;
+  const metas = (await kv.mget(...ids.map((id) => metaKey(id)))) as (LobbyMeta | null)[];
+  const now = Date.now();
+  const staleIds: string[] = [];
+
+  for (const meta of metas) {
+    if (!meta) continue;
+    const updatedAtMs = Date.parse(meta.updatedAt || meta.createdAt);
+    if (!Number.isFinite(updatedAtMs)) continue;
+    const ageMs = now - updatedAtMs;
+    const maxAgeMs =
+      meta.status === "completed" ? COMPLETED_LOBBY_MAX_AGE_MS : ACTIVE_LOBBY_MAX_AGE_MS;
+    if (ageMs > maxAgeMs) staleIds.push(meta.id);
+  }
+
+  if (!staleIds.length) return;
+
+  await Promise.all(
+    staleIds.flatMap((id) => [
+      kv.del(stateKey(id)),
+      kv.del(metaKey(id)),
+      kv.del(votesKey(id)),
+      kv.zrem(INDEX_KEY, id),
+    ])
+  );
 }
 
 export async function withLobby(

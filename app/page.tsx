@@ -480,11 +480,9 @@ export default function HomePage() {
             </a>
             <a
               className="button ghost"
-              href="https://animedraft.godisaloli.com"
-              target="_blank"
-              rel="noreferrer"
+              href="/draft"
             >
-              Go to Draft Lobby
+              Manage Lobbies
             </a>
           </div>
         </article>

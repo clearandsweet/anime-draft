@@ -8,6 +8,7 @@ import {
   finishDraft as finishDraftState,
 } from "./logic";
 import { VotesState, VoteRecord, normalizeVotesState } from "./votesLogic";
+import { generateManageKey, hashManageKey, verifyManageKey } from "./manageKey";
 
 type LobbyMeta = {
   id: string;
@@ -17,7 +18,10 @@ type LobbyMeta = {
   status: "active" | "completed";
   playersCount: number;
   lastPickAt: string | null;
+  manageKeyHash?: string;
 };
+
+export type PublicLobbyMeta = Omit<LobbyMeta, "manageKeyHash">;
 
 type IndexFile = {
   nextId: number;
@@ -30,6 +34,8 @@ const ROOT = process.env.LOBBIES_DIR
   ? path.resolve(process.env.LOBBIES_DIR)
   : path.join(os.tmpdir(), "anime-draft", "lobbies");
 const INDEX = path.join(ROOT, "index.json");
+const ACTIVE_LOBBY_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
+const COMPLETED_LOBBY_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 30; // 30 days
 
 function lobbyPath(id: string) {
   return path.join(ROOT, `${id}.json`);
@@ -72,11 +78,13 @@ function computeStatus(state: LobbyState): "active" | "completed" {
 export async function createLobby(opts?: {
   hostName?: string;
   targetPlayers?: number;
-}): Promise<{ id: string; state: LobbyState }>
+}): Promise<{ id: string; state: LobbyState; manageKey: string }>
 {
+  await cleanupStaleLobbies();
   const idx = await readIndex();
   const id = String(idx.nextId++);
   const now = new Date().toISOString();
+  const manageKey = generateManageKey();
   const state = makeFreshLobby();
   if (opts?.targetPlayers && [2,4,8,12].includes(opts.targetPlayers)) {
     state.targetPlayers = opts.targetPlayers;
@@ -97,11 +105,12 @@ export async function createLobby(opts?: {
     status: computeStatus(state),
     playersCount: state.players.length,
     lastPickAt: null,
+    manageKeyHash: hashManageKey(manageKey),
   };
   idx.list.push(meta);
   await writeIndex(idx);
   await fs.writeFile(lobbyPath(id), JSON.stringify(state, null, 2), "utf8");
-  return { id, state };
+  return { id, state, manageKey };
 }
 
 export async function loadLobby(id: string): Promise<LobbyState> {
@@ -152,12 +161,23 @@ export async function saveLobby(id: string, state: LobbyState) {
 }
 
 export async function listLobbies(filter?: { status?: "active" | "completed" }) {
+  await cleanupStaleLobbies();
   const idx = await readIndex();
   const list = filter?.status
     ? idx.list.filter((m) => m.status === filter.status)
     : idx.list;
   // newest first
-  return [...list].sort((a, b) => (a.id < b.id ? 1 : -1));
+  return [...list]
+    .sort((a, b) => (a.id < b.id ? 1 : -1))
+    .map((meta) => ({
+      id: meta.id,
+      createdAt: meta.createdAt,
+      updatedAt: meta.updatedAt,
+      hostName: meta.hostName,
+      status: meta.status,
+      playersCount: meta.playersCount,
+      lastPickAt: meta.lastPickAt,
+    }));
 }
 
 export async function getVotesState(id: string): Promise<VotesState> {
@@ -198,6 +218,13 @@ export async function deleteLobby(id: string) {
   await writeIndex(idx);
 }
 
+export async function authorizeLobbyDelete(id: string, manageKey: string) {
+  const idx = await readIndex();
+  const meta = idx.list.find((m) => m.id === id);
+  if (!meta) return false;
+  return verifyManageKey(manageKey, meta.manageKeyHash);
+}
+
 export async function finishLobby(id: string, requesterName: string) {
   let result: { ok: boolean; error?: string } = { ok: true };
   const state = await withLobby(id, async (state) => {
@@ -214,6 +241,34 @@ export async function withLobby(
   await mutate(state);
   await saveLobby(id, state);
   return state;
+}
+
+async function cleanupStaleLobbies() {
+  const idx = await readIndex();
+  const now = Date.now();
+  const stale = idx.list.filter((meta) => {
+    const updatedAtMs = Date.parse(meta.updatedAt || meta.createdAt);
+    if (!Number.isFinite(updatedAtMs)) return false;
+    const ageMs = now - updatedAtMs;
+    const maxAgeMs =
+      meta.status === "completed" ? COMPLETED_LOBBY_MAX_AGE_MS : ACTIVE_LOBBY_MAX_AGE_MS;
+    return ageMs > maxAgeMs;
+  });
+
+  if (!stale.length) return;
+
+  for (const meta of stale) {
+    try {
+      await fs.unlink(lobbyPath(meta.id));
+    } catch {}
+    try {
+      await fs.unlink(votesPath(meta.id));
+    } catch {}
+  }
+
+  const staleSet = new Set(stale.map((m) => m.id));
+  idx.list = idx.list.filter((m) => !staleSet.has(m.id));
+  await writeIndex(idx);
 }
 
 

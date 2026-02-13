@@ -15,8 +15,8 @@ export async function POST(request: Request) {
     const body = await request.json().catch(() => ({}));
     const hostName = (body?.hostName as string | undefined) ?? undefined;
     const targetPlayers = (body?.targetPlayers as number | undefined) ?? undefined;
-    const { id, state } = await createLobby({ hostName, targetPlayers });
-    const response: { id: string; state: LobbyState } = { id, state };
+    const { id, state, manageKey } = await createLobby({ hostName, targetPlayers });
+    const response: { id: string; state: LobbyState; manageKey: string } = { id, state, manageKey };
     return NextResponse.json(response, { status: 200 });
   } catch (err) {
     console.error("create lobby error:", err);

@@ -1,6 +1,6 @@
 ﻿import { NextResponse, NextRequest } from "next/server";
 export const runtime = "nodejs";
-import { deleteLobby } from "../../lobby/kv";
+import { authorizeLobbyDelete, deleteLobby } from "../../lobby/kv";
 
 export async function DELETE(
   request: NextRequest,
@@ -9,9 +9,10 @@ export async function DELETE(
   try {
     const { id } = await params;
     const body = await request.json().catch(() => ({}));
-    const password = (body?.password as string | undefined) ?? "";
-    if (password !== "Cynthia5") {
-      return NextResponse.json({ error: "Invalid password." }, { status: 401 });
+    const manageKey = (body?.manageKey as string | undefined) ?? "";
+    const authorized = await authorizeLobbyDelete(id, manageKey);
+    if (!authorized) {
+      return NextResponse.json({ error: "Invalid lobby management key." }, { status: 401 });
     }
     await deleteLobby(id);
     return NextResponse.json({ ok: true }, { status: 200 });
@@ -20,4 +21,3 @@ export async function DELETE(
     return NextResponse.json({ error: "Server error." }, { status: 500 });
   }
 }
-
