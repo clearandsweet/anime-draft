@@ -181,7 +181,7 @@ export default function HomePage() {
           <article className="geo-box geo-draft-box">
             <h2 className="blink">ANIME DRAFT</h2>
             <p>The draft app is alive and hosted at animedraft.godisaloli.com.</p>
-            <a className="geo-button" href="https://animedraft.godisaloli.com" target="_blank" rel="noreferrer">ENTER THE DRAFT</a>
+            <a className="geo-button" href="https://animedraft.godisaloli.com/anime-draft" target="_blank" rel="noreferrer">ENTER THE DRAFT</a>
             <a className="geo-button alt" href="https://animedraft.godisaloli.com/draft" target="_blank" rel="noreferrer">LOBBY ROOMS</a>
           </article>
 

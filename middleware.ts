@@ -6,7 +6,7 @@ export function middleware(request: NextRequest) {
 
   if (host === "animedraft.godisaloli.com" && request.nextUrl.pathname === "/") {
     const url = request.nextUrl.clone();
-    url.pathname = "/draft";
+    url.pathname = "/anime-draft";
     return NextResponse.redirect(url);
   }
 
