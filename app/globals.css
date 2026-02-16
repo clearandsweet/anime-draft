@@ -685,6 +685,31 @@ a {
   color: #cbd5e1;
 }
 
+.v2-draft-feature {
+  background:
+    radial-gradient(circle at 82% 14%, rgba(20, 184, 166, 0.2), transparent 40%),
+    radial-gradient(circle at 16% 88%, rgba(56, 189, 248, 0.18), transparent 42%),
+    rgba(2, 6, 23, 0.9);
+}
+
+.v2-draft-feature h2 {
+  margin-top: 0.35rem;
+  font-size: clamp(1.25rem, 2.4vw, 1.7rem);
+}
+
+.v2-draft-points {
+  margin: 0.72rem 0 0;
+  padding-left: 1rem;
+  color: #cbd5e1;
+  display: grid;
+  gap: 0.34rem;
+  font-size: 0.84rem;
+}
+
+.v2-draft-points li::marker {
+  color: #7dd3fc;
+}
+
 .v2-actions {
   display: flex;
   flex-wrap: wrap;

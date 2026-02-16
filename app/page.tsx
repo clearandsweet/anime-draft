@@ -258,6 +258,9 @@ export default function HomePage() {
             <a href="https://www.youtube.com/@clearandsweet" target="_blank" rel="noreferrer" className="v2-btn primary">
               YouTube Channel
             </a>
+            <a href="https://www.patreon.com/clearandsweet" target="_blank" rel="noreferrer" className="v2-btn ghost">
+              Patreon
+            </a>
             <a href="https://suno.com/playlist/b4ac130d-3ccd-46f2-9bf6-9f79d8271542" target="_blank" rel="noreferrer" className="v2-btn ghost">
               Suno Playlist
             </a>
@@ -266,8 +269,13 @@ export default function HomePage() {
 
         <article className="v2-panel v2-draft-feature">
           <p className="v2-kicker">Featured App</p>
-          <h2>Anime Draft</h2>
-          <p>Live multiplayer character draft rooms with timer, voting, and exports.</p>
+          <h2>Create Your Anime Character Draft</h2>
+          <p>Spin up a room in seconds, share the code, run a live snake draft, and settle it with instant voting.</p>
+          <ul className="v2-draft-points">
+            <li>Fast lobby creation and joining</li>
+            <li>Built-in timer + live state sync</li>
+            <li>Best for streams, servers, and watch parties</li>
+          </ul>
           <div className="v2-actions stack">
             <a href="https://animedraft.godisaloli.com/draft" target="_blank" rel="noreferrer" className="v2-btn primary">
               Create Your Own Anime Character Draft
@@ -402,6 +410,7 @@ export default function HomePage() {
           <div className="v2-link-list minor">
             <a href="https://x.com/clearandsweet" target="_blank" rel="noreferrer">Twitter / X</a>
             <a href="https://bsky.app/profile/clearandsweet.bsky.social" target="_blank" rel="noreferrer">Bluesky</a>
+            <a href="https://www.patreon.com/clearandsweet" target="_blank" rel="noreferrer">Patreon</a>
             <a href="https://animesummit.net" target="_blank" rel="noreferrer">Anime Summit (Partner & Guest)</a>
           </div>
         </article>
