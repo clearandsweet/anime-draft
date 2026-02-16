@@ -24,6 +24,13 @@ type FeedVideo = {
   url: string;
 };
 
+type TweetItem = {
+  id: string;
+  text: string;
+  url: string;
+  publishedAt: string;
+};
+
 const featured = [
   {
     title: "Madoka Magica Analysis - Visual Storytelling",
@@ -172,6 +179,7 @@ export default function HomePage() {
   const [latestFeed, setLatestFeed] = useState<FeedVideo[]>([]);
   const [latestFetchedAt, setLatestFetchedAt] = useState<string | null>(null);
   const [feedLoading, setFeedLoading] = useState(false);
+  const [tweets, setTweets] = useState<TweetItem[]>([]);
 
   async function fetchLatest() {
     try {
@@ -189,7 +197,20 @@ export default function HomePage() {
 
   useEffect(() => {
     fetchLatest();
+    fetchTweets();
   }, []);
+
+  async function fetchTweets() {
+    try {
+      const res = await fetch("/api/twitter/latest", { cache: "no-store" });
+      const data = await res.json();
+      if (!res.ok) return;
+      const nextTweets = Array.isArray(data.tweets) ? (data.tweets as TweetItem[]) : [];
+      setTweets(nextTweets);
+    } catch {
+      // non-blocking
+    }
+  }
 
   const mergedVideos = useMemo(() => {
     const feedAsLibrary: LibraryVideo[] = latestFeed.map((video) => ({
@@ -244,14 +265,36 @@ export default function HomePage() {
           <h2>Anime Draft</h2>
           <p>Live multiplayer character draft rooms with timer, voting, and exports.</p>
           <div className="v2-actions stack">
-            <a href="https://animedraft.godisaloli.com/anime-draft" target="_blank" rel="noreferrer" className="v2-btn primary">
-              Open Anime Draft
-            </a>
-            <a href="https://animedraft.godisaloli.com/draft" target="_blank" rel="noreferrer" className="v2-btn ghost">
-              Lobby Hub
+            <a href="https://animedraft.godisaloli.com/draft" target="_blank" rel="noreferrer" className="v2-btn primary">
+              Create Your Own Anime Character Draft
             </a>
           </div>
         </article>
+      </section>
+
+      <section className="v2-section">
+        <div className="v2-section-head">
+          <h2>What People Say</h2>
+        </div>
+        {tweets.length === 0 ? (
+          <p className="v2-empty">Twitter feed loading...</p>
+        ) : (
+          <div className="v2-tweet-marquee" aria-label="Recent tweets">
+            <div className="v2-tweet-track">
+              {[...tweets, ...tweets].map((tweet, index) => (
+                <a
+                  key={`${tweet.id}-${index}`}
+                  href={tweet.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="v2-tweet-chip"
+                >
+                  <span>{tweet.text}</span>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
       </section>
 
       <section className="v2-section">

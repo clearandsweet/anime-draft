@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 
@@ -150,11 +150,19 @@ export default function DraftLobbyPage() {
   return (
     <div className="min-h-screen bg-neutral-950 text-neutral-100 p-6">
       <div className="max-w-5xl mx-auto space-y-6">
+        <div className="border border-cyan-500/30 bg-cyan-500/10 rounded-xl p-5">
+          <p className="text-xs uppercase tracking-wide text-cyan-300">Anime Draft</p>
+          <h1 className="text-3xl font-bold text-white mt-1">Create your own anime character draft</h1>
+          <p className="text-sm text-neutral-300 mt-2">
+            Start a room, share the lobby code, draft live, then vote on the results.
+          </p>
+        </div>
+
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold">Anime Draft Lobby Rooms</h1>
+            <h2 className="text-2xl font-bold">Lobby Rooms</h2>
             <p className="text-sm text-neutral-400">
-              Active rooms: {activeCount} • Completed rooms: {lobbies.length - activeCount}
+              Active rooms: {activeCount} - Completed rooms: {lobbies.length - activeCount}
             </p>
           </div>
           <button
@@ -248,7 +256,7 @@ export default function DraftLobbyPage() {
                         <span className="text-xs font-normal text-neutral-400">({lobby.status})</span>
                       </p>
                       <p className="text-xs text-neutral-500">
-                        Host: {lobby.hostName || "n/a"} • Players: {lobby.playersCount}
+                        Host: {lobby.hostName || "n/a"} - Players: {lobby.playersCount}
                       </p>
                       <p className="text-xs text-neutral-600">
                         Updated: {formatDate(lobby.updatedAt)}
