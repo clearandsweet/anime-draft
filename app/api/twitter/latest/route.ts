@@ -2,7 +2,10 @@ import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
-const RSS_URL = "https://twitrss.me/twitter_user_to_rss/?user=clearandsweet";
+const RSS_SOURCES = [
+  "https://twitrss.me/twitter_user_to_rss/?user=clearandsweet",
+  "https://nitter.net/clearandsweet/rss",
+];
 
 type TweetItem = {
   id: string;
@@ -36,10 +39,20 @@ function parseItems(xml: string): TweetItem[] {
     .map((m) => {
       const block = m[1] ?? "";
       const title = normalizeTweetText(takeTag(block, "title"));
-      const link = takeTag(block, "link");
+      const rawLink = takeTag(block, "link");
       const pubDate = takeTag(block, "pubDate");
-      if (!title || !link) return null;
-      if (title.startsWith("RT @")) return null;
+      const guid = takeTag(block, "guid");
+      if (!title || !rawLink) return null;
+      if (title.startsWith("RT @") || title.startsWith("RT by @")) return null;
+
+      const statusIdMatch =
+        rawLink.match(/status\/(\d+)/)?.[1] ??
+        guid.match(/(\d{6,})/)?.[1] ??
+        "";
+      const link = statusIdMatch
+        ? `https://x.com/clearandsweet/status/${statusIdMatch}`
+        : rawLink;
+
       return {
         id: link,
         text: title,
@@ -54,15 +67,25 @@ function parseItems(xml: string): TweetItem[] {
 
 export async function GET() {
   try {
-    const res = await fetch(RSS_URL, { cache: "no-store" });
-    if (!res.ok) {
+    let xml = "";
+    let sourceUsed = "";
+
+    for (const source of RSS_SOURCES) {
+      const res = await fetch(source, { cache: "no-store" }).catch(() => null);
+      if (!res || !res.ok) continue;
+      xml = await res.text();
+      sourceUsed = source;
+      if (xml.includes("<item>")) break;
+    }
+
+    if (!xml) {
       return NextResponse.json({ error: "Twitter feed unavailable." }, { status: 502 });
     }
-    const xml = await res.text();
+
     const tweets = parseItems(xml);
 
     return NextResponse.json(
-      { tweets, fetchedAt: new Date().toISOString() },
+      { tweets, fetchedAt: new Date().toISOString(), sourceUsed },
       {
         status: 200,
         headers: {
@@ -75,4 +98,3 @@ export async function GET() {
     return NextResponse.json({ error: "Twitter feed server error." }, { status: 500 });
   }
 }
-

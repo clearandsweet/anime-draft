@@ -174,12 +174,13 @@ function formatTimestamp(iso: string | null) {
 }
 
 export default function HomePage() {
-  const [active, setActive] = useState<(typeof categories)[number]>("All");
+  const [active, setActive] = useState<(typeof categories)[number]>("Visual Storytelling");
   const [search, setSearch] = useState("");
   const [latestFeed, setLatestFeed] = useState<FeedVideo[]>([]);
   const [latestFetchedAt, setLatestFetchedAt] = useState<string | null>(null);
   const [feedLoading, setFeedLoading] = useState(false);
   const [tweets, setTweets] = useState<TweetItem[]>([]);
+  const [tweetsLoading, setTweetsLoading] = useState(false);
 
   async function fetchLatest() {
     try {
@@ -202,6 +203,7 @@ export default function HomePage() {
 
   async function fetchTweets() {
     try {
+      setTweetsLoading(true);
       const res = await fetch("/api/twitter/latest", { cache: "no-store" });
       const data = await res.json();
       if (!res.ok) return;
@@ -209,6 +211,8 @@ export default function HomePage() {
       setTweets(nextTweets);
     } catch {
       // non-blocking
+    } finally {
+      setTweetsLoading(false);
     }
   }
 
@@ -276,8 +280,10 @@ export default function HomePage() {
         <div className="v2-section-head">
           <h2>What People Say</h2>
         </div>
-        {tweets.length === 0 ? (
-          <p className="v2-empty">Twitter feed loading...</p>
+        {tweetsLoading ? (
+          <p className="v2-empty">Twitter/X feed loading...</p>
+        ) : tweets.length === 0 ? (
+          <p className="v2-empty">No composed tweets available right now.</p>
         ) : (
           <div className="v2-tweet-marquee" aria-label="Recent tweets">
             <div className="v2-tweet-track">
