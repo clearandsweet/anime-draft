@@ -913,6 +913,70 @@ a {
   color: #94a3b8;
 }
 
+.v2-contact-wrap {
+  display: grid;
+  place-items: center;
+  min-height: calc(100vh - 2.4rem);
+}
+
+.v2-contact-panel {
+  width: min(720px, 100%);
+}
+
+.v2-contact-title {
+  margin-top: 0.5rem;
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+}
+
+.v2-contact-copy {
+  margin-top: 0.5rem;
+  color: #94a3b8;
+}
+
+.v2-contact-form {
+  display: grid;
+  gap: 0.8rem;
+  margin-top: 1rem;
+}
+
+.v2-contact-form label {
+  display: grid;
+  gap: 0.4rem;
+  font-size: 0.86rem;
+  color: #cbd5e1;
+}
+
+.v2-contact-form .v2-search {
+  margin: 0;
+}
+
+.v2-contact-textarea {
+  width: 100%;
+  min-height: 180px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 0.62rem;
+  background: rgba(15, 23, 42, 0.94);
+  color: #e2e8f0;
+  padding: 0.68rem;
+  resize: vertical;
+}
+
+.v2-contact-ok {
+  margin: 0;
+  color: #86efac;
+  font-size: 0.85rem;
+}
+
+.v2-contact-error {
+  margin: 0;
+  color: #fca5a5;
+  font-size: 0.85rem;
+}
+
+.v2-contact-back {
+  margin-top: 1rem;
+}
+
 .v2-tweet-marquee {
   border: 1px solid rgba(148, 163, 184, 0.24);
   border-radius: 0.7rem;
