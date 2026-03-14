@@ -18,9 +18,10 @@ type LobbyMeta = {
   playersCount: number;
   lastPickAt: string | null;
   manageKeyHash?: string;
+  draftType?: "anime" | "pokemon";
 };
 
-export type PublicLobbyMeta = Omit<LobbyMeta, "manageKeyHash">;
+export type PublicLobbyMeta = Omit<LobbyMeta, "manageKeyHash"> & { draftType?: "anime" | "pokemon" };
 
 function computeStatus(state: LobbyState): "active" | "completed" {
   if (state.completedAt) return "completed";
@@ -56,6 +57,7 @@ function hasKVEnv() {
 export async function createLobby(opts?: {
   hostName?: string;
   targetPlayers?: number;
+  draftType?: "anime" | "pokemon";
 }): Promise<{ id: string; state: LobbyState; manageKey: string }> {
   if (!hasKVEnv()) {
     return fsStore.createLobby(opts);
@@ -67,7 +69,7 @@ export async function createLobby(opts?: {
   const nowScore = Date.now();
   const manageKey = generateManageKey();
 
-  const state = makeFreshLobby();
+  const state = makeFreshLobby(opts?.draftType ?? "anime");
   if (opts?.targetPlayers && [2, 4, 8, 12].includes(opts.targetPlayers)) {
     state.targetPlayers = opts.targetPlayers;
   }
@@ -82,6 +84,7 @@ export async function createLobby(opts?: {
     playersCount: state.players.length,
     lastPickAt: null,
     manageKeyHash: hashManageKey(manageKey),
+    draftType: state.draftType,
   };
 
   await Promise.all([
@@ -102,6 +105,7 @@ export async function loadLobby(id: string): Promise<LobbyState> {
   if (state.startedAt === undefined) state.startedAt = null;
   if (state.completedAt === undefined) state.completedAt = null;
   if (state.version === undefined) state.version = 0;
+  if (!state.draftType) state.draftType = "anime";
   return state;
 }
 
@@ -131,6 +135,7 @@ export async function saveLobby(id: string, state: LobbyState, expectedVersion?:
     status: computeStatus(state),
     playersCount: state.players.length,
     lastPickAt: state.lastPick ? now : existingMeta?.lastPickAt || null,
+    draftType: state.draftType ?? existingMeta?.draftType ?? "anime",
   };
   await Promise.all([
     kv.set(metaKey(id), meta),
@@ -138,7 +143,7 @@ export async function saveLobby(id: string, state: LobbyState, expectedVersion?:
   ]);
 }
 
-export async function listLobbies(filter?: { status?: "active" | "completed" }) {
+export async function listLobbies(filter?: { status?: "active" | "completed"; draftType?: "anime" | "pokemon" }) {
   if (!hasKVEnv()) {
     return fsStore.listLobbies(filter);
   }
@@ -159,8 +164,12 @@ export async function listLobbies(filter?: { status?: "active" | "completed" }) 
       status: meta.status,
       playersCount: meta.playersCount,
       lastPickAt: meta.lastPickAt,
+      draftType: meta.draftType ?? "anime",
     }));
-  return filter?.status ? list.filter((m) => m.status === filter.status) : list;
+  let result = list;
+  if (filter?.status) result = result.filter((m) => m.status === filter.status);
+  if (filter?.draftType) result = result.filter((m) => (m.draftType ?? "anime") === filter.draftType);
+  return result;
 }
 
 export async function getVotesState(id: string): Promise<VotesState> {

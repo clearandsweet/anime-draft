@@ -3,6 +3,7 @@
 // so it can be reused with different persistence backends (e.g., filesystem).
 
 import { CATEGORY_POOL, DEFAULT_SLOTS } from "./categories";
+import { POKEMON_CATEGORY_POOL, POKEMON_DEFAULT_SLOTS } from "../pokemon-categories";
 import { getRandomCompetitions } from "./competitions";
 
 export type Character = {
@@ -53,6 +54,7 @@ export type LobbyState = {
   slotNames: string[];
   version: number;
   competitions: string[];
+  draftType: "anime" | "pokemon";
 };
 
 
@@ -68,7 +70,7 @@ const PLAYER_COLORS = [
   "cyan",
 ];
 
-export function makeFreshLobby(): LobbyState {
+export function makeFreshLobby(draftType: "anime" | "pokemon" = "anime"): LobbyState {
   return {
     players: [],
     round: 1,
@@ -84,10 +86,13 @@ export function makeFreshLobby(): LobbyState {
     startedAt: null,
     completedAt: null,
     draftedIds: [],
-    categoryMode: "default",
-    slotNames: [...DEFAULT_SLOTS],
+    categoryMode: draftType === "pokemon" ? "random" : "default",
+    slotNames: draftType === "pokemon"
+      ? shuffle([...POKEMON_CATEGORY_POOL]).slice(0, 10)
+      : [...DEFAULT_SLOTS],
     version: 0,
     competitions: ["Fight", ...getRandomCompetitions(2)],
+    draftType,
   };
 }
 
@@ -151,11 +156,14 @@ export function setCategoryMode(state: LobbyState, requesterName: string, mode: 
 
   state.categoryMode = mode;
 
+  const isPokemon = state.draftType === "pokemon";
+
   if (mode === "default") {
-    state.slotNames = [...DEFAULT_SLOTS];
+    state.slotNames = isPokemon ? [...POKEMON_DEFAULT_SLOTS] : [...DEFAULT_SLOTS];
   } else {
-    // Pick 10 random
-    state.slotNames = shuffle([...CATEGORY_POOL]).slice(0, 10);
+    // Pick 10 random from the appropriate pool
+    const pool = isPokemon ? POKEMON_CATEGORY_POOL : CATEGORY_POOL;
+    state.slotNames = shuffle([...pool]).slice(0, 10);
   }
 
   // Update existing players to have these new slots

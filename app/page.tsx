@@ -243,8 +243,8 @@ export default function HomePage() {
         </article>
 
         <article className="v2-panel v2-draft-feature">
-          <p className="v2-kicker">Featured App</p>
-          <h2>Create Your Anime Character Draft</h2>
+          <p className="v2-kicker">Featured Apps</p>
+          <h2>Draft Games</h2>
           <p>Spin up a room in seconds, share the code, run a live snake draft, and settle it with instant voting.</p>
           <ul className="v2-draft-points">
             <li>Fast lobby creation and joining</li>
@@ -253,7 +253,10 @@ export default function HomePage() {
           </ul>
           <div className="v2-actions stack">
             <a href="https://animedraft.godisaloli.com/draft" target="_blank" rel="noreferrer" className="v2-btn primary">
-              Create Your Own Anime Character Draft
+              Anime Character Draft
+            </a>
+            <a href="https://animedraft.godisaloli.com/draft/pokemon" target="_blank" rel="noreferrer" className="v2-btn primary" style={{background: "linear-gradient(135deg, #dc2626, #ea580c)"}}>
+              Pokémon Draft
             </a>
           </div>
         </article>

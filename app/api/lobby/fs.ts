@@ -19,6 +19,7 @@ type LobbyMeta = {
   playersCount: number;
   lastPickAt: string | null;
   manageKeyHash?: string;
+  draftType?: "anime" | "pokemon";
 };
 
 export type PublicLobbyMeta = Omit<LobbyMeta, "manageKeyHash">;
@@ -78,6 +79,7 @@ function computeStatus(state: LobbyState): "active" | "completed" {
 export async function createLobby(opts?: {
   hostName?: string;
   targetPlayers?: number;
+  draftType?: "anime" | "pokemon";
 }): Promise<{ id: string; state: LobbyState; manageKey: string }>
 {
   await cleanupStaleLobbies();
@@ -85,16 +87,12 @@ export async function createLobby(opts?: {
   const id = String(idx.nextId++);
   const now = new Date().toISOString();
   const manageKey = generateManageKey();
-  const state = makeFreshLobby();
+  const state = makeFreshLobby(opts?.draftType ?? "anime");
   if (opts?.targetPlayers && [2,4,8,12].includes(opts.targetPlayers)) {
     state.targetPlayers = opts.targetPlayers;
   }
   if (opts?.hostName) {
-    // host becomes first joiner
     state.hostName = opts.hostName.trim() || null;
-    if (state.hostName) {
-      // Defer actual join to client or keep hostName only; we keep hostName only
-    }
   }
 
   const meta: LobbyMeta = {
@@ -106,6 +104,7 @@ export async function createLobby(opts?: {
     playersCount: state.players.length,
     lastPickAt: null,
     manageKeyHash: hashManageKey(manageKey),
+    draftType: state.draftType,
   };
   idx.list.push(meta);
   await writeIndex(idx);
@@ -122,6 +121,7 @@ export async function loadLobby(id: string): Promise<LobbyState> {
     if (!state.draftedIds) state.draftedIds = [];
     if (state.startedAt === undefined) state.startedAt = null;
     if (state.completedAt === undefined) state.completedAt = null;
+    if (!state.draftType) state.draftType = "anime";
     return state;
   } catch {
     // If not found (e.g., another instance handled creation), start a fresh lobby
@@ -156,16 +156,20 @@ export async function saveLobby(id: string, state: LobbyState) {
     meta.status = computeStatus(state);
     meta.playersCount = state.players.length;
     meta.lastPickAt = state.lastPick ? now : meta.lastPickAt;
+    meta.draftType = state.draftType ?? meta.draftType ?? "anime";
   }
   await writeIndex(idx);
 }
 
-export async function listLobbies(filter?: { status?: "active" | "completed" }) {
+export async function listLobbies(filter?: { status?: "active" | "completed"; draftType?: "anime" | "pokemon" }) {
   await cleanupStaleLobbies();
   const idx = await readIndex();
-  const list = filter?.status
+  let list = filter?.status
     ? idx.list.filter((m) => m.status === filter.status)
     : idx.list;
+  if (filter?.draftType) {
+    list = list.filter((m) => (m.draftType ?? "anime") === filter.draftType);
+  }
   // newest first
   return [...list]
     .sort((a, b) => (a.id < b.id ? 1 : -1))
@@ -177,6 +181,7 @@ export async function listLobbies(filter?: { status?: "active" | "completed" }) 
       status: meta.status,
       playersCount: meta.playersCount,
       lastPickAt: meta.lastPickAt,
+      draftType: meta.draftType ?? "anime",
     }));
 }
 

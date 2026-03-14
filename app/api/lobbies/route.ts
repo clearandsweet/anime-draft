@@ -6,7 +6,11 @@ import { LobbyState } from "../lobby/logic";
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const status = searchParams.get("status") as "active" | "completed" | null;
-  const list = await listLobbies(status ? { status } : undefined);
+  const draftType = searchParams.get("draftType") as "anime" | "pokemon" | null;
+  const filter: { status?: "active" | "completed"; draftType?: "anime" | "pokemon" } = {};
+  if (status) filter.status = status;
+  if (draftType) filter.draftType = draftType;
+  const list = await listLobbies(Object.keys(filter).length ? filter : undefined);
   return NextResponse.json({ lobbies: list }, { status: 200 });
 }
 
@@ -15,7 +19,8 @@ export async function POST(request: Request) {
     const body = await request.json().catch(() => ({}));
     const hostName = (body?.hostName as string | undefined) ?? undefined;
     const targetPlayers = (body?.targetPlayers as number | undefined) ?? undefined;
-    const { id, state, manageKey } = await createLobby({ hostName, targetPlayers });
+    const draftType = (body?.draftType as "anime" | "pokemon" | undefined) ?? "anime";
+    const { id, state, manageKey } = await createLobby({ hostName, targetPlayers, draftType });
     const response: { id: string; state: LobbyState; manageKey: string } = { id, state, manageKey };
     return NextResponse.json(response, { status: 200 });
   } catch (err) {
