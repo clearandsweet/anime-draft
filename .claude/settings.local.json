@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s \"https://thomasgamedocs.com/pokemon/\")",
+      "Bash(grep -E '^[0-9]+$' -A 2)",
+      "WebFetch(domain:thomasgamedocs.com)",
+      "Bash(npx tsc:*)"
+    ]
+  }
+}

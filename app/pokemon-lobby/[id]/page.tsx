@@ -744,12 +744,13 @@ export default function PokemonDraftApp() {
         </div>
       </header>
 
-      <main className="grid xl:grid-cols-[1fr_1fr] gap-4">
+      <main className="grid lg:grid-cols-[1fr_1fr] gap-4 p-4">
         <PlayerList
           lobby={lobby}
           downloadingBoards={downloadingBoards}
           onDownloadBoard={downloadBoardPng}
           boardRefs={boardRefs}
+          squareImages
         />
         <PokemonPool
           pokemon={pokemon}

@@ -14,7 +14,7 @@ export const POKEMON_DEFAULT_SLOTS = [
 export const POKEMON_CATEGORY_POOL = [
   // Vibes & Aesthetics
   "Little Guy",
-  "Big Boy",
+  "Chonker",
   "Absolute Unit",
   "Elegant",
   "Terrifying",
@@ -31,6 +31,7 @@ export const POKEMON_CATEGORY_POOL = [
   "Edgy",
   "Wholesome",
   "Spooky",
+  "Fugly",
 
   // Physical Traits
   "Bird",
@@ -41,7 +42,7 @@ export const POKEMON_CATEGORY_POOL = [
   "Spiky",
   "Round",
   "Long Boy",
-  "Has a Face on It That Shouldn't Have a Face",
+  "Stupid Face",
 
   // Type Categories
   "Fire Type",
@@ -61,8 +62,8 @@ export const POKEMON_CATEGORY_POOL = [
 
   // Battle & Competitive
   "Competitively Strong",
-  "Comptetively Cursed (Terrible in battle)",
-  "One-Shot Wonder",
+  "Terrible in battle",
+  "Would",
   "The Tank",
   "Speed Demon",
   "Special Attacker",
@@ -82,14 +83,14 @@ export const POKEMON_CATEGORY_POOL = [
   "Fossil Pokemon",
   "Baby Pokemon",
   "Regional Form",
-  "Has a Mega Evolution",
-  "Has a Gigantamax Form",
+  "Best Mega Evolution",
+  "Best Gigantamax Form",
   "Gen 1 Classic",
   "Deep Cut (Obscure Pick)",
   "Trade Evolution",
   "Evolution Stone User",
   "Friendship Evolution",
-  "Early Route Pokemon (Commonly found in the first area)",
+  "Early Route Pokemon",
   "Final Boss Energy",
 
   // Viability & Culture
@@ -103,21 +104,20 @@ export const POKEMON_CATEGORY_POOL = [
   "Could Run a Business",
   "Would Survive in the Wild",
   "Needs Constant Care",
-  "Starter Eeveelution (or should be)",
   "Main Character Energy",
   "Sidekick Energy",
   "Villain Energy",
   "Comic Relief",
-  "Gym Leader Worthy",
+  "Gym Leader's Ace",
   "Champion Worthy",
   "Evil Team Vibes",
 
   // Type Combos & Traits
-  "Unique Type Combo",
+  "Rare Type Combo",
   "Pure Monotype",
   "Dual Type Powerhouse",
   "Defensive Wall",
-  "Would Be a Good Legendary Box Art",
+  "Good Box Art",
   "Literally Just a Rock",
   "Literally Just Food",
   "Based on a Real Animal",

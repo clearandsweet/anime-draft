@@ -12,12 +12,6 @@ type LobbyMeta = {
   lastPickAt: string | null;
 };
 
-const MANAGE_KEY_PREFIX = "draft:manageKey:";
-
-function manageStorageKey(lobbyId: string) {
-  return `${MANAGE_KEY_PREFIX}${lobbyId}`;
-}
-
 function formatDate(value: string | null) {
   if (!value) return "n/a";
   const d = new Date(value);
@@ -31,8 +25,7 @@ export default function PokemonDraftLobbyPage() {
   const [lobbies, setLobbies] = useState<LobbyMeta[]>([]);
   const [loading, setLoading] = useState(true);
   const [createBusy, setCreateBusy] = useState(false);
-  const [lastCreated, setLastCreated] = useState<{ id: string; manageKey: string } | null>(null);
-  const [managedLobbyIds, setManagedLobbyIds] = useState<Set<string>>(new Set());
+  const [lastCreatedId, setLastCreatedId] = useState<string | null>(null);
 
   const activeCount = useMemo(
     () => lobbies.filter((lobby) => lobby.status === "active").length,
@@ -51,16 +44,6 @@ export default function PokemonDraftLobbyPage() {
   }
 
   useEffect(() => {
-    const managed = new Set<string>();
-    try {
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (!key || !key.startsWith(MANAGE_KEY_PREFIX)) continue;
-        const id = key.slice(MANAGE_KEY_PREFIX.length);
-        if (id) managed.add(id);
-      }
-    } catch {}
-    setManagedLobbyIds(managed);
     refreshLobbies();
   }, []);
 
@@ -82,16 +65,7 @@ export default function PokemonDraftLobbyPage() {
         return;
       }
       const id = String(data.id);
-      const manageKey = String(data.manageKey || "");
-      if (manageKey) {
-        localStorage.setItem(manageStorageKey(id), manageKey);
-        setLastCreated({ id, manageKey });
-        setManagedLobbyIds((prev) => {
-          const next = new Set(prev);
-          next.add(id);
-          return next;
-        });
-      }
+      setLastCreatedId(id);
       setJoinCode(id);
       await refreshLobbies();
     } catch {
@@ -109,43 +83,21 @@ export default function PokemonDraftLobbyPage() {
   }
 
   async function handleDelete(id: string) {
-    let manageKey = localStorage.getItem(manageStorageKey(id)) || "";
-    if (!manageKey) {
-      manageKey = window.prompt("Enter this lobby's management key:")?.trim() || "";
-    }
-    if (!manageKey) return;
-
+    const password = window.prompt("Enter deletion password:")?.trim() || "";
+    if (!password) return;
     const confirmDelete = window.confirm(`Delete lobby #${id}? This cannot be undone.`);
     if (!confirmDelete) return;
-
     const res = await fetch(`/api/lobbies/${id}`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ manageKey }),
+      body: JSON.stringify({ manageKey: password }),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      alert(data.error || "Delete failed. Check the management key.");
+      alert(data.error || "Delete failed.");
       return;
     }
-
-    localStorage.removeItem(manageStorageKey(id));
-    setManagedLobbyIds((prev) => {
-      const next = new Set(prev);
-      next.delete(id);
-      return next;
-    });
     setLobbies((prev) => prev.filter((lobby) => lobby.id !== id));
-  }
-
-  async function copyManageKey() {
-    if (!lastCreated?.manageKey) return;
-    try {
-      await navigator.clipboard.writeText(lastCreated.manageKey);
-      alert("Management key copied.");
-    } catch {
-      window.prompt("Copy your management key", lastCreated.manageKey);
-    }
   }
 
   return (
@@ -174,23 +126,9 @@ export default function PokemonDraftLobbyPage() {
           </button>
         </div>
 
-        {lastCreated && (
+        {lastCreatedId && (
           <div className="border border-red-400/30 bg-red-900/20 rounded-xl p-4">
-            <p className="text-sm text-red-100 font-semibold">Lobby #{lastCreated.id} created.</p>
-            <p className="text-xs text-red-200/90 mt-1">
-              Save this management key. It is required to delete this lobby later.
-            </p>
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <code className="text-xs bg-black/40 px-2 py-1 rounded border border-red-300/30">
-                {lastCreated.manageKey}
-              </code>
-              <button
-                onClick={copyManageKey}
-                className="text-xs border border-red-300/40 rounded px-2 py-1 hover:bg-red-800/30"
-              >
-                Copy
-              </button>
-            </div>
+            <p className="text-sm text-red-100 font-semibold">Lobby #{lastCreatedId} created.</p>
           </div>
         )}
 
@@ -245,7 +183,6 @@ export default function PokemonDraftLobbyPage() {
           ) : (
             <div className="space-y-2">
               {lobbies.map((lobby) => {
-                const hasSavedKey = managedLobbyIds.has(lobby.id);
                 return (
                   <div
                     key={lobby.id}
@@ -274,7 +211,7 @@ export default function PokemonDraftLobbyPage() {
                         onClick={() => handleDelete(lobby.id)}
                         className="border border-red-500/40 bg-red-900/20 hover:bg-red-900/30 px-3 py-1.5 rounded text-xs text-red-200"
                       >
-                        {hasSavedKey ? "Delete" : "Delete (needs key)"}
+                        Delete
                       </button>
                     </div>
                   </div>

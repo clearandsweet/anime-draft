@@ -7,6 +7,7 @@ type Props = {
     downloadingBoards: Record<string, boolean>;
     onDownloadBoard: (playerId: string) => void;
     boardRefs: React.MutableRefObject<Record<string, HTMLDivElement | null>>;
+    squareImages?: boolean;
 };
 
 export function PlayerList({
@@ -14,6 +15,7 @@ export function PlayerList({
     downloadingBoards,
     onDownloadBoard,
     boardRefs,
+    squareImages = false,
 }: Props) {
     return (
         <aside className="space-y-4 overflow-y-auto max-h-[80vh] pr-1">
@@ -55,14 +57,14 @@ export function PlayerList({
                                     return (
                                         <div
                                             key={slotName}
-                                            className={`relative w-[90px] h-[120px] rounded border overflow-hidden ${col.glow} group`}
+                                            className={`relative w-[90px] ${squareImages ? "h-[90px]" : "h-[120px]"} rounded border overflow-hidden ${col.glow} group`}
                                         >
                                             {char ? (
                                                 <>
                                                     <img
                                                         src={char.image.large}
                                                         alt={char.name.full}
-                                                        className="w-full h-full object-cover"
+                                                        className={`w-full h-full ${squareImages ? "object-contain" : "object-cover"}`}
                                                     />
                                                     <div
                                                         className={`absolute bottom-0 left-0 right-0 bg-black/70 text-[11px] font-semibold text-center py-[3px] ${col.text}`}

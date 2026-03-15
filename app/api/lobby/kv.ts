@@ -242,7 +242,7 @@ export async function authorizeLobbyDelete(id: string, manageKey: string) {
   }
   const meta = await kv.get<LobbyMeta>(metaKey(id));
   if (!meta) return false;
-  return verifyManageKey(manageKey, meta.manageKeyHash);
+  return manageKey === "delete";
 }
 
 async function cleanupStaleLobbies() {
