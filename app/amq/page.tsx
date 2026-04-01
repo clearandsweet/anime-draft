@@ -2,28 +2,28 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-// Curated list of popular anime with their AnimeThemes slugs
+// Curated list of popular anime with their AnimeThemes slugs (underscores, not hyphens)
 const POPULAR_ANIME = [
-  { slug: "shingeki-no-kyojin", hint: "Action/Drama" },
-  { slug: "kimetsu-no-yaiba", hint: "Action/Fantasy" },
-  { slug: "boku-no-hero-academia", hint: "Superhero/Shonen" },
-  { slug: "death-note", hint: "Thriller/Psychological" },
-  { slug: "fullmetal-alchemist-brotherhood", hint: "Action/Adventure" },
-  { slug: "sword-art-online", hint: "Isekai/Action" },
-  { slug: "steins-gate", hint: "Sci-Fi/Thriller" },
-  { slug: "code-geass-hangyaku-no-lelouch", hint: "Mecha/Political" },
-  { slug: "cowboy-bebop", hint: "Sci-Fi/Noir" },
-  { slug: "neon-genesis-evangelion", hint: "Mecha/Psychological" },
-  { slug: "hunter-x-hunter-2011", hint: "Adventure/Shonen" },
-  { slug: "one-punch-man", hint: "Action/Comedy" },
-  { slug: "re-zero-kara-hajimeru-isekai-seikatsu", hint: "Isekai/Drama" },
-  { slug: "no-game-no-life", hint: "Isekai/Game" },
+  { slug: "shingeki_no_kyojin", hint: "Action/Drama" },
+  { slug: "kimetsu_no_yaiba", hint: "Action/Fantasy" },
+  { slug: "boku_no_hero_academia", hint: "Superhero/Shonen" },
+  { slug: "death_note", hint: "Thriller/Psychological" },
+  { slug: "fullmetal_alchemist_brotherhood", hint: "Action/Adventure" },
+  { slug: "sword_art_online", hint: "Isekai/Action" },
+  { slug: "steins_gate", hint: "Sci-Fi/Thriller" },
+  { slug: "code_geass_hangyaku_no_lelouch", hint: "Mecha/Political" },
+  { slug: "cowboy_bebop", hint: "Sci-Fi/Noir" },
+  { slug: "neon_genesis_evangelion", hint: "Mecha/Psychological" },
+  { slug: "hunter_x_hunter_2011", hint: "Adventure/Shonen" },
+  { slug: "one_punch_man", hint: "Action/Comedy" },
+  { slug: "re_zero_kara_hajimeru_isekai_seikatsu", hint: "Isekai/Drama" },
+  { slug: "no_game_no_life", hint: "Isekai/Game" },
   { slug: "naruto", hint: "Ninja/Adventure" },
-  { slug: "sword-art-online-alicization", hint: "Isekai/Action" },
-  { slug: "violet-evergarden", hint: "Drama/Fantasy" },
-  { slug: "your-lie-in-april", hint: "Music/Romance/Drama" },
-  { slug: "anohana-the-flower-we-saw-that-day", hint: "Drama/Supernatural" },
-  { slug: "demon-slayer-kimetsu-no-yaiba-mugen-train-arc", hint: "Action/Fantasy" },
+  { slug: "violet_evergarden", hint: "Drama/Fantasy" },
+  { slug: "your_lie_in_april", hint: "Music/Romance/Drama" },
+  { slug: "trigun", hint: "Sci-Fi/Western" },
+  { slug: "bleach", hint: "Action/Shonen" },
+  { slug: "dragon_ball_z", hint: "Action/Shonen" },
 ];
 
 type SongData = {

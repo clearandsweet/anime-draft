@@ -5,7 +5,7 @@ export async function GET(request: NextRequest) {
   if (!slug) return Response.json({ error: "No slug provided" }, { status: 400 });
 
   const res = await fetch(
-    `https://api.animethemes.moe/anime?filter[slug]=${encodeURIComponent(slug)}&include=animethemes.animethemeentries.videos,animethemes.song`,
+    `https://api.animethemes.moe/anime/${encodeURIComponent(slug)}?include=animethemes.animethemeentries.videos,animethemes.song`,
     {
       headers: { "User-Agent": "animedraft-quiz/1.0" },
       next: { revalidate: 3600 },
@@ -17,7 +17,8 @@ export async function GET(request: NextRequest) {
   }
 
   const data = await res.json();
-  const anime = data.anime?.[0];
+  // Show endpoint returns singular { anime: {...} }, not an array
+  const anime = data.anime;
   if (!anime) return Response.json({ error: "Anime not found" }, { status: 404 });
 
   // Prefer first OP, fall back to first theme of any type
