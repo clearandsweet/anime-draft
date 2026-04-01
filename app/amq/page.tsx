@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 // Curated list of popular anime with their AnimeThemes slugs (underscores, not hyphens)
 const POPULAR_ANIME = [
+  // Action / Adventure
   { slug: "shingeki_no_kyojin", hint: "Action/Drama" },
   { slug: "kimetsu_no_yaiba", hint: "Action/Fantasy" },
   { slug: "boku_no_hero_academia", hint: "Superhero/Shonen" },
@@ -24,6 +25,55 @@ const POPULAR_ANIME = [
   { slug: "trigun", hint: "Sci-Fi/Western" },
   { slug: "bleach", hint: "Action/Shonen" },
   { slug: "dragon_ball_z", hint: "Action/Shonen" },
+  { slug: "one_piece", hint: "Adventure/Shonen" },
+  { slug: "mob_psycho_100", hint: "Supernatural/Comedy" },
+  { slug: "jujutsu_kaisen", hint: "Supernatural/Action" },
+  { slug: "chainsaw_man", hint: "Action/Horror" },
+  { slug: "spy_x_family", hint: "Comedy/Action" },
+
+  // Magical Girl
+  { slug: "bishoujo_senshi_sailor_moon", hint: "Magical Girl/Action" },
+  { slug: "cardcaptor_sakura", hint: "Magical Girl/Fantasy" },
+  { slug: "mahou_shoujo_madoka_magica", hint: "Magical Girl/Psychological" },
+  { slug: "shoujo_kakumei_utena", hint: "Magical Girl/Surreal" },
+  { slug: "mahou_shoujo_lyrical_nanoha", hint: "Magical Girl/Action" },
+  { slug: "ojamajo_doremi", hint: "Magical Girl/Kids" },
+  { slug: "tokyo_mew_mew", hint: "Magical Girl/Action" },
+  { slug: "heartcatch_precure", hint: "Magical Girl/Action" },
+  { slug: "yuki_yuna_wa_yusha_de_aru", hint: "Magical Girl/Drama" },
+  { slug: "flip_flappers", hint: "Magical Girl/Adventure" },
+
+  // Slice of Life
+  { slug: "k_on", hint: "Slice of Life/Music" },
+  { slug: "non_non_biyori", hint: "Slice of Life/Rural" },
+  { slug: "barakamon", hint: "Slice of Life/Comedy" },
+  { slug: "yuru_camp", hint: "Slice of Life/Outdoors" },
+  { slug: "azumanga_daioh", hint: "Slice of Life/Comedy" },
+  { slug: "lucky_star", hint: "Slice of Life/Comedy" },
+  { slug: "hyouka", hint: "Slice of Life/Mystery" },
+  { slug: "nichijou", hint: "Slice of Life/Absurdist Comedy" },
+  { slug: "tamako_market", hint: "Slice of Life/Fantasy" },
+  { slug: "a_silent_voice", hint: "Drama/Slice of Life" },
+  { slug: "mushishi", hint: "Slice of Life/Supernatural" },
+  { slug: "aria_the_animation", hint: "Slice of Life/Sci-Fi" },
+  { slug: "shirokuma_cafe", hint: "Slice of Life/Comedy" },
+
+  // Romance
+  { slug: "toradora", hint: "Romance/Comedy" },
+  { slug: "clannad", hint: "Romance/Drama" },
+  { slug: "fruits_basket_1st_season", hint: "Romance/Drama" },
+  { slug: "ouran_koukou_host_club", hint: "Romance/Comedy" },
+  { slug: "kimi_ni_todoke", hint: "Romance/Drama" },
+  { slug: "kaichou_wa_maid_sama", hint: "Romance/Comedy" },
+  { slug: "ore_monogatari", hint: "Romance/Comedy" },
+  { slug: "chuunibyou_demo_koi_ga_shitai", hint: "Romance/Comedy" },
+  { slug: "nisekoi", hint: "Romance/Comedy" },
+  { slug: "horimiya", hint: "Romance/Slice of Life" },
+  { slug: "kaguya_sama_wa_kokurasetai_tensai_tachi_no_renai_zunousen", hint: "Romance/Comedy" },
+  { slug: "ao_haru_ride", hint: "Romance/Drama" },
+  { slug: "sukitte_ii_na_yo", hint: "Romance/Drama" },
+  { slug: "lovely_complex", hint: "Romance/Comedy" },
+  { slug: "anohana", hint: "Romance/Drama" },
 ];
 
 type SongData = {
