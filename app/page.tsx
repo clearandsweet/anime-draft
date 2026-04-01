@@ -258,6 +258,9 @@ export default function HomePage() {
             <a href="https://animedraft.godisaloli.com/draft/pokemon" target="_blank" rel="noreferrer" className="v2-btn primary" style={{background: "linear-gradient(135deg, #dc2626, #ea580c)"}}>
               Pokémon Draft
             </a>
+            <a href="/amq" className="v2-btn primary" style={{background: "linear-gradient(135deg, #7c3aed, #db2777)"}}>
+              Anime Music Quiz ↩
+            </a>
           </div>
         </article>
       </section>
