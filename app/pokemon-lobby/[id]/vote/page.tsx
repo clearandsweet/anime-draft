@@ -342,8 +342,6 @@ export default function PokemonVoteDraftBoards() {
 
         <DraftBroadcastBooth
           lobbyId={lobbyId}
-          draftType="pokemon"
-          players={lobby.players}
           competitions={lobby.competitions}
         />
       </main>

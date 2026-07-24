@@ -43,3 +43,24 @@ export const votes = sqliteTable(
     index("votes_lobby_created_idx").on(table.lobbyId, table.createdAt),
   ]
 );
+
+export const broadcasts = sqliteTable(
+  "broadcasts",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    lobbyId: integer("lobby_id")
+      .notNull()
+      .references(() => lobbies.id, { onDelete: "cascade" }),
+    competition: text("competition").notNull(),
+    draftType: text("draft_type", { enum: ["anime", "pokemon"] }).notNull(),
+    resultText: text("result_text").notNull(),
+    createdAt: text("created_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("broadcasts_lobby_competition_idx").on(
+      table.lobbyId,
+      table.competition
+    ),
+    index("broadcasts_lobby_created_idx").on(table.lobbyId, table.createdAt),
+  ]
+);

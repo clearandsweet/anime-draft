@@ -177,6 +177,11 @@ export async function loadLobby(id: string): Promise<LobbyState> {
   return row ? parseState(row) : makeFreshLobby();
 }
 
+export async function loadLobbyIfExists(id: string): Promise<LobbyState | null> {
+  const row = await getLobbyRow(id);
+  return row ? parseState(row) : null;
+}
+
 export async function saveLobby(
   id: string,
   state: LobbyState,

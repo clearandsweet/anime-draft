@@ -363,8 +363,6 @@ export default function VoteDraftBoards() {
 
         <DraftBroadcastBooth
           lobbyId={lobbyId}
-          draftType="anime"
-          players={lobby.players}
           competitions={lobby.competitions}
         />
 

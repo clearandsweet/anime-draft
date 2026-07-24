@@ -1,50 +1,73 @@
 "use client";
 
-import { useState } from "react";
-
-type DraftCharacter = {
-  name: { full: string };
-};
-
-type DraftPlayer = {
-  id: string;
-  name: string;
-  slots: Record<string, DraftCharacter | null>;
-};
+import { useEffect, useState } from "react";
 
 type Props = {
   lobbyId: string;
-  draftType: "anime" | "pokemon";
-  players: DraftPlayer[];
   competitions?: string[];
 };
 
-export function DraftBroadcastBooth({
-  lobbyId,
-  draftType,
-  players,
-  competitions = [],
-}: Props) {
-  const options = competitions.length ? competitions : ["Overall draft showdown"];
+function formatSavedDate(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString();
+}
+
+export function DraftBroadcastBooth({ lobbyId, competitions = [] }: Props) {
+  const options = competitions.length ? competitions : ["Fight"];
   const [competition, setCompetition] = useState(options[0]);
   const [result, setResult] = useState("");
+  const [createdAt, setCreatedAt] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [loadingArchive, setLoadingArchive] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadArchivedBroadcast() {
+      setLoadingArchive(true);
+      setError("");
+      setResult("");
+      setCreatedAt("");
+
+      try {
+        const query = new URLSearchParams({ lobbyId, competition });
+        const response = await fetch(`/api/ai/judge?${query.toString()}`, {
+          cache: "no-store",
+        });
+        const data = await response.json();
+        if (!cancelled && response.ok && data.result) {
+          setResult(String(data.result));
+          setCreatedAt(String(data.createdAt || ""));
+        }
+        if (!cancelled && !response.ok) {
+          setError(data.error || "The broadcast archive is temporarily unavailable.");
+        }
+      } catch {
+        if (!cancelled) {
+          setError("The broadcast archive could not reach the server.");
+        }
+      } finally {
+        if (!cancelled) setLoadingArchive(false);
+      }
+    }
+
+    loadArchivedBroadcast();
+    return () => {
+      cancelled = true;
+    };
+  }, [competition, lobbyId]);
 
   async function generateBroadcast() {
     setBusy(true);
     setError("");
-    setResult("");
 
     try {
       const response = await fetch("/api/ai/judge", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          lobby: { id: lobbyId, players },
-          competition,
-          draftType,
-        }),
+        body: JSON.stringify({ lobbyId, competition }),
       });
       const data = await response.json();
       if (!response.ok) {
@@ -52,6 +75,7 @@ export function DraftBroadcastBooth({
         return;
       }
       setResult(String(data.result || ""));
+      setCreatedAt(String(data.createdAt || ""));
     } catch {
       setError("The broadcast booth could not reach the server.");
     } finally {
@@ -68,8 +92,8 @@ export function DraftBroadcastBooth({
           </p>
           <h2 className="mt-1 text-xl font-bold text-white">AI Broadcast Booth</h2>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-neutral-400">
-            Pick an event and get a playful, sports-desk-style call of the matchup.
-            It is commentary, not an official result.
+            Generate one playful sports-desk call per event. Once created, it is
+            saved with this draft so every visitor sees the same archive.
           </p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">
@@ -90,10 +114,16 @@ export function DraftBroadcastBooth({
           <button
             type="button"
             onClick={generateBroadcast}
-            disabled={busy}
-            className="rounded-xl bg-cyan-400 px-4 py-2.5 text-sm font-bold text-cyan-950 transition hover:bg-cyan-300 disabled:cursor-wait disabled:opacity-60"
+            disabled={busy || loadingArchive || Boolean(result)}
+            className="rounded-xl bg-cyan-400 px-4 py-2.5 text-sm font-bold text-cyan-950 transition hover:bg-cyan-300 disabled:cursor-default disabled:opacity-60"
           >
-            {busy ? "Calling the match…" : result ? "Run it again" : "Generate broadcast"}
+            {loadingArchive
+              ? "Checking archive…"
+              : busy
+                ? "Calling the match…"
+                : result
+                  ? "Saved to archive"
+                  : "Generate & archive"}
           </button>
         </div>
       </div>
@@ -103,7 +133,21 @@ export function DraftBroadcastBooth({
           {error ? (
             <p className="text-sm text-red-300">{error}</p>
           ) : (
-            <div className="whitespace-pre-wrap text-sm leading-7 text-neutral-200">{result}</div>
+            <>
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+                <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[10px] uppercase tracking-wide text-emerald-300">
+                  Archived commentary
+                </span>
+                {createdAt && (
+                  <span className="text-xs text-neutral-600">
+                    Saved {formatSavedDate(createdAt)}
+                  </span>
+                )}
+              </div>
+              <div className="whitespace-pre-wrap text-sm leading-7 text-neutral-200">
+                {result}
+              </div>
+            </>
           )}
         </div>
       )}
