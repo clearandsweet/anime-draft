@@ -18,7 +18,7 @@ export function PlayerList({
     squareImages = false,
 }: Props) {
     return (
-        <aside className="space-y-4 overflow-y-auto max-h-[80vh] pr-1">
+        <aside className="min-w-0 space-y-4 pr-1 lg:max-h-[80vh] lg:overflow-y-auto">
             {lobby.players.map((p, i) => {
                 const col = colorStyleForColor(p.color);
                 const isOnClock = i === lobby.currentPlayerIndex;
@@ -27,18 +27,18 @@ export function PlayerList({
                 return (
                     <div
                         key={p.id}
-                        className={`rounded-xl border p-3 bg-neutral-900 ${isOnClock ? col.border : "border-neutral-700"
+                        className={`min-w-0 rounded-xl border p-3 bg-neutral-900 ${isOnClock ? col.border : "border-neutral-700"
                             }`}
                     >
-                        <div className="flex items-center justify-between mb-2">
-                            <span className="font-semibold">{p.name}</span>
-                            <span className="text-xs text-neutral-500">
+                        <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+                            <span className="min-w-0 flex-1 truncate font-semibold">{p.name}</span>
+                            <span className="shrink-0 text-xs text-neutral-500">
                                 {p.popularityTotal.toLocaleString()} {"\u2665"}
                             </span>
                             <button
                                 onClick={() => onDownloadBoard(p.id)}
                                 disabled={downloading}
-                                className="text-[10px] text-neutral-500 hover:text-neutral-300"
+                                className="shrink-0 rounded border border-neutral-800 px-2 py-1 text-[10px] text-neutral-500 hover:border-neutral-700 hover:text-neutral-300"
                             >
                                 {downloading ? "Saving..." : "Save PNG"}
                             </button>
@@ -49,15 +49,15 @@ export function PlayerList({
                             ref={(el) => {
                                 boardRefs.current[p.id] = el;
                             }}
-                            className="bg-neutral-900" // Wrapper for capture if needed, or just capture the grid
+                            className="min-w-0 bg-neutral-900"
                         >
-                            <div className="grid grid-cols-5 gap-2">
+                            <div className="grid grid-cols-2 gap-2 min-[430px]:grid-cols-3 sm:grid-cols-5">
                                 {Object.entries(p.slots).map(([slotName, charValue]) => {
                                     const char = charValue as Character | null;
                                     return (
                                         <div
                                             key={slotName}
-                                            className={`relative w-[90px] ${squareImages ? "h-[90px]" : "h-[120px]"} rounded border overflow-hidden ${col.glow} group`}
+                                            className={`group relative w-full overflow-hidden rounded border ${squareImages ? "aspect-square" : "aspect-[3/4]"} ${col.glow}`}
                                         >
                                             {char ? (
                                                 <>
@@ -66,8 +66,11 @@ export function PlayerList({
                                                         alt={char.name.full}
                                                         className={`w-full h-full ${squareImages ? "object-contain" : "object-cover"}`}
                                                     />
+                                                    <div className="absolute inset-x-0 top-0 truncate bg-gradient-to-b from-black/90 to-transparent px-1.5 pb-3 pt-1 text-center text-[10px] font-semibold text-white">
+                                                        {char.name.full}
+                                                    </div>
                                                     <div
-                                                        className={`absolute bottom-0 left-0 right-0 bg-black/70 text-[11px] font-semibold text-center py-[3px] ${col.text}`}
+                                                        className={`absolute bottom-0 left-0 right-0 truncate bg-black/75 px-1 py-[3px] text-center text-[11px] font-semibold ${col.text}`}
                                                     >
                                                         {slotName}
                                                     </div>

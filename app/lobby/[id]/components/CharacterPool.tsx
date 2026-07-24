@@ -33,14 +33,7 @@ export function CharacterPool({
     return (
         <section className="flex flex-col bg-neutral-900/0">
             <div
-                className="bg-neutral-800/40 border border-neutral-700 rounded-xl p-3 mb-3 shadow-[0_10px_20px_rgba(0,0,0,0.6)]"
-                style={{
-                    position: "sticky",
-                    top: 0,
-                    zIndex: 20,
-                    backgroundColor: "rgba(23,23,23,0.9)",
-                    backdropFilter: "blur(4px)",
-                }}
+                className="mb-3 rounded-xl border border-neutral-700 bg-neutral-900/90 p-3 shadow-[0_10px_20px_rgba(0,0,0,0.6)] backdrop-blur-sm lg:sticky lg:top-0 lg:z-20"
             >
                 <div className="flex flex-wrap gap-4 items-start justify-between">
                     <div className="flex flex-col">
@@ -120,7 +113,7 @@ export function CharacterPool({
                     </div>
                 </div>
             </div>
-            <div className="overflow-y-auto max-h-[70vh] pr-1 grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 pr-1 md:grid-cols-2 lg:max-h-[70vh] lg:overflow-y-auto">
                 {filteredPool.map((c, idx) => {
                     const isShortlisted = shortlistedIds.has(c.id);
                     return (
