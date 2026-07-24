@@ -12,6 +12,7 @@ import { DraftActivityStrip } from "../../components/DraftActivityStrip";
 import { DraftProgressPanel } from "../../components/DraftProgressPanel";
 import { LobbyInvitePanel } from "../../components/LobbyInvitePanel";
 import { DraftStartReviewDialog } from "../../components/DraftStartReviewDialog";
+import { LobbyPlayerRoster } from "../../components/LobbyPlayerRoster";
 import {
   forgetLobbyIdentity,
   getLobbyIdentity,
@@ -90,6 +91,7 @@ export default function CharacterDraftApp() {
   const [completionDismissed, setCompletionDismissed] = useState(false);
   const [finishingDraft, setFinishingDraft] = useState(false);
   const [showStartReview, setShowStartReview] = useState(false);
+  const [removingPlayerId, setRemovingPlayerId] = useState<string | null>(null);
   const [lobby, setLobby] = useState<LobbyState>({
     players: [],
     round: 1,
@@ -326,6 +328,45 @@ export default function CharacterDraftApp() {
   function useAnotherPlayer() {
     forgetLobbyIdentity(lobbyId);
     setMeName("");
+  }
+
+  async function removeLobbyPlayer(playerId: string, playerName: string) {
+    if (!iAmHost) return;
+    if (
+      !window.confirm(
+        `Remove ${playerName} from this lobby? They can rejoin before the draft starts.`
+      )
+    ) {
+      return;
+    }
+
+    setRemovingPlayerId(playerId);
+    try {
+      const res = await fetch(`/api/lobby/${lobbyId}/player`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          meName: meName.trim(),
+          playerId,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || "Could not remove that player.");
+        return;
+      }
+      setLobby((prev) => ({
+        ...prev,
+        ...data,
+        draftedIds: data.draftedIds ?? prev.draftedIds ?? [],
+        startedAt: data.startedAt ?? prev.startedAt ?? null,
+        completedAt: data.completedAt ?? prev.completedAt ?? null,
+      }));
+    } catch {
+      alert("Network error while removing that player.");
+    } finally {
+      setRemovingPlayerId(null);
+    }
   }
 
   async function setTargetPlayers(n: number) {
@@ -724,18 +765,15 @@ export default function CharacterDraftApp() {
                 )}
               </div>
             </div>
-            <div className="bg-neutral-800/40 border border-neutral-700 rounded-xl p-4">
-              <div className="text-xs uppercase text-neutral-500 font-semibold mb-2">Players</div>
-              <div className="space-y-1">
-                {lobby.players.map((p) => (
-                  <div key={p.id} className="text-sm text-neutral-200 flex items-center justify-between">
-                    <span>{p.name}</span>
-                    <span className="text-[11px] text-neutral-500">{p.color}</span>
-                  </div>
-                ))}
-                {!lobby.players.length && <div className="text-xs text-neutral-600">No players yet</div>}
-              </div>
-            </div>
+            <LobbyPlayerRoster
+              players={lobby.players}
+              hostName={lobby.hostName}
+              canManage={Boolean(iAmHost)}
+              removingPlayerId={removingPlayerId}
+              onRemovePlayer={(playerId, playerName) => {
+                void removeLobbyPlayer(playerId, playerName);
+              }}
+            />
           </div>
           <div className="flex items-center justify-center">
             <button onClick={() => setShowStartReview(true)} disabled={!iAmHost || !readyToStart} className={`px-4 py-2 rounded-lg border ${iAmHost && readyToStart ? "bg-emerald-600/20 border-emerald-500 text-emerald-300 hover:bg-emerald-600/30" : "bg-neutral-800 border-neutral-700 text-neutral-400 opacity-60"}`}>
@@ -1133,7 +1171,6 @@ export default function CharacterDraftApp() {
     </div>
   );
 }
-
 
 
 

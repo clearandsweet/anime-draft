@@ -5,6 +5,10 @@
 import { CATEGORY_POOL, DEFAULT_SLOTS } from "./categories";
 import { POKEMON_CATEGORY_POOL, POKEMON_DEFAULT_SLOTS } from "../pokemon-categories";
 import { getRandomCompetitions } from "./competitions";
+import {
+  getNextPlayerIndex,
+  removeLobbyPlayer,
+} from "../../lib/lobbyPlayers";
 
 export type Character = {
   id: number;
@@ -191,11 +195,23 @@ export function join(state: LobbyState, name: string): { ok: boolean; error?: st
   // Removed targetPlayers check to allow variable count
   // if (state.players.length >= state.targetPlayers) { ... }
 
-  const newPlayer = createPlayer(trimmed, state.players.length, state.slotNames);
+  const newPlayer = createPlayer(
+    trimmed,
+    getNextPlayerIndex(state.players),
+    state.slotNames
+  );
   state.players.push(newPlayer);
   if (!state.hostName) state.hostName = trimmed;
   state.version += 1;
   return { ok: true };
+}
+
+export function removePlayer(
+  state: LobbyState,
+  requesterName: string,
+  playerId: string
+): { ok: boolean; error?: string; removedName?: string } {
+  return removeLobbyPlayer(state, requesterName, playerId);
 }
 
 export function setCategoryMode(state: LobbyState, requesterName: string, mode: "default" | "random") {
