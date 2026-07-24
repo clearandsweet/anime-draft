@@ -92,6 +92,7 @@ export default function CharacterDraftApp() {
   const [finishingDraft, setFinishingDraft] = useState(false);
   const [showStartReview, setShowStartReview] = useState(false);
   const [removingPlayerId, setRemovingPlayerId] = useState<string | null>(null);
+  const [updatingReady, setUpdatingReady] = useState(false);
   const [lobby, setLobby] = useState<LobbyState>({
     players: [],
     round: 1,
@@ -328,6 +329,39 @@ export default function CharacterDraftApp() {
   function useAnotherPlayer() {
     forgetLobbyIdentity(lobbyId);
     setMeName("");
+  }
+
+  async function updateReadyStatus(ready: boolean) {
+    if (!iAmJoined || updatingReady) return;
+    setUpdatingReady(true);
+    try {
+      const res = await fetch(`/api/lobby/${lobbyId}/ready`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          playerName: meName.trim(),
+          ready,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || "Could not update your ready status.");
+        return;
+      }
+      setLobby((prev) => ({
+        ...prev,
+        ...data,
+        draftedIds: data.draftedIds ?? prev.draftedIds ?? [],
+        readyPlayerIds:
+          data.readyPlayerIds ?? prev.readyPlayerIds ?? [],
+        startedAt: data.startedAt ?? prev.startedAt ?? null,
+        completedAt: data.completedAt ?? prev.completedAt ?? null,
+      }));
+    } catch {
+      alert("Network error while updating your ready status.");
+    } finally {
+      setUpdatingReady(false);
+    }
   }
 
   async function removeLobbyPlayer(playerId: string, playerName: string) {
@@ -768,10 +802,16 @@ export default function CharacterDraftApp() {
             <LobbyPlayerRoster
               players={lobby.players}
               hostName={lobby.hostName}
+              currentPlayerName={iAmJoined ? meName : ""}
+              readyPlayerIds={lobby.readyPlayerIds ?? []}
               canManage={Boolean(iAmHost)}
               removingPlayerId={removingPlayerId}
+              updatingReady={updatingReady}
               onRemovePlayer={(playerId, playerName) => {
                 void removeLobbyPlayer(playerId, playerName);
+              }}
+              onToggleReady={(ready) => {
+                void updateReadyStatus(ready);
               }}
             />
           </div>
@@ -785,6 +825,7 @@ export default function CharacterDraftApp() {
           open={showStartReview && Boolean(iAmHost)}
           draftType="anime"
           players={lobby.players}
+          readyPlayerIds={lobby.readyPlayerIds ?? []}
           slotNames={lobby.slotNames ?? []}
           preset={lobby.preset}
           timerDuration={lobby.timerDuration}
@@ -1171,7 +1212,6 @@ export default function CharacterDraftApp() {
     </div>
   );
 }
-
 
 
 

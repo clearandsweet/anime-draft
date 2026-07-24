@@ -7,6 +7,7 @@ type PlayerManagementState = Pick<
   | "startedAt"
   | "completedAt"
   | "draftActive"
+  | "readyPlayerIds"
   | "version"
 >;
 
@@ -60,6 +61,9 @@ export function removeLobbyPlayer(
   }
 
   state.players.splice(targetIndex, 1);
+  state.readyPlayerIds = (state.readyPlayerIds ?? []).filter(
+    (playerId) => playerId !== target.id
+  );
   state.version += 1;
   return { ok: true, removedName: target.name };
 }

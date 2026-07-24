@@ -7,6 +7,7 @@ import {
   recomputeDraftedIds,
   finishDraft as finishDraftState,
 } from "./logic";
+import { normalizeReadyPlayerIds } from "../../lib/draftReadiness";
 import { VotesState, VoteRecord, normalizeVotesState } from "./votesLogic";
 import { generateManageKey, hashManageKey, verifyManageKey } from "./manageKey";
 
@@ -119,6 +120,10 @@ export async function loadLobby(id: string): Promise<LobbyState> {
     const buf = await fs.readFile(p, "utf8");
     const state = JSON.parse(buf) as LobbyState;
     if (!state.draftedIds) state.draftedIds = [];
+    state.readyPlayerIds = normalizeReadyPlayerIds(
+      state.readyPlayerIds,
+      state.players ?? []
+    );
     if (state.startedAt === undefined) state.startedAt = null;
     if (state.completedAt === undefined) state.completedAt = null;
     if (!state.draftType) state.draftType = "anime";

@@ -5,11 +5,13 @@ import {
   getDraftPreflight,
   type DraftPreflightPreset,
 } from "../lib/draftPreflight";
+import { getDraftReadiness } from "../lib/draftReadiness";
 
 type DraftStartReviewDialogProps = {
   open: boolean;
   draftType: "anime" | "pokemon";
   players: Array<{ id: string; name: string; color: string }>;
+  readyPlayerIds: string[];
   slotNames: string[];
   preset?: DraftPreflightPreset;
   timerDuration?: number;
@@ -38,6 +40,7 @@ export function DraftStartReviewDialog({
   open,
   draftType,
   players,
+  readyPlayerIds,
   slotNames,
   preset,
   timerDuration,
@@ -53,6 +56,8 @@ export function DraftStartReviewDialog({
     preset,
     timerDuration,
   });
+  const readiness = getDraftReadiness(players, readyPlayerIds);
+  const readySet = new Set(readiness.readyPlayerIds);
 
   useEffect(() => {
     onCancelRef.current = onCancel;
@@ -109,7 +114,7 @@ export function DraftStartReviewDialog({
         </div>
 
         <div className="space-y-5 p-5 sm:p-6">
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
             {[
               { label: "Format", value: summary.presetLabel },
               {
@@ -123,6 +128,10 @@ export function DraftStartReviewDialog({
               {
                 label: "Pick timer",
                 value: summary.timerLabel,
+              },
+              {
+                label: "Readiness",
+                value: `${readiness.readyCount}/${readiness.playerCount}`,
               },
             ].map((item) => (
               <div
@@ -138,6 +147,37 @@ export function DraftStartReviewDialog({
               </div>
             ))}
           </div>
+
+          {readiness.allReady ? (
+            <div className="rounded-xl border border-emerald-400/30 bg-emerald-500/10 p-4">
+              <div className="text-sm font-semibold text-emerald-200">
+                Everyone is ready
+              </div>
+              <div className="mt-1 text-xs leading-relaxed text-emerald-100/70">
+                Every player in the room has checked in.
+              </div>
+            </div>
+          ) : (
+            summary.playerCount > 1 && (
+              <div className="rounded-xl border border-amber-400/30 bg-amber-500/10 p-4">
+                <div className="text-sm font-semibold text-amber-200">
+                  {readiness.unreadyPlayers.length}{" "}
+                  {readiness.unreadyPlayers.length === 1
+                    ? "player hasn’t"
+                    : "players haven’t"}{" "}
+                  marked ready
+                </div>
+                <div className="mt-1 text-xs leading-relaxed text-amber-100/70">
+                  Waiting on{" "}
+                  {readiness.unreadyPlayers
+                    .map((player) => player.name)
+                    .join(", ")}
+                  . Readiness is informational, so you can still launch a test
+                  draft.
+                </div>
+              </div>
+            )
+          )}
 
           <div
             className={`rounded-xl border ${styles.border} ${styles.panel} p-4`}
@@ -179,6 +219,15 @@ export function DraftStartReviewDialog({
                       {index + 1}
                     </span>
                     <span>{name}</span>
+                    <span
+                      className={`ml-auto rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
+                        readySet.has(players[index]?.id)
+                          ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
+                          : "border-neutral-700 bg-neutral-950 text-neutral-500"
+                      }`}
+                    >
+                      {readySet.has(players[index]?.id) ? "Ready" : "Not ready"}
+                    </span>
                   </li>
                 ))}
               </ol>

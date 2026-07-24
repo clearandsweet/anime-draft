@@ -21,12 +21,14 @@ function roomWithPlayers(...names) {
     startedAt: null,
     completedAt: null,
     draftActive: false,
+    readyPlayerIds: [],
     version: names.length,
   };
 }
 
 test("lets the host remove a guest before launch", () => {
   const room = roomWithPlayers("Kai", "Mina", "Ren");
+  room.readyPlayerIds = ["p1", "p2"];
   const versionBefore = room.version;
 
   const result = removeLobbyPlayer(room, " kai ", "p2");
@@ -37,6 +39,7 @@ test("lets the host remove a guest before launch", () => {
     ["Kai", "Ren"]
   );
   assert.equal(room.version, versionBefore + 1);
+  assert.deepEqual(room.readyPlayerIds, ["p1"]);
 });
 
 test("finds the first available id without creating duplicates", () => {

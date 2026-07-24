@@ -14,6 +14,7 @@ import {
   tallyVotes,
 } from "./votesLogic";
 import { generateManageKey, hashManageKey, verifyManageKey } from "./manageKey";
+import { normalizeReadyPlayerIds } from "../../lib/draftReadiness";
 
 type LobbyMeta = {
   id: string;
@@ -91,6 +92,10 @@ function computeStatus(state: LobbyState): "active" | "completed" {
 
 function normalizeLobbyState(state: LobbyState): LobbyState {
   if (!state.draftedIds) state.draftedIds = [];
+  state.readyPlayerIds = normalizeReadyPlayerIds(
+    state.readyPlayerIds,
+    state.players ?? []
+  );
   if (state.startedAt === undefined) state.startedAt = null;
   if (state.completedAt === undefined) state.completedAt = null;
   if (state.version === undefined) state.version = 0;

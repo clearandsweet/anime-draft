@@ -9,6 +9,7 @@ import {
   getNextPlayerIndex,
   removeLobbyPlayer,
 } from "../../lib/lobbyPlayers";
+import { setLobbyPlayerReady } from "../../lib/draftReadiness";
 
 export type Character = {
   id: number;
@@ -58,6 +59,7 @@ export type LobbyState = {
   startedAt: string | null;
   completedAt: string | null;
   draftedIds: number[];
+  readyPlayerIds: string[];
   categoryMode: "default" | "random";
   slotNames: string[];
   version: number;
@@ -140,6 +142,7 @@ export function makeFreshLobby(
     startedAt: null,
     completedAt: null,
     draftedIds: [],
+    readyPlayerIds: [],
     categoryMode: presetSlots.categoryMode,
     slotNames: presetSlots.slotNames,
     version: 0,
@@ -212,6 +215,14 @@ export function removePlayer(
   playerId: string
 ): { ok: boolean; error?: string; removedName?: string } {
   return removeLobbyPlayer(state, requesterName, playerId);
+}
+
+export function setPlayerReady(
+  state: LobbyState,
+  playerName: string,
+  ready: boolean
+): { ok: boolean; error?: string } {
+  return setLobbyPlayerReady(state, playerName, ready);
 }
 
 export function setCategoryMode(state: LobbyState, requesterName: string, mode: "default" | "random") {
