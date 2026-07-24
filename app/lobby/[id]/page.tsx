@@ -14,6 +14,12 @@ import {
   rememberLobbyIdentity,
 } from "../../lib/lobbyIdentity";
 import { getOpenSlotNames } from "../../lib/draftTurns";
+import {
+  getDraftShortlist,
+  rememberDraftShortlist,
+  removeDraftedShortlistIds,
+  toggleShortlistId,
+} from "../../lib/draftShortlist";
 
 type Character = {
   id: number;
@@ -49,6 +55,8 @@ export default function CharacterDraftApp() {
   const [filters, setFilters] = useState<{ searchText: string; gender: string }>(
     { searchText: "", gender: "All" }
   );
+  const [shortlistedIds, setShortlistedIds] = useState<number[]>([]);
+  const [showShortlistOnly, setShowShortlistOnly] = useState(false);
 
   // deep cut modal
   const [showDeepSearchModal, setShowDeepSearchModal] =
@@ -141,6 +149,26 @@ export default function CharacterDraftApp() {
     setMeName(getLobbyIdentity(lobbyId));
     setIdentityReady(true);
   }, [lobbyId]);
+
+  useEffect(() => {
+    setShortlistedIds(getDraftShortlist("anime", lobbyId));
+    setShowShortlistOnly(false);
+  }, [lobbyId]);
+
+  useEffect(() => {
+    setShortlistedIds((previousIds) => {
+      const nextIds = removeDraftedShortlistIds(
+        previousIds,
+        lobby.draftedIds ?? []
+      );
+      const unchanged =
+        nextIds.length === previousIds.length &&
+        nextIds.every((id, index) => id === previousIds[index]);
+      if (unchanged) return previousIds;
+      rememberDraftShortlist("anime", lobbyId, nextIds);
+      return nextIds;
+    });
+  }, [lobby.draftedIds, lobbyId]);
 
   useEffect(() => {
     if (!everyoneFull) {
@@ -558,15 +586,27 @@ export default function CharacterDraftApp() {
       alert("Unable to copy the vote link. You can copy it manually below.");
     }
   }
+  const shortlistedSet = useMemo(
+    () => new Set(shortlistedIds),
+    [shortlistedIds]
+  );
+
   const filteredLocalPool = useMemo(() => {
     const draftedSet = new Set(lobby.draftedIds || []);
     return characters.filter((c) => {
       if (draftedSet.has(c.id)) return false;
+      if (showShortlistOnly && !shortlistedSet.has(c.id)) return false;
       const genderOK = filters.gender === "All" || (c.gender && c.gender.toLowerCase().includes(filters.gender.toLowerCase()));
       const textOK = `${c.name.full} ${c.name.native}`.toLowerCase().includes(filters.searchText.toLowerCase());
       return genderOK && textOK;
     });
-  }, [characters, filters, lobby.draftedIds]);
+  }, [
+    characters,
+    filters,
+    lobby.draftedIds,
+    shortlistedSet,
+    showShortlistOnly,
+  ]);
 
   function handleRandomPick() {
     if (filteredLocalPool.length === 0) {
@@ -576,6 +616,14 @@ export default function CharacterDraftApp() {
     const idx = Math.floor(Math.random() * filteredLocalPool.length);
     setRandomCharacter(filteredLocalPool[idx]);
     setShowRandomModal(true);
+  }
+
+  function toggleShortlist(characterId: number) {
+    setShortlistedIds((previousIds) => {
+      const nextIds = toggleShortlistId(previousIds, characterId);
+      rememberDraftShortlist("anime", lobbyId, nextIds);
+      return nextIds;
+    });
   }
 
   if (loadingChars) {
@@ -901,6 +949,12 @@ export default function CharacterDraftApp() {
             deepSearchRunningRef.current = false; // reset just in case because strict mode might trigger this weirdly
           }}
           onRandom={handleRandomPick}
+          shortlistedIds={shortlistedSet}
+          showShortlistOnly={showShortlistOnly}
+          onToggleShortlist={toggleShortlist}
+          onToggleShortlistOnly={() =>
+            setShowShortlistOnly((showing) => !showing)
+          }
         />
 
         {showDeepSearchModal && (
@@ -1061,9 +1115,6 @@ export default function CharacterDraftApp() {
     </div>
   );
 }
-
-
-
 
 
 

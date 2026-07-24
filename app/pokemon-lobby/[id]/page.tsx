@@ -13,6 +13,12 @@ import {
   rememberLobbyIdentity,
 } from "../../lib/lobbyIdentity";
 import { getOpenSlotNames } from "../../lib/draftTurns";
+import {
+  getDraftShortlist,
+  rememberDraftShortlist,
+  removeDraftedShortlistIds,
+  toggleShortlistId,
+} from "../../lib/draftShortlist";
 
 import { LobbyState } from "../../api/lobby/logic";
 
@@ -41,6 +47,8 @@ export default function PokemonDraftApp() {
     type: "All",
     generation: "All",
   });
+  const [shortlistedIds, setShortlistedIds] = useState<number[]>([]);
+  const [showShortlistOnly, setShowShortlistOnly] = useState(false);
 
   // Pokédex deep search modal
   const [showSearchModal, setShowSearchModal] = useState<boolean>(false);
@@ -122,6 +130,26 @@ export default function PokemonDraftApp() {
     setMeName(getLobbyIdentity(lobbyId));
     setIdentityReady(true);
   }, [lobbyId]);
+
+  useEffect(() => {
+    setShortlistedIds(getDraftShortlist("pokemon", lobbyId));
+    setShowShortlistOnly(false);
+  }, [lobbyId]);
+
+  useEffect(() => {
+    setShortlistedIds((previousIds) => {
+      const nextIds = removeDraftedShortlistIds(
+        previousIds,
+        lobby.draftedIds ?? []
+      );
+      const unchanged =
+        nextIds.length === previousIds.length &&
+        nextIds.every((id, index) => id === previousIds[index]);
+      if (unchanged) return previousIds;
+      rememberDraftShortlist("pokemon", lobbyId, nextIds);
+      return nextIds;
+    });
+  }, [lobby.draftedIds, lobbyId]);
 
   useEffect(() => {
     if (!everyoneFull) setCompletionDismissed(false);
@@ -409,11 +437,17 @@ export default function PokemonDraftApp() {
     }
   }
 
+  const shortlistedSet = useMemo(
+    () => new Set(shortlistedIds),
+    [shortlistedIds]
+  );
+
   // Filtered pool — exclude already-drafted Pokemon, apply filters
   const filteredPool = useMemo(() => {
     const draftedSet = new Set(lobby.draftedIds || []);
     return pokemon.filter((p) => {
       if (draftedSet.has(p.id)) return false;
+      if (showShortlistOnly && !shortlistedSet.has(p.id)) return false;
 
       // Text search: name or Pokédex number
       if (filters.searchText) {
@@ -435,7 +469,13 @@ export default function PokemonDraftApp() {
 
       return true;
     });
-  }, [pokemon, filters, lobby.draftedIds]);
+  }, [
+    pokemon,
+    filters,
+    lobby.draftedIds,
+    shortlistedSet,
+    showShortlistOnly,
+  ]);
 
   function handleRandomPick() {
     if (filteredPool.length === 0) {
@@ -445,6 +485,14 @@ export default function PokemonDraftApp() {
     const idx = Math.floor(Math.random() * filteredPool.length);
     setRandomPokemon(filteredPool[idx]);
     setShowRandomModal(true);
+  }
+
+  function toggleShortlist(pokemonId: number) {
+    setShortlistedIds((previousIds) => {
+      const nextIds = toggleShortlistId(previousIds, pokemonId);
+      rememberDraftShortlist("pokemon", lobbyId, nextIds);
+      return nextIds;
+    });
   }
 
   // ─── Loading screen ────────────────────────────────────────────────────────
@@ -821,6 +869,12 @@ export default function PokemonDraftApp() {
             setSearchError(null);
           }}
           onRandom={handleRandomPick}
+          shortlistedIds={shortlistedSet}
+          showShortlistOnly={showShortlistOnly}
+          onToggleShortlist={toggleShortlist}
+          onToggleShortlistOnly={() =>
+            setShowShortlistOnly((showing) => !showing)
+          }
         />
       </main>
 

@@ -11,6 +11,10 @@ type Props = {
     onPick: (charId: number) => void;
     onDeepSearch: () => void;
     onRandom: () => void;
+    shortlistedIds: ReadonlySet<number>;
+    showShortlistOnly: boolean;
+    onToggleShortlist: (charId: number) => void;
+    onToggleShortlistOnly: () => void;
 };
 
 export function CharacterPool({
@@ -21,6 +25,10 @@ export function CharacterPool({
     onPick,
     onDeepSearch,
     onRandom,
+    shortlistedIds,
+    showShortlistOnly,
+    onToggleShortlist,
+    onToggleShortlistOnly,
 }: Props) {
     return (
         <section className="flex flex-col bg-neutral-900/0">
@@ -68,6 +76,25 @@ export function CharacterPool({
                     </div>
                     <div className="flex flex-col">
                         <label className="text-[10px] uppercase text-neutral-500 font-semibold">
+                            Scout List
+                        </label>
+                        <button
+                            type="button"
+                            aria-pressed={showShortlistOnly}
+                            onClick={onToggleShortlistOnly}
+                            className={`rounded border px-2 py-1 text-[11px] font-semibold transition ${
+                                showShortlistOnly
+                                    ? "border-amber-400 bg-amber-500/20 text-amber-200"
+                                    : "border-neutral-700 bg-neutral-900 text-neutral-300 hover:border-amber-500/60 hover:text-amber-200"
+                            }`}
+                        >
+                            {showShortlistOnly
+                                ? `Showing saved (${shortlistedIds.size})`
+                                : `Saved picks (${shortlistedIds.size})`}
+                        </button>
+                    </div>
+                    <div className="flex flex-col">
+                        <label className="text-[10px] uppercase text-neutral-500 font-semibold">
                             Can&apos;t Find Them?
                         </label>
                         <div className="flex gap-2">
@@ -94,41 +121,65 @@ export function CharacterPool({
                 </div>
             </div>
             <div className="overflow-y-auto max-h-[70vh] pr-1 grid grid-cols-1 md:grid-cols-2 gap-3">
-                {filteredPool.map((c, idx) => (
-                    <div
-                        key={c.id}
-                        className="bg-neutral-900 border border-neutral-700 rounded-xl p-3 flex gap-3"
-                    >
-                        <img
-                            src={c.image.large}
-                            alt={c.name.full}
-                            className="w-20 h-28 object-cover rounded"
-                        />
-                        <div className="flex-1 min-w-0">
-                            <div className="font-semibold text-neutral-100 truncate">
-                                {c.name.full}
+                {filteredPool.map((c, idx) => {
+                    const isShortlisted = shortlistedIds.has(c.id);
+                    return (
+                        <div
+                            key={c.id}
+                            className={`bg-neutral-900 border rounded-xl p-3 flex gap-3 ${
+                                isShortlisted ? "border-amber-500/60" : "border-neutral-700"
+                            }`}
+                        >
+                            <img
+                                src={c.image.large}
+                                alt={c.name.full}
+                                className="w-20 h-28 object-cover rounded"
+                            />
+                            <div className="flex-1 min-w-0">
+                                <div className="flex items-start justify-between gap-2">
+                                    <div className="font-semibold text-neutral-100 truncate">
+                                        {c.name.full}
+                                    </div>
+                                    <button
+                                        type="button"
+                                        aria-pressed={isShortlisted}
+                                        aria-label={`${isShortlisted ? "Remove" : "Add"} ${c.name.full} ${isShortlisted ? "from" : "to"} your Scout List`}
+                                        onClick={() => onToggleShortlist(c.id)}
+                                        className={`shrink-0 rounded border px-2 py-1 text-[10px] font-semibold ${
+                                            isShortlisted
+                                                ? "border-amber-400 bg-amber-500/15 text-amber-200"
+                                                : "border-neutral-700 text-neutral-400 hover:border-amber-500/60 hover:text-amber-200"
+                                        }`}
+                                    >
+                                        {isShortlisted ? "★ Saved" : "☆ Save"}
+                                    </button>
+                                </div>
+                                <div className="text-xs text-neutral-400 truncate">
+                                    {c.name.native}
+                                </div>
+                                <div className="text-xs text-neutral-500 mt-1">
+                                    {c.gender} {"\u2022"} {"\u2764"}{" "}
+                                    {c.favourites.toLocaleString()}
+                                </div>
+                                <button
+                                    onClick={() => onPick(c.id)}
+                                    className="mt-2 text-[11px] bg-neutral-800 border border-neutral-700 rounded px-2 py-1 hover:bg-neutral-700"
+                                >
+                                    Pick #{idx + 1}
+                                </button>
                             </div>
-                            <div className="text-xs text-neutral-400 truncate">
-                                {c.name.native}
-                            </div>
-                            <div className="text-xs text-neutral-500 mt-1">
-                                {c.gender} {"\u2022"} {"\u2764"}{" "}
-                                {c.favourites.toLocaleString()}
-                            </div>
-                            <button
-                                onClick={() => onPick(c.id)}
-                                className="mt-2 text-[11px] bg-neutral-800 border border-neutral-700 rounded px-2 py-1 hover:bg-neutral-700"
-                            >
-                                Pick #{idx + 1}
-                            </button>
                         </div>
-                    </div>
-                ))}
+                    );
+                })}
                 {filteredPool.length === 0 && (
                     <div className="col-span-full text-center text-neutral-500 text-sm py-12">
-                        No local matches.
+                        {showShortlistOnly
+                            ? "No saved candidates match these filters."
+                            : "No local matches."}
                         <div className="mt-2 text-[11px] text-neutral-600">
-                            Try Deep Cut Search {"\u2192"} to pull from AniList directly.
+                            {showShortlistOnly
+                                ? "Turn off Scout List or save candidates with ☆."
+                                : <>Try Deep Cut Search {"\u2192"} to pull from AniList directly.</>}
                         </div>
                     </div>
                 )}

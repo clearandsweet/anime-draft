@@ -27,6 +27,10 @@ type Props = {
   onPick: (pokemonId: number) => void;
   onSearch: () => void;
   onRandom: () => void;
+  shortlistedIds: ReadonlySet<number>;
+  showShortlistOnly: boolean;
+  onToggleShortlist: (pokemonId: number) => void;
+  onToggleShortlistOnly: () => void;
 };
 
 export function PokemonPool({
@@ -37,6 +41,10 @@ export function PokemonPool({
   onPick,
   onSearch,
   onRandom,
+  shortlistedIds,
+  showShortlistOnly,
+  onToggleShortlist,
+  onToggleShortlistOnly,
 }: Props) {
   return (
     <section className="flex flex-col bg-neutral-900/0">
@@ -92,6 +100,26 @@ export function PokemonPool({
             </select>
           </div>
 
+          <div className="flex flex-col">
+            <label className="text-[10px] uppercase text-neutral-500 font-semibold">
+              Scout List
+            </label>
+            <button
+              type="button"
+              aria-pressed={showShortlistOnly}
+              onClick={onToggleShortlistOnly}
+              className={`rounded border px-2 py-1 text-[11px] font-semibold transition ${
+                showShortlistOnly
+                  ? "border-amber-400 bg-amber-500/20 text-amber-200"
+                  : "border-neutral-700 bg-neutral-900 text-neutral-300 hover:border-amber-500/60 hover:text-amber-200"
+              }`}
+            >
+              {showShortlistOnly
+                ? `Showing saved (${shortlistedIds.size})`
+                : `Saved picks (${shortlistedIds.size})`}
+            </button>
+          </div>
+
           {/* Action buttons */}
           <div className="flex flex-col">
             <label className="text-[10px] uppercase text-neutral-500 font-semibold">
@@ -123,11 +151,15 @@ export function PokemonPool({
       </div>
 
       <div className="overflow-y-auto max-h-[70vh] pr-1 grid grid-cols-1 md:grid-cols-2 gap-3">
-        {filteredPool.map((p, idx) => (
-          <div
-            key={p.id}
-            className="bg-neutral-900 border border-neutral-700 rounded-xl p-3 flex gap-3"
-          >
+        {filteredPool.map((p, idx) => {
+          const isShortlisted = shortlistedIds.has(p.id);
+          return (
+            <div
+              key={p.id}
+              className={`bg-neutral-900 border rounded-xl p-3 flex gap-3 ${
+                isShortlisted ? "border-amber-500/60" : "border-neutral-700"
+              }`}
+            >
             <img
               src={p.image.large}
               alt={p.name.full}
@@ -140,7 +172,24 @@ export function PokemonPool({
               }}
             />
             <div className="flex-1 min-w-0">
-              <div className="font-semibold text-neutral-100 truncate">{p.name.full}</div>
+              <div className="flex items-start justify-between gap-2">
+                <div className="font-semibold text-neutral-100 truncate">
+                  {p.name.full}
+                </div>
+                <button
+                  type="button"
+                  aria-pressed={isShortlisted}
+                  aria-label={`${isShortlisted ? "Remove" : "Add"} ${p.name.full} ${isShortlisted ? "from" : "to"} your Scout List`}
+                  onClick={() => onToggleShortlist(p.id)}
+                  className={`shrink-0 rounded border px-2 py-1 text-[10px] font-semibold ${
+                    isShortlisted
+                      ? "border-amber-400 bg-amber-500/15 text-amber-200"
+                      : "border-neutral-700 text-neutral-400 hover:border-amber-500/60 hover:text-amber-200"
+                  }`}
+                >
+                  {isShortlisted ? "★ Saved" : "☆ Save"}
+                </button>
+              </div>
               <div className="text-xs text-neutral-400 mt-0.5">
                 {p.name.native}
               </div>
@@ -155,12 +204,17 @@ export function PokemonPool({
               </button>
             </div>
           </div>
-        ))}
+          );
+        })}
         {filteredPool.length === 0 && (
           <div className="col-span-full text-center text-neutral-500 text-sm py-12">
-            No Pokémon match your filters.
+            {showShortlistOnly
+              ? "No saved Pokémon match these filters."
+              : "No Pokémon match your filters."}
             <div className="mt-2 text-[11px] text-neutral-600">
-              Try Pokédex Search to look up by exact name or number.
+              {showShortlistOnly
+                ? "Turn off Scout List or save Pokémon with ☆."
+                : "Try Pokédex Search to look up by exact name or number."}
             </div>
           </div>
         )}

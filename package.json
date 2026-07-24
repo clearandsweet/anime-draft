@@ -12,6 +12,7 @@
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "test:draft-turns": "node --experimental-strip-types --test tests/draftTurns.test.mjs",
     "test:identity": "node --experimental-strip-types --test tests/lobbyIdentity.test.mjs",
+    "test:shortlist": "node --experimental-strip-types --test tests/draftShortlist.test.mjs",
     "test:voting": "node --experimental-strip-types --test tests/votesLogic.test.mjs",
     "db:generate": "drizzle-kit generate"
   },
