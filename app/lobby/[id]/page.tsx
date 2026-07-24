@@ -8,6 +8,7 @@ import { PlayerList } from "./components/PlayerList";
 import { CharacterPool } from "./components/CharacterPool";
 import { ThanksgivingTheme } from "./components/ThanksgivingTheme";
 import { DraftTurnGuide } from "../../components/DraftTurnGuide";
+import { DraftActivityStrip } from "../../components/DraftActivityStrip";
 import { LobbyInvitePanel } from "../../components/LobbyInvitePanel";
 import {
   forgetLobbyIdentity,
@@ -891,17 +892,7 @@ export default function CharacterDraftApp() {
             onTogglePause={handleTogglePause}
             viewerName={meName}
           />
-          <div className="text-right flex-1 min-w-[200px]">
-            <div className="text-[10px] uppercase tracking-wide text-neutral-500 font-semibold">Last Pick</div>
-            {lobby.lastPick ? (
-              <div className="text-xs text-neutral-300 leading-tight">
-                <span className="text-white font-semibold">{lobby.lastPick.playerName}</span>{" "}took{" "}
-                <span className="text-white font-semibold">{lobby.lastPick.char.name.full}</span>{" "}as {lobby.lastPick.slot}
-              </div>
-            ) : (
-              <div className="text-xs text-neutral-600 leading-tight">(none yet)</div>
-            )}
-          </div>
+          <DraftActivityStrip lobby={lobby} draftType="anime" />
         </div>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex items-center gap-2">
@@ -1121,7 +1112,6 @@ export default function CharacterDraftApp() {
     </div>
   );
 }
-
 
 
 

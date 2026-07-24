@@ -11,6 +11,7 @@
     "start": "vinext start",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "test:draft-turns": "node --experimental-strip-types --test tests/draftTurns.test.mjs",
+    "test:activity": "node --experimental-strip-types --test tests/draftActivity.test.mjs",
     "test:identity": "node --experimental-strip-types --test tests/lobbyIdentity.test.mjs",
     "test:invite": "node --experimental-strip-types --test tests/lobbyInvite.test.mjs",
     "test:shortlist": "node --experimental-strip-types --test tests/draftShortlist.test.mjs",
