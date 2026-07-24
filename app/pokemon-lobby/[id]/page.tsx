@@ -7,6 +7,7 @@ import { DraftTimer } from "../../lobby/[id]/components/DraftTimer";
 import { PlayerList } from "../../lobby/[id]/components/PlayerList";
 import { PokemonPool, PokemonFilters } from "./components/PokemonPool";
 import { DraftTurnGuide } from "../../components/DraftTurnGuide";
+import { LobbyInvitePanel } from "../../components/LobbyInvitePanel";
 import {
   forgetLobbyIdentity,
   getLobbyIdentity,
@@ -528,6 +529,13 @@ export default function PokemonDraftApp() {
             )}
           </div>
 
+          <LobbyInvitePanel
+            draftType="pokemon"
+            lobbyId={lobbyId}
+            hostName={lobby.hostName}
+            playerCount={joinedCount}
+          />
+
           <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Categories panel */}
             <div className="bg-neutral-800/40 border border-neutral-700 rounded-xl p-4">
@@ -607,7 +615,6 @@ export default function PokemonDraftApp() {
                   </div>
                 )}
               </div>
-              <div className="text-[11px] text-neutral-500">Lobby Code: {lobbyId}</div>
             </div>
 
             {/* Players list */}

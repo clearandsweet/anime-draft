@@ -8,6 +8,7 @@ import { PlayerList } from "./components/PlayerList";
 import { CharacterPool } from "./components/CharacterPool";
 import { ThanksgivingTheme } from "./components/ThanksgivingTheme";
 import { DraftTurnGuide } from "../../components/DraftTurnGuide";
+import { LobbyInvitePanel } from "../../components/LobbyInvitePanel";
 import {
   forgetLobbyIdentity,
   getLobbyIdentity,
@@ -654,6 +655,12 @@ export default function CharacterDraftApp() {
               "Waiting for first player to join..."
             )}
           </div>
+          <LobbyInvitePanel
+            draftType="anime"
+            lobbyId={lobbyId}
+            hostName={lobby.hostName}
+            playerCount={joinedCount}
+          />
           <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-neutral-800/40 border border-neutral-700 rounded-xl p-4">
               <div className="text-xs uppercase text-neutral-500 font-semibold mb-2 text-center">Categories</div>
@@ -712,7 +719,6 @@ export default function CharacterDraftApp() {
                   </div>
                 )}
               </div>
-              <div className="text-[11px] text-neutral-500">Lobby Code: {lobbyId}</div>
             </div>
             <div className="bg-neutral-800/40 border border-neutral-700 rounded-xl p-4">
               <div className="text-xs uppercase text-neutral-500 font-semibold mb-2">Players</div>
@@ -1115,7 +1121,6 @@ export default function CharacterDraftApp() {
     </div>
   );
 }
-
 
 
 
