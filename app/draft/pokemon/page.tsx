@@ -18,6 +18,7 @@ export default function PokemonDraftLobbyPage() {
   const [loading, setLoading] = useState(true);
   const [createBusy, setCreateBusy] = useState(false);
   const [lastCreatedId, setLastCreatedId] = useState<string | null>(null);
+  const [rematchOf, setRematchOf] = useState<string | null>(null);
 
   async function refreshLobbies() {
     try {
@@ -33,6 +34,19 @@ export default function PokemonDraftLobbyPage() {
   }
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const requestedPreset = params.get("preset");
+    if (
+      requestedPreset === "classic" ||
+      requestedPreset === "blitz" ||
+      requestedPreset === "chaos"
+    ) {
+      setPreset(requestedPreset);
+    }
+    const requestedRematch = params.get("rematchOf");
+    if (requestedRematch && /^\d+$/.test(requestedRematch)) {
+      setRematchOf(requestedRematch);
+    }
     refreshLobbies();
   }, []);
 
@@ -114,6 +128,25 @@ export default function PokemonDraftLobbyPage() {
             </div>
           </div>
         </header>
+
+        {rematchOf && !lastCreatedId && (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-cyan-400/25 bg-cyan-500/10 p-4">
+            <div>
+              <p className="font-semibold text-cyan-100">
+                Rematch setup for archived room #{rematchOf}
+              </p>
+              <p className="text-xs text-cyan-200/70">
+                The original format is selected. Add a host name, then create the new room.
+              </p>
+            </div>
+            <a
+              href={`/pokemon-lobby/${rematchOf}/vote`}
+              className="text-xs font-semibold text-cyan-200 underline decoration-cyan-500/50 underline-offset-4"
+            >
+              Back to archive
+            </a>
+          </div>
+        )}
 
         {lastCreatedId && (
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-4">

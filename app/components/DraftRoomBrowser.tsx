@@ -80,7 +80,7 @@ function RoomCard({
             href={completed ? `${basePath}/${lobby.id}/vote` : `${basePath}/${lobby.id}`}
             className={`rounded-lg border px-3 py-2 text-xs font-semibold transition ${primaryClass}`}
           >
-            {completed ? "View results" : "Enter room"}
+            {completed ? "Results & recap" : "Enter room"}
           </a>
           {completed && (
             <a

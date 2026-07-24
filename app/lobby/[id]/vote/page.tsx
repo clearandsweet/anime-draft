@@ -4,6 +4,11 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { colorStyleForColor } from "../../../lib/colors";
 import { DraftBroadcastBooth } from "../../../components/DraftBroadcastBooth";
+import {
+  DraftRecap,
+  type DraftHistoryEntry,
+} from "../../../components/DraftRecap";
+import type { DraftPreset } from "../../../components/DraftPresetPicker";
 import { ThanksgivingTheme } from "../components/ThanksgivingTheme";
 
 type Character = {
@@ -22,6 +27,9 @@ type Player = {
 
 type LobbyState = {
   players: Player[];
+  history: DraftHistoryEntry[];
+  preset?: DraftPreset;
+  startedAt?: string | null;
   completedAt: string | null;
   competitions?: string[];
 };
@@ -76,6 +84,9 @@ export default function VoteDraftBoards() {
       } else {
         setLobby({
           players: Array.isArray(stateData.players) ? stateData.players : [],
+          history: Array.isArray(stateData.history) ? stateData.history : [],
+          preset: stateData.preset || "classic",
+          startedAt: stateData.startedAt ?? null,
           completedAt: stateData.completedAt ?? null,
           competitions: stateData.competitions || ["Fight"],
         });
@@ -339,6 +350,16 @@ export default function VoteDraftBoards() {
             </div>
           </section>
         )}
+
+        <DraftRecap
+          lobbyId={lobbyId}
+          draftType="anime"
+          players={lobby.players}
+          history={lobby.history}
+          preset={lobby.preset}
+          startedAt={lobby.startedAt}
+          completedAt={lobby.completedAt}
+        />
 
         <DraftBroadcastBooth
           lobbyId={lobbyId}
