@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { colorStyleForColor } from "../../../lib/colors";
 import { DraftBroadcastBooth } from "../../../components/DraftBroadcastBooth";
+import { SelectableDraftBoard } from "../../../components/SelectableDraftBoard";
 import {
   DraftRecap,
   type DraftHistoryEntry,
@@ -160,8 +161,8 @@ export default function VoteDraftBoards() {
   }, [lobby?.players]);
   const voteInstruction =
     requiredSelections === 1
-      ? "Tap one board to assign your top pick, then submit your sealed ballot."
-      : "Tap boards to assign 1st, 2nd, and 3rd. Submit once all three picks are chosen.";
+      ? "Select one board to assign your top pick, then submit your sealed ballot."
+      : "Select boards to assign 1st, 2nd, and 3rd. Submit once all three picks are chosen.";
 
   function toggleSelection(playerId: string) {
     setSelected((prev) => {
@@ -289,11 +290,15 @@ export default function VoteDraftBoards() {
             const label = typeof placeIdx === "number" ? PLACE_LABELS[placeIdx] : null;
             const disabled = alreadyVoted;
             return (
-              <div
+              <SelectableDraftBoard
                 key={player.id}
-                className={`relative border rounded-2xl overflow-hidden bg-neutral-900/80 backdrop-blur-sm transition ${label ? col.border : "border-neutral-800"
-                  } ${disabled ? "opacity-80" : "cursor-pointer hover:border-fuchsia-500/60"}`}
-                onClick={() => !disabled && toggleSelection(player.id)}
+                playerName={player.name}
+                selectionLabel={label}
+                disabled={disabled}
+                draftType="anime"
+                selectedBorderClass={col.border}
+                selectionBadgeClass={col.overlay}
+                onSelect={() => toggleSelection(player.id)}
               >
                 <div className="p-4 space-y-3">
                   <div className="flex items-center justify-between">
@@ -339,14 +344,7 @@ export default function VoteDraftBoards() {
                     })}
                   </div>
                 </div>
-                {label && (
-                  <div
-                    className={`absolute inset-0 flex items-center justify-center text-white font-bold text-lg ${col.overlay}`}
-                  >
-                    <div className="bg-black/50 px-4 py-2 rounded-xl shadow-lg">{label}</div>
-                  </div>
-                )}
-              </div>
+              </SelectableDraftBoard>
             );
           })}
         </section>
