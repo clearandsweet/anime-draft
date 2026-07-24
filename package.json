@@ -12,6 +12,7 @@
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "test:draft-turns": "node --experimental-strip-types --test tests/draftTurns.test.mjs",
     "test:activity": "node --experimental-strip-types --test tests/draftActivity.test.mjs",
+    "test:awards": "node --experimental-strip-types --test tests/draftAwards.test.mjs",
     "test:identity": "node --experimental-strip-types --test tests/lobbyIdentity.test.mjs",
     "test:invite": "node --experimental-strip-types --test tests/lobbyInvite.test.mjs",
     "test:progress": "node --experimental-strip-types --test tests/draftProgress.test.mjs",

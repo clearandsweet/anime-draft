@@ -2,11 +2,14 @@
 
 import { useMemo, useState } from "react";
 import { colorStyleForColor } from "../lib/colors";
+import { getDraftAwards } from "../lib/draftAwards";
 import type { DraftPreset } from "./DraftPresetPicker";
 
 type RecapCharacter = {
   id: number;
   name: { full: string; native?: string };
+  image?: { large?: string };
+  favourites?: number;
 };
 
 export type DraftHistoryEntry = {
@@ -79,6 +82,10 @@ export function DraftRecap({
       })),
     [history, players]
   );
+  const awards = useMemo(
+    () => getDraftAwards(history, players),
+    [history, players]
+  );
 
   const completedPicks = recap.filter((entry) => !entry.skipped).length;
   const skippedTurns = recap.length - completedPicks;
@@ -143,6 +150,73 @@ export function DraftRecap({
       </div>
 
       <div className="p-5">
+        {awards.length > 0 && (
+          <section className="mb-8" aria-labelledby="draft-awards-heading">
+            <div className="mb-4">
+              <p className="text-xs uppercase tracking-[0.18em] text-amber-400">
+                Automatic superlatives
+              </p>
+              <h3
+                id="draft-awards-heading"
+                className="mt-1 text-lg font-semibold text-white"
+              >
+                Draft Awards
+              </h3>
+              <p className="mt-1 text-xs text-neutral-500">
+                Memorable moments selected from the permanent pick log.
+              </p>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              {awards.map((award) => {
+                const color = colorStyleForColor(award.playerColor);
+
+                return (
+                  <article
+                    key={award.id}
+                    className={`overflow-hidden rounded-xl border bg-neutral-950/75 ${color.border}`}
+                  >
+                    <div className="flex min-h-24">
+                      <div
+                        aria-hidden="true"
+                        className={`flex w-20 shrink-0 items-center justify-center border-r border-neutral-800 bg-neutral-900 bg-center ${
+                          draftType === "pokemon"
+                            ? "bg-contain bg-no-repeat"
+                            : "bg-cover"
+                        } text-xl font-black text-neutral-700`}
+                        style={
+                          award.imageUrl
+                            ? { backgroundImage: `url(${award.imageUrl})` }
+                            : undefined
+                        }
+                      >
+                        {!award.imageUrl && award.pickNumber}
+                      </div>
+                      <div className="min-w-0 flex-1 p-3">
+                        <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-amber-400">
+                          {award.title}
+                        </p>
+                        <p className="mt-1 truncate text-sm font-bold text-white">
+                          {award.characterName}
+                        </p>
+                        <p className={`truncate text-xs ${color.text}`}>
+                          {award.playerName}
+                        </p>
+                        <p className="mt-1 truncate text-[10px] text-neutral-500">
+                          Pick {award.pickNumber} · {award.slot}
+                        </p>
+                      </div>
+                    </div>
+                    <p className="border-t border-neutral-800 px-3 py-2 text-[10px] leading-relaxed text-neutral-500">
+                      {award.description}
+                    </p>
+                  </article>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
             <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">Pick log</p>
