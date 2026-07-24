@@ -252,10 +252,10 @@ export default function HomePage() {
             <li>Best for streams, servers, and watch parties</li>
           </ul>
           <div className="v2-actions stack">
-            <a href="https://animedraft.godisaloli.com/draft" target="_blank" rel="noreferrer" className="v2-btn primary">
+            <a href="/draft" className="v2-btn primary">
               Anime Character Draft
             </a>
-            <a href="https://animedraft.godisaloli.com/draft/pokemon" target="_blank" rel="noreferrer" className="v2-btn primary" style={{background: "linear-gradient(135deg, #dc2626, #ea580c)"}}>
+            <a href="/draft/pokemon" className="v2-btn primary" style={{background: "linear-gradient(135deg, #dc2626, #ea580c)"}}>
               Pokémon Draft
             </a>
             <a href="/amq" className="v2-btn primary" style={{background: "linear-gradient(135deg, #7c3aed, #db2777)"}}>
