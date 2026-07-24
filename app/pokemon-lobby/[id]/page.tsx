@@ -8,6 +8,7 @@ import { PlayerList } from "../../lobby/[id]/components/PlayerList";
 import { PokemonPool, PokemonFilters } from "./components/PokemonPool";
 import { DraftTurnGuide } from "../../components/DraftTurnGuide";
 import { DraftActivityStrip } from "../../components/DraftActivityStrip";
+import { DraftProgressPanel } from "../../components/DraftProgressPanel";
 import { LobbyInvitePanel } from "../../components/LobbyInvitePanel";
 import {
   forgetLobbyIdentity,
@@ -847,6 +848,11 @@ export default function PokemonDraftApp() {
       </header>
 
       <main className="grid lg:grid-cols-[1fr_1fr] gap-4 p-4">
+        <DraftProgressPanel
+          lobby={lobby}
+          viewerName={meName}
+          draftType="pokemon"
+        />
         <PlayerList
           lobby={lobby}
           downloadingBoards={downloadingBoards}

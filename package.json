@@ -14,6 +14,7 @@
     "test:activity": "node --experimental-strip-types --test tests/draftActivity.test.mjs",
     "test:identity": "node --experimental-strip-types --test tests/lobbyIdentity.test.mjs",
     "test:invite": "node --experimental-strip-types --test tests/lobbyInvite.test.mjs",
+    "test:progress": "node --experimental-strip-types --test tests/draftProgress.test.mjs",
     "test:shortlist": "node --experimental-strip-types --test tests/draftShortlist.test.mjs",
     "test:voting": "node --experimental-strip-types --test tests/votesLogic.test.mjs",
     "db:generate": "drizzle-kit generate"

@@ -9,6 +9,7 @@ import { CharacterPool } from "./components/CharacterPool";
 import { ThanksgivingTheme } from "./components/ThanksgivingTheme";
 import { DraftTurnGuide } from "../../components/DraftTurnGuide";
 import { DraftActivityStrip } from "../../components/DraftActivityStrip";
+import { DraftProgressPanel } from "../../components/DraftProgressPanel";
 import { LobbyInvitePanel } from "../../components/LobbyInvitePanel";
 import {
   forgetLobbyIdentity,
@@ -926,6 +927,11 @@ export default function CharacterDraftApp() {
         <DraftTurnGuide lobby={lobby} viewerName={meName} />
       </header>
       <main className="grid xl:grid-cols-[1fr_1fr] gap-4">
+        <DraftProgressPanel
+          lobby={lobby}
+          viewerName={meName}
+          draftType="anime"
+        />
         <PlayerList
           lobby={lobby}
           downloadingBoards={downloadingBoards}
@@ -1112,7 +1118,6 @@ export default function CharacterDraftApp() {
     </div>
   );
 }
-
 
 
 
