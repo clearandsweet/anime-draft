@@ -9,10 +9,11 @@ export async function DELETE(
   try {
     const { id } = await params;
     const body = await request.json().catch(() => ({}));
-    const manageKey = (body?.manageKey as string | undefined) ?? "";
+    const manageKey =
+      typeof body?.manageKey === "string" ? body.manageKey.trim().slice(0, 128) : "";
     const authorized = await authorizeLobbyDelete(id, manageKey);
     if (!authorized) {
-      return NextResponse.json({ error: "Invalid lobby management key." }, { status: 401 });
+      return NextResponse.json({ error: "Invalid lobby management key." }, { status: 403 });
     }
     await deleteLobby(id);
     return NextResponse.json({ ok: true }, { status: 200 });

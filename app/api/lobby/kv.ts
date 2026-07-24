@@ -400,10 +400,7 @@ export async function deleteLobby(id: string) {
 export async function authorizeLobbyDelete(id: string, manageKey: string) {
   const row = await getLobbyRow(id);
   if (!row) return false;
-  return (
-    manageKey === "delete" ||
-    verifyManageKey(manageKey, row.manage_key_hash)
-  );
+  return verifyManageKey(manageKey, row.manage_key_hash);
 }
 
 async function cleanupStaleLobbies() {

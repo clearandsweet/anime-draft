@@ -227,7 +227,7 @@ export async function authorizeLobbyDelete(id: string, manageKey: string) {
   const idx = await readIndex();
   const meta = idx.list.find((m) => m.id === id);
   if (!meta) return false;
-  return manageKey === "delete";
+  return verifyManageKey(manageKey, meta.manageKeyHash);
 }
 
 export async function finishLobby(id: string, requesterName: string) {

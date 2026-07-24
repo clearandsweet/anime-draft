@@ -18,6 +18,7 @@ type Props = {
   loading: boolean;
   basePath: "/lobby" | "/pokemon-lobby";
   accent: "fuchsia" | "red";
+  ownedLobbyIds: Set<string>;
   onDelete: (id: string) => void;
 };
 
@@ -38,9 +39,11 @@ function RoomCard({
   lobby,
   basePath,
   accent,
+  ownedLobbyIds,
   onDelete,
 }: Omit<Props, "lobbies" | "loading"> & { lobby: LobbyMeta }) {
   const completed = lobby.status === "completed";
+  const owned = ownedLobbyIds.has(lobby.id);
   const preset = lobby.preset ?? "classic";
   const primaryClass =
     accent === "fuchsia"
@@ -65,6 +68,11 @@ function RoomCard({
             >
               {completed ? "Final" : "Live"}
             </span>
+            {owned && (
+              <span className="rounded-full bg-cyan-500/15 px-2 py-0.5 text-[10px] uppercase tracking-wide text-cyan-200">
+                Your room
+              </span>
+            )}
           </div>
           <p className="mt-2 text-xs text-neutral-400">
             Hosted by {lobby.hostName || "anonymous"} · {lobby.playersCount}{" "}
@@ -90,20 +98,29 @@ function RoomCard({
               Draft board
             </a>
           )}
-          <button
-            type="button"
-            onClick={() => onDelete(lobby.id)}
-            className="rounded-lg border border-red-500/30 bg-red-950/20 px-3 py-2 text-xs text-red-300 transition hover:bg-red-950/40"
-          >
-            Delete
-          </button>
+          {owned && (
+            <button
+              type="button"
+              onClick={() => onDelete(lobby.id)}
+              className="rounded-lg border border-red-500/30 bg-red-950/20 px-3 py-2 text-xs text-red-300 transition hover:bg-red-950/40"
+            >
+              Delete
+            </button>
+          )}
         </div>
       </div>
     </article>
   );
 }
 
-export function DraftRoomBrowser({ lobbies, loading, basePath, accent, onDelete }: Props) {
+export function DraftRoomBrowser({
+  lobbies,
+  loading,
+  basePath,
+  accent,
+  ownedLobbyIds,
+  onDelete,
+}: Props) {
   const active = lobbies.filter((lobby) => lobby.status === "active");
   const completed = lobbies.filter((lobby) => lobby.status === "completed");
 
@@ -135,6 +152,7 @@ export function DraftRoomBrowser({ lobbies, loading, basePath, accent, onDelete 
                 lobby={lobby}
                 basePath={basePath}
                 accent={accent}
+                ownedLobbyIds={ownedLobbyIds}
                 onDelete={onDelete}
               />
             ))
@@ -164,6 +182,7 @@ export function DraftRoomBrowser({ lobbies, loading, basePath, accent, onDelete 
                 lobby={lobby}
                 basePath={basePath}
                 accent={accent}
+                ownedLobbyIds={ownedLobbyIds}
                 onDelete={onDelete}
               />
             ))

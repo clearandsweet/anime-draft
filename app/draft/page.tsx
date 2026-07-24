@@ -9,6 +9,12 @@ import {
   DraftRoomBrowser,
   type LobbyMeta,
 } from "../components/DraftRoomBrowser";
+import {
+  forgetLobbyManagementKey,
+  getLobbyManagementKey,
+  ownedLobbyIds as findOwnedLobbyIds,
+  rememberLobbyManagementKey,
+} from "../lib/lobbyOwnership";
 
 export default function DraftLobbyPage() {
   const [hostName, setHostName] = useState("");
@@ -19,6 +25,7 @@ export default function DraftLobbyPage() {
   const [createBusy, setCreateBusy] = useState(false);
   const [lastCreatedId, setLastCreatedId] = useState<string | null>(null);
   const [rematchOf, setRematchOf] = useState<string | null>(null);
+  const [ownedLobbyIds, setOwnedLobbyIds] = useState<Set<string>>(new Set());
 
   async function refreshLobbies() {
     try {
@@ -27,7 +34,9 @@ export default function DraftLobbyPage() {
         cache: "no-store",
       });
       const data = await response.json();
-      setLobbies(Array.isArray(data.lobbies) ? data.lobbies : []);
+      const nextLobbies: LobbyMeta[] = Array.isArray(data.lobbies) ? data.lobbies : [];
+      setLobbies(nextLobbies);
+      setOwnedLobbyIds(findOwnedLobbyIds(nextLobbies.map((lobby) => lobby.id)));
     } finally {
       setLoading(false);
     }
@@ -69,8 +78,20 @@ export default function DraftLobbyPage() {
         return;
       }
       const id = String(data.id);
+      const ownershipSaved =
+        typeof data.manageKey === "string" &&
+        Boolean(data.manageKey) &&
+        rememberLobbyManagementKey(id, data.manageKey);
+      if (!ownershipSaved) {
+        alert(
+          "The room was created, but this browser blocked its ownership record. The room will remain protected from deletion."
+        );
+      }
       setLastCreatedId(id);
       setJoinCode(id);
+      if (ownershipSaved) {
+        setOwnedLobbyIds((current) => new Set([...current, id]));
+      }
       await refreshLobbies();
     } catch {
       alert("Server error creating lobby.");
@@ -86,21 +107,30 @@ export default function DraftLobbyPage() {
   }
 
   async function handleDelete(id: string) {
-    const password = window.prompt("Enter deletion password:")?.trim() || "";
-    if (!password) return;
+    const manageKey = getLobbyManagementKey(id);
+    if (!manageKey) {
+      alert("This browser does not own that room.");
+      return;
+    }
     if (!window.confirm(`Delete lobby #${id}? This cannot be undone.`)) return;
 
     const response = await fetch(`/api/lobbies/${id}`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ manageKey: password }),
+      body: JSON.stringify({ manageKey }),
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
       alert(data.error || "Delete failed.");
       return;
     }
+    forgetLobbyManagementKey(id);
     setLobbies((current) => current.filter((lobby) => lobby.id !== id));
+    setOwnedLobbyIds((current) => {
+      const next = new Set(current);
+      next.delete(id);
+      return next;
+    });
   }
 
   return (
@@ -152,7 +182,11 @@ export default function DraftLobbyPage() {
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-4">
             <div>
               <p className="font-semibold text-emerald-100">Room #{lastCreatedId} is ready.</p>
-              <p className="text-xs text-emerald-200/70">Share the number or jump in now.</p>
+              <p className="text-xs text-emerald-200/70">
+                {ownedLobbyIds.has(lastCreatedId)
+                  ? "Share the number or jump in now. This browser securely owns room management."
+                  : "Share the number or jump in now. The archive remains protected from deletion."}
+              </p>
             </div>
             <a
               href={`/lobby/${lastCreatedId}`}
@@ -249,6 +283,7 @@ export default function DraftLobbyPage() {
           loading={loading}
           basePath="/lobby"
           accent="fuchsia"
+          ownedLobbyIds={ownedLobbyIds}
           onDelete={handleDelete}
         />
       </main>
