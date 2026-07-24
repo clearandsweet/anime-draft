@@ -7,6 +7,11 @@ import { DraftTimer } from "./components/DraftTimer";
 import { PlayerList } from "./components/PlayerList";
 import { CharacterPool } from "./components/CharacterPool";
 import { ThanksgivingTheme } from "./components/ThanksgivingTheme";
+import {
+  forgetLobbyIdentity,
+  getLobbyIdentity,
+  rememberLobbyIdentity,
+} from "../../lib/lobbyIdentity";
 
 type Character = {
   id: number;
@@ -32,6 +37,7 @@ export default function CharacterDraftApp() {
 
   // local identity: user types their name locally
   const [meName, setMeName] = useState<string>("");
+  const [identityReady, setIdentityReady] = useState(false);
 
   // local giant character pool
   const [characters, setCharacters] = useState<Character[]>([]);
@@ -126,6 +132,10 @@ export default function CharacterDraftApp() {
   const canPromptFinish = useMemo(() => everyoneFull && !lobby.completedAt, [everyoneFull, lobby.completedAt]);
   const showCompletionModal = iAmHost && canPromptFinish && !completionDismissed;
 
+  useEffect(() => {
+    setMeName(getLobbyIdentity(lobbyId));
+    setIdentityReady(true);
+  }, [lobbyId]);
 
   useEffect(() => {
     if (!everyoneFull) {
@@ -251,23 +261,33 @@ export default function CharacterDraftApp() {
   }, [lobbyId]);
 
   async function tryJoin() {
-    if (!meName.trim()) return;
+    const joinedName = meName.trim();
+    if (!joinedName) return;
     try {
       const res = await fetch(`/api/lobby/${lobbyId}/join`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: meName.trim() }),
+        body: JSON.stringify({ name: joinedName }),
       });
       const data = await res.json();
       if (!res.ok) alert(data.error || "Join failed");
-      else setLobby((prev) => ({
-        ...prev,
-        ...data,
-        draftedIds: data.draftedIds ?? prev.draftedIds ?? [],
-        startedAt: data.startedAt ?? prev.startedAt ?? null,
-        completedAt: data.completedAt ?? prev.completedAt ?? null,
-      }));
+      else {
+        rememberLobbyIdentity(lobbyId, joinedName);
+        setMeName(joinedName);
+        setLobby((prev) => ({
+          ...prev,
+          ...data,
+          draftedIds: data.draftedIds ?? prev.draftedIds ?? [],
+          startedAt: data.startedAt ?? prev.startedAt ?? null,
+          completedAt: data.completedAt ?? prev.completedAt ?? null,
+        }));
+      }
     } catch { }
+  }
+
+  function useAnotherPlayer() {
+    forgetLobbyIdentity(lobbyId);
+    setMeName("");
   }
 
   async function setTargetPlayers(n: number) {
@@ -623,7 +643,19 @@ export default function CharacterDraftApp() {
                     <button onClick={tryJoin} className="mt-2 bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm hover:bg-neutral-700">Join Lobby</button>
                   </>
                 ) : (
-                  <div className="text-sm text-emerald-400">Joined as {meName}</div>
+                  <div>
+                    <div className="text-sm text-emerald-400">Joined as {meName}</div>
+                    <div className="text-[11px] text-neutral-500 mt-1">
+                      This browser will remember you for this room.
+                    </div>
+                    <button
+                      type="button"
+                      onClick={useAnotherPlayer}
+                      className="mt-3 text-xs text-neutral-400 underline underline-offset-4 hover:text-white"
+                    >
+                      Use another player
+                    </button>
+                  </div>
                 )}
               </div>
               <div className="text-[11px] text-neutral-500">Lobby Code: {lobbyId}</div>
@@ -757,7 +789,7 @@ export default function CharacterDraftApp() {
       </div>
     );
   }
-  const needReconnect = lobby.draftActive && !iAmJoined;
+  const needReconnect = identityReady && lobby.draftActive && !iAmJoined;
   const reconnectModal = needReconnect ? (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 backdrop-blur-sm">
       <div className="bg-neutral-900 border border-neutral-700 rounded-2xl p-8 w-full max-w-md text-center shadow-2xl">
@@ -826,7 +858,18 @@ export default function CharacterDraftApp() {
               </button>
             )}
           </div>
-          <button onClick={handleExport} className="bg-neutral-800 px-3 py-1 rounded border border-neutral-700 hover:bg-neutral-700 text-sm">Export</button>
+          <div className="flex items-center gap-2">
+            {iAmJoined && (
+              <button
+                type="button"
+                onClick={useAnotherPlayer}
+                className="text-xs text-neutral-500 hover:text-neutral-200"
+              >
+                Playing as {meName} · Switch
+              </button>
+            )}
+            <button onClick={handleExport} className="bg-neutral-800 px-3 py-1 rounded border border-neutral-700 hover:bg-neutral-700 text-sm">Export</button>
+          </div>
         </div>
       </header>
       <main className="grid xl:grid-cols-[1fr_1fr] gap-4">
@@ -1007,8 +1050,6 @@ export default function CharacterDraftApp() {
     </div>
   );
 }
-
-
 
 
 

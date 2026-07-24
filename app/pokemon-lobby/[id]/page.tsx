@@ -6,6 +6,11 @@ import { colorStyleForColor } from "../../lib/colors";
 import { DraftTimer } from "../../lobby/[id]/components/DraftTimer";
 import { PlayerList } from "../../lobby/[id]/components/PlayerList";
 import { PokemonPool, PokemonFilters } from "./components/PokemonPool";
+import {
+  forgetLobbyIdentity,
+  getLobbyIdentity,
+  rememberLobbyIdentity,
+} from "../../lib/lobbyIdentity";
 
 import { LobbyState } from "../../api/lobby/logic";
 
@@ -22,6 +27,7 @@ export default function PokemonDraftApp() {
   const lobbyId = String(params.id);
 
   const [meName, setMeName] = useState<string>("");
+  const [identityReady, setIdentityReady] = useState(false);
 
   // full Pokemon pool (loaded once from /api/pokemon)
   const [pokemon, setPokemon] = useState<Pokemon[]>([]);
@@ -108,6 +114,11 @@ export default function PokemonDraftApp() {
   const showCompletionModal = iAmHost && canPromptFinish && !completionDismissed;
 
   useEffect(() => {
+    setMeName(getLobbyIdentity(lobbyId));
+    setIdentityReady(true);
+  }, [lobbyId]);
+
+  useEffect(() => {
     if (!everyoneFull) setCompletionDismissed(false);
   }, [everyoneFull]);
 
@@ -160,22 +171,32 @@ export default function PokemonDraftApp() {
   }, [lobbyId]);
 
   async function tryJoin() {
-    if (!meName.trim()) return;
+    const joinedName = meName.trim();
+    if (!joinedName) return;
     try {
       const res = await fetch(`/api/lobby/${lobbyId}/join`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: meName.trim() }),
+        body: JSON.stringify({ name: joinedName }),
       });
       const data = await res.json();
       if (!res.ok) alert(data.error || "Join failed");
-      else setLobby((prev) => ({
-        ...prev, ...data,
-        draftedIds: data.draftedIds ?? prev.draftedIds ?? [],
-        startedAt: data.startedAt ?? prev.startedAt ?? null,
-        completedAt: data.completedAt ?? prev.completedAt ?? null,
-      }));
+      else {
+        rememberLobbyIdentity(lobbyId, joinedName);
+        setMeName(joinedName);
+        setLobby((prev) => ({
+          ...prev, ...data,
+          draftedIds: data.draftedIds ?? prev.draftedIds ?? [],
+          startedAt: data.startedAt ?? prev.startedAt ?? null,
+          completedAt: data.completedAt ?? prev.completedAt ?? null,
+        }));
+      }
     } catch {}
+  }
+
+  function useAnotherPlayer() {
+    forgetLobbyIdentity(lobbyId);
+    setMeName("");
   }
 
   async function setCategoryMode(mode: "default" | "random") {
@@ -517,7 +538,19 @@ export default function PokemonDraftApp() {
                     </button>
                   </>
                 ) : (
-                  <div className="text-sm text-emerald-400">Joined as {meName}</div>
+                  <div>
+                    <div className="text-sm text-emerald-400">Joined as {meName}</div>
+                    <div className="text-[11px] text-neutral-500 mt-1">
+                      This browser will remember you for this room.
+                    </div>
+                    <button
+                      type="button"
+                      onClick={useAnotherPlayer}
+                      className="mt-3 text-xs text-neutral-400 underline underline-offset-4 hover:text-white"
+                    >
+                      Use another player
+                    </button>
+                  </div>
                 )}
               </div>
               <div className="text-[11px] text-neutral-500">Lobby Code: {lobbyId}</div>
@@ -672,7 +705,7 @@ export default function PokemonDraftApp() {
   }
 
   // ─── Active draft screen ───────────────────────────────────────────────────
-  const needReconnect = lobby.draftActive && !iAmJoined;
+  const needReconnect = identityReady && lobby.draftActive && !iAmJoined;
 
   return (
     <div className="min-h-screen bg-neutral-950 text-neutral-200 font-sans selection:bg-red-900 selection:text-white pb-20 relative">
@@ -738,9 +771,20 @@ export default function PokemonDraftApp() {
               </button>
             )}
           </div>
-          <button onClick={handleExport} className="bg-neutral-800 px-3 py-1 rounded border border-neutral-700 hover:bg-neutral-700 text-sm">
-            Export
-          </button>
+          <div className="flex items-center gap-2">
+            {iAmJoined && (
+              <button
+                type="button"
+                onClick={useAnotherPlayer}
+                className="text-xs text-neutral-500 hover:text-neutral-200"
+              >
+                Playing as {meName} · Switch
+              </button>
+            )}
+            <button onClick={handleExport} className="bg-neutral-800 px-3 py-1 rounded border border-neutral-700 hover:bg-neutral-700 text-sm">
+              Export
+            </button>
+          </div>
         </div>
       </header>
 
