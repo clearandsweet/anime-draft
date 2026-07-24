@@ -17,6 +17,12 @@ export type VoteTotals = Record<
   { first: number; second: number; third: number; points: number }
 >;
 
+export function getRequiredVoteSelections(playerCount: number) {
+  if (playerCount < 1) return 0;
+  if (playerCount <= 2) return 1;
+  return Math.min(3, playerCount);
+}
+
 export function normalizeVotesState(data?: Partial<VotesState> | null): VotesState {
   if (!data || !Array.isArray(data.records)) {
     return { records: [] };

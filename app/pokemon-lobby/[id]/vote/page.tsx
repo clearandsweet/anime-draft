@@ -9,6 +9,7 @@ import {
   type DraftHistoryEntry,
 } from "../../../components/DraftRecap";
 import type { DraftPreset } from "../../../components/DraftPresetPicker";
+import { getRequiredVoteSelections } from "../../../api/lobby/votesLogic";
 
 type Pokemon = {
   id: number;
@@ -59,7 +60,8 @@ export default function PokemonVoteDraftBoards() {
   const lobbyId = String(params.id);
   const [lobby, setLobby] = useState<LobbyState | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [alreadyVoted, setAlreadyVoted] = useState(false);
@@ -69,6 +71,7 @@ export default function PokemonVoteDraftBoards() {
   async function refresh() {
     try {
       setLoading(true);
+      setLoadError(null);
       const [stateRes, votesRes] = await Promise.all([
         fetch(`/api/lobby/${lobbyId}/state`, { cache: "no-store" }),
         fetch(`/api/lobby/${lobbyId}/votes`, { cache: "no-store" }),
@@ -76,7 +79,7 @@ export default function PokemonVoteDraftBoards() {
       const stateData = await stateRes.json();
       const votesData = await votesRes.json();
       if (!stateRes.ok) {
-        setError(stateData.error || "Unable to load draft state.");
+        setLoadError(stateData.error || "Unable to load draft state.");
       } else {
         setLobby({
           players: Array.isArray(stateData.players) ? stateData.players : [],
@@ -91,9 +94,11 @@ export default function PokemonVoteDraftBoards() {
         setTotals(votesData.totals || {});
         setBallots(votesData.ballots || 0);
         setAlreadyVoted(Boolean(votesData.alreadyVoted));
+      } else {
+        setLoadError(votesData.error || "Unable to load voting details.");
       }
     } catch {
-      setError("Failed to load voting details.");
+      setLoadError("Failed to load voting details.");
     } finally {
       setLoading(false);
     }
@@ -104,19 +109,51 @@ export default function PokemonVoteDraftBoards() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lobbyId]);
 
+  useEffect(() => {
+    if (!alreadyVoted) return;
+
+    let active = true;
+    async function refreshLiveResults() {
+      try {
+        const res = await fetch(`/api/lobby/${lobbyId}/votes`, {
+          cache: "no-store",
+        });
+        const data = await res.json();
+        if (!active || !res.ok) return;
+        setTotals(data.totals || {});
+        setBallots(data.ballots || 0);
+      } catch {
+        // Keep the last good standings during a temporary refresh failure.
+      }
+    }
+
+    void refreshLiveResults();
+    const intervalId = window.setInterval(refreshLiveResults, 5000);
+    return () => {
+      active = false;
+      window.clearInterval(intervalId);
+    };
+  }, [alreadyVoted, lobbyId]);
+
   const selectedMap = useMemo(() => {
     const map = new Map<string, number>();
     selected.forEach((id, idx) => map.set(id, idx));
     return map;
   }, [selected]);
 
-  const requiredSelections = lobby?.players.length === 2 ? 1 : 3;
-  const maxSelectable = useMemo(() => Math.min(3, lobby?.players.length ?? 0), [lobby?.players]);
-  const canSubmit = selected.length >= requiredSelections && !submitting && !alreadyVoted;
+  const requiredSelections = getRequiredVoteSelections(
+    lobby?.players.length ?? 0
+  );
+  const maxSelectable = requiredSelections;
+  const canSubmit =
+    requiredSelections > 0 &&
+    selected.length === requiredSelections &&
+    !submitting &&
+    !alreadyVoted;
 
   const voteInstruction =
     requiredSelections === 1
-      ? "Tap a board to assign your top pick. Submit once you've chosen at least one favorite."
+      ? "Tap one board to assign your top pick, then submit your sealed ballot."
       : "Tap boards to assign 1st, 2nd, and 3rd. Submit once all three picks are chosen.";
 
   function toggleSelection(playerId: string) {
@@ -136,10 +173,11 @@ export default function PokemonVoteDraftBoards() {
     if (!canSubmit) return;
     try {
       setSubmitting(true);
+      setSubmitError(null);
       const payload = {
         first: selected[0] ?? null,
-        second: lobby?.players.length === 2 ? null : selected[1] ?? null,
-        third: lobby?.players.length === 2 ? null : selected[2] ?? null,
+        second: requiredSelections >= 2 ? selected[1] ?? null : null,
+        third: requiredSelections >= 3 ? selected[2] ?? null : null,
       };
       const res = await fetch(`/api/lobby/${lobbyId}/votes`, {
         method: "POST",
@@ -150,9 +188,11 @@ export default function PokemonVoteDraftBoards() {
       if (!res.ok) {
         if (res.status === 409) {
           setAlreadyVoted(true);
-          setError("You have already voted from this device.");
+          setSubmitError(
+            "This device already voted. Live results are now unlocked."
+          );
         } else {
-          setError(data.error || "Unable to record vote.");
+          setSubmitError(data.error || "Unable to record vote.");
         }
         return;
       }
@@ -161,7 +201,7 @@ export default function PokemonVoteDraftBoards() {
       setAlreadyVoted(true);
       setSelected([]);
     } catch {
-      setError("Network error submitting vote.");
+      setSubmitError("Network error submitting vote.");
     } finally {
       setSubmitting(false);
     }
@@ -178,11 +218,11 @@ export default function PokemonVoteDraftBoards() {
     );
   }
 
-  if (error) {
+  if (loadError) {
     return (
       <div className="min-h-screen bg-neutral-950 text-neutral-200 flex items-center justify-center p-6">
         <div className="bg-neutral-900 border border-red-500/40 text-red-300 px-4 py-3 rounded-lg text-sm">
-          {error}
+          {loadError}
         </div>
       </div>
     );
@@ -212,6 +252,11 @@ export default function PokemonVoteDraftBoards() {
             <p className="text-xs text-neutral-500">{voteInstruction}</p>
             {alreadyVoted && (
               <p className="text-xs text-emerald-400 mt-1">Thanks! Your vote has been recorded.</p>
+            )}
+            {submitError && (
+              <p className="text-xs text-amber-300 mt-1" role="alert">
+                {submitError}
+              </p>
             )}
           </div>
           <button
@@ -292,13 +337,35 @@ export default function PokemonVoteDraftBoards() {
           })}
         </section>
 
-        {rankedTotals.length > 0 && (
+        {!alreadyVoted ? (
+          <section className="rounded-2xl border border-red-500/30 bg-red-500/5 p-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="text-sm font-semibold uppercase tracking-wide text-red-200">
+                  Sealed results
+                </h2>
+                <p className="mt-1 text-sm text-neutral-400">
+                  Community standings unlock after you submit, so every ballot stays independent.
+                </p>
+              </div>
+              <span className="rounded-full border border-neutral-700 bg-neutral-900 px-3 py-1 text-xs text-neutral-400">
+                {ballots} {ballots === 1 ? "ballot" : "ballots"} sealed
+              </span>
+            </div>
+          </section>
+        ) : rankedTotals.length > 0 ? (
           <section className="bg-neutral-900/70 border border-neutral-800 rounded-2xl p-4 space-y-3">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-sm font-semibold text-neutral-200 uppercase tracking-wide">
                 Community Standings
               </h2>
-              <span className="text-xs text-neutral-500">{ballots} ballots</span>
+              <div className="flex items-center gap-3 text-xs text-neutral-500">
+                <span className="flex items-center gap-1.5 text-emerald-400">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                  Live
+                </span>
+                <span>{ballots} {ballots === 1 ? "ballot" : "ballots"}</span>
+              </div>
             </div>
             <div className="space-y-2">
               {rankedTotals.map(({ playerId, tally, player }, index) => {
@@ -327,6 +394,10 @@ export default function PokemonVoteDraftBoards() {
                 );
               })}
             </div>
+          </section>
+        ) : (
+          <section className="rounded-2xl border border-neutral-800 bg-neutral-900/70 p-5 text-sm text-neutral-400">
+            Your ballot is recorded. Waiting for live standings…
           </section>
         )}
 

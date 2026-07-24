@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 export const runtime = "nodejs";
 import { loadLobby, getVotesState, recordVote, summarizeVotesFor } from "../../../lobby/kv";
+import { getRequiredVoteSelections } from "../../../lobby/votesLogic";
 import { randomUUID, createHash } from "crypto";
 
 function getClientIp(req: NextRequest): string {
@@ -40,8 +41,9 @@ export async function GET(
     return NextResponse.json(
       {
         ballots: summary.ballots,
-        totals: summary.totals,
+        totals: already ? summary.totals : null,
         alreadyVoted: already,
+        resultsHidden: !already,
       },
       { status: 200 }
     );
@@ -65,21 +67,21 @@ export async function POST(
       );
     }
     const body = await request.json().catch(() => ({}));
+    const requiredSelections = getRequiredVoteSelections(lobby.players.length);
     const parsePick = (value: unknown): string | null =>
       typeof value === "string" && value.trim() ? value : null;
     const first = parsePick(body?.first);
-    const second = parsePick(body?.second);
-    const third = parsePick(body?.third);
+    const second = requiredSelections >= 2 ? parsePick(body?.second) : null;
+    const third = requiredSelections >= 3 ? parsePick(body?.third) : null;
     const picks: (string | null)[] = [first, second, third];
     const chosen = picks.filter((v): v is string => !!v);
-    const requiredSelections = lobby.players.length === 2 ? 1 : 3;
-    if (chosen.length < requiredSelections) {
+    if (requiredSelections === 0 || chosen.length !== requiredSelections) {
       return NextResponse.json(
         {
           error:
             requiredSelections === 1
-              ? "Select at least one board before submitting."
-              : "Select three distinct boards before submitting.",
+              ? "Select one board before submitting."
+              : `Select ${requiredSelections} distinct boards before submitting.`,
         },
         { status: 400 }
       );
