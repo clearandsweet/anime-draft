@@ -10,6 +10,7 @@ import { DraftTurnGuide } from "../../components/DraftTurnGuide";
 import { DraftActivityStrip } from "../../components/DraftActivityStrip";
 import { DraftProgressPanel } from "../../components/DraftProgressPanel";
 import { LobbyInvitePanel } from "../../components/LobbyInvitePanel";
+import { DraftStartReviewDialog } from "../../components/DraftStartReviewDialog";
 import {
   forgetLobbyIdentity,
   getLobbyIdentity,
@@ -75,6 +76,7 @@ export default function PokemonDraftApp() {
 
   const [completionDismissed, setCompletionDismissed] = useState(false);
   const [finishingDraft, setFinishingDraft] = useState(false);
+  const [showStartReview, setShowStartReview] = useState(false);
 
   const [lobby, setLobby] = useState<LobbyState>({
     players: [],
@@ -638,14 +640,27 @@ export default function PokemonDraftApp() {
 
           <div className="flex items-center justify-center">
             <button
-              onClick={startDraft}
+              onClick={() => setShowStartReview(true)}
               disabled={!iAmHost || !readyToStart}
               className={`px-4 py-2 rounded-lg border ${iAmHost && readyToStart ? "bg-emerald-600/20 border-emerald-500 text-emerald-300 hover:bg-emerald-600/30" : "bg-neutral-800 border-neutral-700 text-neutral-400 opacity-60"}`}
             >
-              Start Draft
+              Review &amp; Start Draft
             </button>
           </div>
         </div>
+        <DraftStartReviewDialog
+          open={showStartReview && Boolean(iAmHost)}
+          draftType="pokemon"
+          players={lobby.players}
+          slotNames={lobby.slotNames ?? []}
+          preset={lobby.preset}
+          timerDuration={lobby.timerDuration}
+          onCancel={() => setShowStartReview(false)}
+          onConfirm={() => {
+            setShowStartReview(false);
+            void startDraft();
+          }}
+        />
       </div>
     );
   }
