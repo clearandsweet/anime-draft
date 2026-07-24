@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { colorStyleForColor } from "../../../lib/colors";
+import { DraftBroadcastBooth } from "../../../components/DraftBroadcastBooth";
 import { ThanksgivingTheme } from "../components/ThanksgivingTheme";
 
 type Character = {
@@ -339,6 +340,12 @@ export default function VoteDraftBoards() {
           </section>
         )}
 
+        <DraftBroadcastBooth
+          lobbyId={lobbyId}
+          draftType="anime"
+          players={lobby.players}
+          competitions={lobby.competitions}
+        />
 
       </main>
       <ThanksgivingTheme />

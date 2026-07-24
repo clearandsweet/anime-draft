@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 import { createLobby, listLobbies } from "../lobby/kv";
-import { LobbyState } from "../lobby/logic";
+import { LobbyState, isDraftPreset } from "../lobby/logic";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -20,7 +20,16 @@ export async function POST(request: Request) {
     const hostName = (body?.hostName as string | undefined) ?? undefined;
     const targetPlayers = (body?.targetPlayers as number | undefined) ?? undefined;
     const draftType = (body?.draftType as "anime" | "pokemon" | undefined) ?? "anime";
-    const { id, state, manageKey } = await createLobby({ hostName, targetPlayers, draftType });
+    const preset = body?.preset;
+    if (preset !== undefined && !isDraftPreset(preset)) {
+      return NextResponse.json({ error: "Unknown draft preset." }, { status: 400 });
+    }
+    const { id, state, manageKey } = await createLobby({
+      hostName,
+      targetPlayers,
+      draftType,
+      preset,
+    });
     const response: { id: string; state: LobbyState; manageKey: string } = { id, state, manageKey };
     return NextResponse.json(response, { status: 200 });
   } catch (err) {

@@ -30,11 +30,15 @@ export type HistoryEntry = {
   previousCurrentPlayerIndex?: number;
 };
 
+export type DraftPreset = "classic" | "blitz" | "chaos";
+
 export type LobbyState = {
   players: Player[];
   round: number;
   currentPlayerIndex: number;
   timerSeconds: number;
+  timerDuration: number;
+  preset: DraftPreset;
   lastTickAt: number; // [NEW] Timestamp of last tick to prevent multi-client speedup
   isPaused: boolean; // [NEW] Pause state
   lastPick: null | {
@@ -70,12 +74,58 @@ const PLAYER_COLORS = [
   "cyan",
 ];
 
-export function makeFreshLobby(draftType: "anime" | "pokemon" = "anime"): LobbyState {
+const PRESET_TIMERS: Record<DraftPreset, number> = {
+  classic: 300,
+  blitz: 60,
+  chaos: 90,
+};
+
+export function isDraftPreset(value: unknown): value is DraftPreset {
+  return value === "classic" || value === "blitz" || value === "chaos";
+}
+
+function getPresetSlots(
+  draftType: "anime" | "pokemon",
+  preset: DraftPreset
+): { categoryMode: "default" | "random"; slotNames: string[] } {
+  const randomPool = draftType === "pokemon" ? POKEMON_CATEGORY_POOL : CATEGORY_POOL;
+
+  if (preset === "blitz") {
+    return {
+      categoryMode: "random",
+      slotNames: shuffle([...randomPool]).slice(0, 6),
+    };
+  }
+
+  if (preset === "chaos") {
+    return {
+      categoryMode: "random",
+      slotNames: shuffle([...randomPool]).slice(0, 10),
+    };
+  }
+
+  return draftType === "pokemon"
+    ? {
+        categoryMode: "random",
+        slotNames: shuffle([...POKEMON_CATEGORY_POOL]).slice(0, 10),
+      }
+    : { categoryMode: "default", slotNames: [...DEFAULT_SLOTS] };
+}
+
+export function makeFreshLobby(
+  draftType: "anime" | "pokemon" = "anime",
+  preset: DraftPreset = "classic"
+): LobbyState {
+  const presetSlots = getPresetSlots(draftType, preset);
+  const timerDuration = PRESET_TIMERS[preset];
+
   return {
     players: [],
     round: 1,
     currentPlayerIndex: 0,
-    timerSeconds: 300, // [MODIFIED] 5 minutes
+    timerSeconds: timerDuration,
+    timerDuration,
+    preset,
     lastTickAt: Date.now(),
     isPaused: false,
     lastPick: null,
@@ -86,10 +136,8 @@ export function makeFreshLobby(draftType: "anime" | "pokemon" = "anime"): LobbyS
     startedAt: null,
     completedAt: null,
     draftedIds: [],
-    categoryMode: draftType === "pokemon" ? "random" : "default",
-    slotNames: draftType === "pokemon"
-      ? shuffle([...POKEMON_CATEGORY_POOL]).slice(0, 10)
-      : [...DEFAULT_SLOTS],
+    categoryMode: presetSlots.categoryMode,
+    slotNames: presetSlots.slotNames,
     version: 0,
     competitions: ["Fight", ...getRandomCompetitions(2)],
     draftType,
@@ -158,12 +206,14 @@ export function setCategoryMode(state: LobbyState, requesterName: string, mode: 
 
   const isPokemon = state.draftType === "pokemon";
 
+  const slotCount = state.preset === "blitz" ? 6 : 10;
+
   if (mode === "default") {
-    state.slotNames = isPokemon ? [...POKEMON_DEFAULT_SLOTS] : [...DEFAULT_SLOTS];
+    const defaultSlots = isPokemon ? POKEMON_DEFAULT_SLOTS : DEFAULT_SLOTS;
+    state.slotNames = [...defaultSlots].slice(0, slotCount);
   } else {
-    // Pick 10 random from the appropriate pool
     const pool = isPokemon ? POKEMON_CATEGORY_POOL : CATEGORY_POOL;
-    state.slotNames = shuffle([...pool]).slice(0, 10);
+    state.slotNames = shuffle([...pool]).slice(0, slotCount);
   }
 
   // Update existing players to have these new slots
@@ -197,7 +247,7 @@ export function start(state: LobbyState, requesterName: string) {
   state.players = shuffle(state.players);
   state.round = 1;
   state.currentPlayerIndex = 0;
-  state.timerSeconds = 300; // [MODIFIED]
+  state.timerSeconds = state.timerDuration;
   state.lastTickAt = Date.now(); // [NEW]
   state.isPaused = false;
   state.draftActive = true;
@@ -317,7 +367,7 @@ export function isRoundForward(r: number) {
 }
 
 export function advanceSnakeTurn(state: LobbyState) {
-  state.timerSeconds = 300; // [MODIFIED]
+  state.timerSeconds = state.timerDuration;
   state.lastTickAt = Date.now(); // [NEW]
   const n = state.players.length;
   const forward = isRoundForward(state.round);
@@ -333,7 +383,7 @@ export function advanceSnakeTurn(state: LobbyState) {
 
 export function rewindSnakeTurnTo(state: LobbyState, playerIndex: number) {
   state.currentPlayerIndex = playerIndex;
-  state.timerSeconds = 300; // [MODIFIED]
+  state.timerSeconds = state.timerDuration;
   state.lastTickAt = Date.now(); // [NEW]
 }
 
@@ -349,7 +399,7 @@ export function doAutopick(state: LobbyState) {
     return;
   }
   advanceSnakeTurn(state);
-  // advanceSnakeTurn resets timer to 300, so we are good.
+  // advanceSnakeTurn resets the timer for the selected preset.
   state.history.push({
     playerIndex: indexBefore,
     char: {

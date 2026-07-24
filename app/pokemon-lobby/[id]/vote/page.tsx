@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { colorStyleForColor } from "../../../lib/colors";
+import { DraftBroadcastBooth } from "../../../components/DraftBroadcastBooth";
 
 type Pokemon = {
   id: number;
@@ -317,6 +318,13 @@ export default function PokemonVoteDraftBoards() {
             </div>
           </section>
         )}
+
+        <DraftBroadcastBooth
+          lobbyId={lobbyId}
+          draftType="pokemon"
+          players={lobby.players}
+          competitions={lobby.competitions}
+        />
       </main>
     </div>
   );

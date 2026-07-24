@@ -1,7 +1,9 @@
 import { env } from "cloudflare:workers";
 import {
+  DraftPreset,
   LobbyState,
   finishDraft,
+  isDraftPreset,
   makeFreshLobby,
   recomputeDraftedIds,
 } from "./logic";
@@ -23,6 +25,7 @@ type LobbyMeta = {
   lastPickAt: string | null;
   manageKeyHash?: string;
   draftType?: "anime" | "pokemon";
+  preset?: DraftPreset;
 };
 
 type LobbyRow = {
@@ -39,7 +42,9 @@ type LobbyRow = {
   version: number;
 };
 
-type LobbyListRow = Omit<LobbyRow, "state_json" | "manage_key_hash" | "version">;
+type LobbyListRow = Omit<LobbyRow, "state_json" | "manage_key_hash" | "version"> & {
+  preset: string | null;
+};
 
 type VoteRow = {
   id: string;
@@ -52,10 +57,10 @@ type VoteRow = {
 
 export type PublicLobbyMeta = Omit<LobbyMeta, "manageKeyHash"> & {
   draftType?: "anime" | "pokemon";
+  preset?: DraftPreset;
 };
 
-const ACTIVE_LOBBY_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 7;
-const COMPLETED_LOBBY_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 30;
+const ACTIVE_LOBBY_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 30;
 
 function getDb(): D1Database {
   if (!env.DB) {
@@ -90,6 +95,10 @@ function normalizeLobbyState(state: LobbyState): LobbyState {
   if (state.completedAt === undefined) state.completedAt = null;
   if (state.version === undefined) state.version = 0;
   if (!state.draftType) state.draftType = "anime";
+  if (!isDraftPreset(state.preset)) state.preset = "classic";
+  if (!Number.isFinite(state.timerDuration) || state.timerDuration <= 0) {
+    state.timerDuration = 300;
+  }
   if (state.lastTickAt === undefined) state.lastTickAt = Date.now();
   if (state.isPaused === undefined) state.isPaused = false;
   return state;
@@ -119,12 +128,13 @@ export async function createLobby(opts?: {
   hostName?: string;
   targetPlayers?: number;
   draftType?: "anime" | "pokemon";
+  preset?: DraftPreset;
 }): Promise<{ id: string; state: LobbyState; manageKey: string }> {
   await cleanupStaleLobbies();
 
   const now = new Date().toISOString();
   const manageKey = generateManageKey();
-  const state = makeFreshLobby(opts?.draftType ?? "anime");
+  const state = makeFreshLobby(opts?.draftType ?? "anime", opts?.preset ?? "classic");
 
   if (opts?.targetPlayers && [2, 4, 8, 12].includes(opts.targetPlayers)) {
     state.targetPlayers = opts.targetPlayers;
@@ -276,7 +286,7 @@ export async function listLobbies(filter?: {
   const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
   const statement = getDb().prepare(
     `SELECT id, created_at, updated_at, host_name, status, players_count,
-            last_pick_at, draft_type
+            last_pick_at, draft_type, json_extract(state_json, '$.preset') AS preset
        FROM lobbies
        ${where}
       ORDER BY updated_at DESC`
@@ -296,6 +306,7 @@ export async function listLobbies(filter?: {
       playersCount: row.players_count,
       lastPickAt: row.last_pick_at,
       draftType: row.draft_type ?? "anime",
+      preset: isDraftPreset(row.preset) ? row.preset : "classic",
     })
   );
 }
@@ -391,14 +402,7 @@ export async function authorizeLobbyDelete(id: string, manageKey: string) {
 }
 
 async function cleanupStaleLobbies() {
-  const now = Date.now();
-  const activeCutoff = new Date(now - ACTIVE_LOBBY_MAX_AGE_MS).toISOString();
-  const completedCutoff = new Date(
-    now - COMPLETED_LOBBY_MAX_AGE_MS
-  ).toISOString();
-  const staleWhere =
-    "(status = 'active' AND updated_at < ?) OR " +
-    "(status = 'completed' AND updated_at < ?)";
+  const activeCutoff = new Date(Date.now() - ACTIVE_LOBBY_MAX_AGE_MS).toISOString();
   const db = getDb();
 
   await db.batch([
@@ -406,13 +410,16 @@ async function cleanupStaleLobbies() {
       .prepare(
         `DELETE FROM votes
           WHERE lobby_id IN (
-            SELECT id FROM lobbies WHERE ${staleWhere}
+            SELECT id FROM lobbies
+             WHERE status = 'active' AND updated_at < ?
           )`
       )
-      .bind(activeCutoff, completedCutoff),
+      .bind(activeCutoff),
     db
-      .prepare(`DELETE FROM lobbies WHERE ${staleWhere}`)
-      .bind(activeCutoff, completedCutoff),
+      .prepare(
+        "DELETE FROM lobbies WHERE status = 'active' AND updated_at < ?"
+      )
+      .bind(activeCutoff),
   ]);
 }
 

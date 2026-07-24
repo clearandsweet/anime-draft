@@ -1,42 +1,31 @@
-﻿"use client";
+"use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
-
-type LobbyMeta = {
-  id: string;
-  createdAt: string;
-  updatedAt: string;
-  hostName: string | null;
-  status: "active" | "completed";
-  playersCount: number;
-  lastPickAt: string | null;
-};
-
-function formatDate(value: string | null) {
-  if (!value) return "n/a";
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return value;
-  return d.toLocaleString();
-}
+import { FormEvent, useEffect, useState } from "react";
+import {
+  DraftPresetPicker,
+  type DraftPreset,
+} from "../components/DraftPresetPicker";
+import {
+  DraftRoomBrowser,
+  type LobbyMeta,
+} from "../components/DraftRoomBrowser";
 
 export default function DraftLobbyPage() {
   const [hostName, setHostName] = useState("");
   const [joinCode, setJoinCode] = useState("");
+  const [preset, setPreset] = useState<DraftPreset>("classic");
   const [lobbies, setLobbies] = useState<LobbyMeta[]>([]);
   const [loading, setLoading] = useState(true);
   const [createBusy, setCreateBusy] = useState(false);
   const [lastCreatedId, setLastCreatedId] = useState<string | null>(null);
 
-  const activeCount = useMemo(
-    () => lobbies.filter((lobby) => lobby.status === "active").length,
-    [lobbies]
-  );
-
   async function refreshLobbies() {
     try {
       setLoading(true);
-      const res = await fetch("/api/lobbies", { cache: "no-store" });
-      const data = await res.json();
+      const response = await fetch("/api/lobbies?draftType=anime", {
+        cache: "no-store",
+      });
+      const data = await response.json();
       setLobbies(Array.isArray(data.lobbies) ? data.lobbies : []);
     } finally {
       setLoading(false);
@@ -51,13 +40,17 @@ export default function DraftLobbyPage() {
     event.preventDefault();
     try {
       setCreateBusy(true);
-      const res = await fetch("/api/lobbies", {
+      const response = await fetch("/api/lobbies", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ hostName: hostName.trim() || undefined }),
+        body: JSON.stringify({
+          hostName: hostName.trim() || undefined,
+          draftType: "anime",
+          preset,
+        }),
       });
-      const data = await res.json();
-      if (!res.ok) {
+      const data = await response.json();
+      if (!response.ok) {
         alert(data.error || "Failed to create lobby.");
         return;
       }
@@ -75,149 +68,157 @@ export default function DraftLobbyPage() {
   function handleJoin(event: FormEvent) {
     event.preventDefault();
     const id = joinCode.trim();
-    if (!id) return;
-    window.location.href = `/lobby/${id}`;
+    if (id) window.location.href = `/lobby/${id}`;
   }
 
   async function handleDelete(id: string) {
     const password = window.prompt("Enter deletion password:")?.trim() || "";
     if (!password) return;
-    const confirmDelete = window.confirm(`Delete lobby #${id}? This cannot be undone.`);
-    if (!confirmDelete) return;
-    const res = await fetch(`/api/lobbies/${id}`, {
+    if (!window.confirm(`Delete lobby #${id}? This cannot be undone.`)) return;
+
+    const response = await fetch(`/api/lobbies/${id}`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ manageKey: password }),
     });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
       alert(data.error || "Delete failed.");
       return;
     }
-    setLobbies((prev) => prev.filter((lobby) => lobby.id !== id));
+    setLobbies((current) => current.filter((lobby) => lobby.id !== id));
   }
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-neutral-100 p-6">
-      <div className="max-w-5xl mx-auto space-y-6">
-        <div className="border border-neutral-800 bg-neutral-900 rounded-xl p-5">
-          <p className="text-xs uppercase tracking-wide text-fuchsia-300">Anime Draft</p>
-          <h1 className="text-3xl font-bold text-white mt-1">Create your own anime character draft</h1>
-          <p className="text-sm text-neutral-400 mt-2">
-            Start a room, share the lobby code, draft live, then vote on the results.
-          </p>
-        </div>
+    <div className="min-h-screen overflow-hidden bg-neutral-950 text-neutral-100">
+      <div className="pointer-events-none fixed inset-x-0 top-0 h-96 bg-[radial-gradient(circle_at_20%_10%,rgba(217,70,239,0.16),transparent_45%),radial-gradient(circle_at_80%_0%,rgba(99,102,241,0.12),transparent_40%)]" />
 
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="text-2xl font-bold">Lobby Rooms</h2>
-            <p className="text-sm text-neutral-400">
-              Active rooms: {activeCount} - Completed rooms: {lobbies.length - activeCount}
-            </p>
+      <main className="relative mx-auto max-w-6xl space-y-7 px-5 py-10">
+        <header className="rounded-3xl border border-fuchsia-500/20 bg-neutral-900/75 p-6 shadow-2xl shadow-fuchsia-950/20 backdrop-blur md:p-8">
+          <div className="flex flex-wrap items-start justify-between gap-6">
+            <div className="max-w-2xl">
+              <p className="text-xs uppercase tracking-[0.24em] text-fuchsia-300">
+                Clear &amp; Sweet Draft Lab
+              </p>
+              <h1 className="mt-3 text-3xl font-black tracking-tight text-white md:text-5xl">
+                Build the most unhinged anime roster in the room.
+              </h1>
+              <p className="mt-4 max-w-xl text-sm leading-relaxed text-neutral-400 md:text-base">
+                Pick a format, invite your friends, snake-draft live, and preserve the
+                final board for voting and post-game chaos.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-neutral-800 bg-neutral-950/80 px-5 py-4 text-sm">
+              <p className="text-neutral-500">Rooms in this lab</p>
+              <p className="mt-1 text-2xl font-bold text-white">{lobbies.length}</p>
+            </div>
           </div>
-          <button
-            onClick={refreshLobbies}
-            className="border border-neutral-700 bg-neutral-900 hover:bg-neutral-800 rounded px-3 py-2 text-sm"
-          >
-            Refresh
-          </button>
-        </div>
+        </header>
 
         {lastCreatedId && (
-          <div className="border border-amber-400/30 bg-amber-900/20 rounded-xl p-4">
-            <p className="text-sm text-amber-100 font-semibold">Lobby #{lastCreatedId} created.</p>
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-4">
+            <div>
+              <p className="font-semibold text-emerald-100">Room #{lastCreatedId} is ready.</p>
+              <p className="text-xs text-emerald-200/70">Share the number or jump in now.</p>
+            </div>
+            <a
+              href={`/lobby/${lastCreatedId}`}
+              className="rounded-lg bg-emerald-400 px-4 py-2 text-xs font-bold text-emerald-950 transition hover:bg-emerald-300"
+            >
+              Enter room
+            </a>
           </div>
         )}
 
-        <div className="grid md:grid-cols-2 gap-4">
+        <section className="grid gap-5 lg:grid-cols-[1.5fr_0.75fr]">
           <form
             onSubmit={handleCreate}
-            className="border border-neutral-800 bg-neutral-900 rounded-xl p-4 space-y-3"
+            className="space-y-5 rounded-2xl border border-neutral-800 bg-neutral-900/75 p-5 backdrop-blur"
           >
-            <p className="text-xs uppercase tracking-wide text-neutral-400">Create Room</p>
-            <input
-              className="w-full bg-neutral-950 border border-neutral-700 rounded px-3 py-2 text-sm"
-              placeholder="Host name (recommended)"
-              value={hostName}
-              onChange={(event) => setHostName(event.target.value)}
-            />
-            <button
-              type="submit"
-              disabled={createBusy}
-              className="w-full bg-fuchsia-600 hover:bg-fuchsia-500 disabled:opacity-60 text-white font-semibold py-2 rounded"
-            >
-              {createBusy ? "Creating..." : "Create Lobby"}
-            </button>
+            <div>
+              <p className="text-xs uppercase tracking-[0.18em] text-fuchsia-300">
+                Create a room
+              </p>
+              <h2 className="mt-1 text-xl font-semibold text-white">Pick your pace</h2>
+            </div>
+
+            <DraftPresetPicker value={preset} onChange={setPreset} accent="fuchsia" />
+
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <label className="flex-1">
+                <span className="sr-only">Host name</span>
+                <input
+                  className="w-full rounded-xl border border-neutral-700 bg-neutral-950 px-4 py-3 text-sm outline-none transition placeholder:text-neutral-600 focus:border-fuchsia-400"
+                  placeholder="Host name (recommended)"
+                  value={hostName}
+                  onChange={(event) => setHostName(event.target.value)}
+                />
+              </label>
+              <button
+                type="submit"
+                disabled={createBusy}
+                className="rounded-xl bg-fuchsia-500 px-6 py-3 text-sm font-bold text-white transition hover:bg-fuchsia-400 disabled:opacity-60"
+              >
+                {createBusy ? "Creating…" : `Create ${preset} room`}
+              </button>
+            </div>
           </form>
 
           <form
             onSubmit={handleJoin}
-            className="border border-neutral-800 bg-neutral-900 rounded-xl p-4 space-y-3"
+            className="flex flex-col justify-between rounded-2xl border border-neutral-800 bg-neutral-900/75 p-5"
           >
-            <p className="text-xs uppercase tracking-wide text-neutral-400">Join by Code</p>
-            <input
-              className="w-full bg-neutral-950 border border-neutral-700 rounded px-3 py-2 text-sm"
-              placeholder="Lobby ID"
-              value={joinCode}
-              onChange={(event) => setJoinCode(event.target.value)}
-            />
-            <button
-              type="submit"
-              className="w-full border border-neutral-700 bg-neutral-800 hover:bg-neutral-700 text-white font-semibold py-2 rounded"
-            >
-              Open Lobby
-            </button>
-          </form>
-        </div>
-
-        <div className="border border-neutral-800 bg-neutral-900 rounded-xl p-4">
-          <p className="text-xs uppercase tracking-wide text-neutral-400 mb-3">All Rooms</p>
-
-          {loading ? (
-            <p className="text-sm text-neutral-500">Loading lobbies...</p>
-          ) : lobbies.length === 0 ? (
-            <p className="text-sm text-neutral-500">No lobbies yet.</p>
-          ) : (
-            <div className="space-y-2">
-              {lobbies.map((lobby) => {
-                return (
-                  <div
-                    key={lobby.id}
-                    className="border border-neutral-800 bg-neutral-950 rounded-lg px-3 py-3 flex flex-wrap items-center justify-between gap-3"
-                  >
-                    <div className="text-sm">
-                      <p className="font-semibold text-white">
-                        #{lobby.id}{" "}
-                        <span className="text-xs font-normal text-neutral-400">({lobby.status})</span>
-                      </p>
-                      <p className="text-xs text-neutral-500">
-                        Host: {lobby.hostName || "n/a"} - Players: {lobby.playersCount}
-                      </p>
-                      <p className="text-xs text-neutral-600">
-                        Updated: {formatDate(lobby.updatedAt)}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <a
-                        href={`/lobby/${lobby.id}`}
-                        className="border border-neutral-700 bg-neutral-800 hover:bg-neutral-700 px-3 py-1.5 rounded text-xs"
-                      >
-                        Open
-                      </a>
-                      <button
-                        onClick={() => handleDelete(lobby.id)}
-                        className="border border-red-500/40 bg-red-900/20 hover:bg-red-900/30 px-3 py-1.5 rounded text-xs text-red-200"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
+            <div>
+              <p className="text-xs uppercase tracking-[0.18em] text-neutral-400">
+                Have a code?
+              </p>
+              <h2 className="mt-1 text-xl font-semibold text-white">Join a draft</h2>
+              <p className="mt-2 text-sm leading-relaxed text-neutral-500">
+                Enter the room number your host shared. Your name is chosen inside.
+              </p>
             </div>
-          )}
+            <div className="mt-6 space-y-3">
+              <input
+                className="w-full rounded-xl border border-neutral-700 bg-neutral-950 px-4 py-3 text-sm outline-none transition placeholder:text-neutral-600 focus:border-fuchsia-400"
+                placeholder="Room number"
+                inputMode="numeric"
+                value={joinCode}
+                onChange={(event) => setJoinCode(event.target.value)}
+              />
+              <button
+                type="submit"
+                className="w-full rounded-xl border border-neutral-700 bg-neutral-800 py-3 text-sm font-semibold text-white transition hover:bg-neutral-700"
+              >
+                Open lobby
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">
+              Room browser
+            </p>
+            <h2 className="mt-1 text-2xl font-bold text-white">Drafts past and present</h2>
+          </div>
+          <button
+            type="button"
+            onClick={refreshLobbies}
+            className="rounded-lg border border-neutral-700 bg-neutral-900 px-4 py-2 text-sm text-neutral-300 transition hover:bg-neutral-800"
+          >
+            Refresh rooms
+          </button>
         </div>
-      </div>
+
+        <DraftRoomBrowser
+          lobbies={lobbies}
+          loading={loading}
+          basePath="/lobby"
+          accent="fuchsia"
+          onDelete={handleDelete}
+        />
+      </main>
     </div>
   );
 }
