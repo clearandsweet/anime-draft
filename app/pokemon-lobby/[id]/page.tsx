@@ -6,11 +6,13 @@ import { colorStyleForColor } from "../../lib/colors";
 import { DraftTimer } from "../../lobby/[id]/components/DraftTimer";
 import { PlayerList } from "../../lobby/[id]/components/PlayerList";
 import { PokemonPool, PokemonFilters } from "./components/PokemonPool";
+import { DraftTurnGuide } from "../../components/DraftTurnGuide";
 import {
   forgetLobbyIdentity,
   getLobbyIdentity,
   rememberLobbyIdentity,
 } from "../../lib/lobbyIdentity";
+import { getOpenSlotNames } from "../../lib/draftTurns";
 
 import { LobbyState } from "../../api/lobby/logic";
 
@@ -82,6 +84,9 @@ export default function PokemonDraftApp() {
 
   const currentPlayer = lobby.players[lobby.currentPlayerIndex] || null;
   const onClockColor = colorStyleForColor(currentPlayer?.color);
+  const openSlotNames = currentPlayer
+    ? getOpenSlotNames(currentPlayer.slots)
+    : [];
 
   const iAmJoined = lobby.players.some(
     (p) => p.name.toLowerCase() === meName.trim().toLowerCase()
@@ -283,6 +288,7 @@ export default function PokemonDraftApp() {
     if (!currentPlayer || currentPlayer.name.toLowerCase() !== meName.trim().toLowerCase()) {
       alert("It's not your turn."); return;
     }
+    if (openSlotNames.length === 0) { alert("Your board is already full."); return; }
     setPendingPick(chosen);
     setShowSlotModal(true);
   }
@@ -742,7 +748,12 @@ export default function PokemonDraftApp() {
           </div>
         )}
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <DraftTimer lobby={lobby} isHost={Boolean(iAmHost)} onTogglePause={handleTogglePause} />
+          <DraftTimer
+            lobby={lobby}
+            isHost={Boolean(iAmHost)}
+            onTogglePause={handleTogglePause}
+            viewerName={meName}
+          />
           <div className="text-right flex-1 min-w-[200px]">
             <div className="text-[10px] uppercase tracking-wide text-neutral-500 font-semibold">Last Pick</div>
             {lobby.lastPick ? (
@@ -786,6 +797,7 @@ export default function PokemonDraftApp() {
             </button>
           </div>
         </div>
+        <DraftTurnGuide lobby={lobby} viewerName={meName} />
       </header>
 
       <main className="grid lg:grid-cols-[1fr_1fr] gap-4 p-4">
@@ -927,9 +939,11 @@ export default function PokemonDraftApp() {
                 <p className="text-xs text-neutral-400">{pendingPick.name.native} · {pendingPick.gender}</p>
               </div>
             </div>
-            <p className="text-sm text-neutral-400 mb-3">Choose a category slot:</p>
+            <p className="text-sm text-neutral-400 mb-3">
+              Choose from {openSlotNames.length} open {openSlotNames.length === 1 ? "category" : "categories"}:
+            </p>
             <div className="grid grid-cols-2 gap-2">
-              {Object.keys(lobby.players[lobby.currentPlayerIndex]?.slots || {}).map((slotName) => (
+              {openSlotNames.map((slotName) => (
                 <button
                   key={slotName}
                   onClick={() => confirmSlot(slotName)}

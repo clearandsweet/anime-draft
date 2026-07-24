@@ -7,11 +7,13 @@ import { DraftTimer } from "./components/DraftTimer";
 import { PlayerList } from "./components/PlayerList";
 import { CharacterPool } from "./components/CharacterPool";
 import { ThanksgivingTheme } from "./components/ThanksgivingTheme";
+import { DraftTurnGuide } from "../../components/DraftTurnGuide";
 import {
   forgetLobbyIdentity,
   getLobbyIdentity,
   rememberLobbyIdentity,
 } from "../../lib/lobbyIdentity";
+import { getOpenSlotNames } from "../../lib/draftTurns";
 
 type Character = {
   id: number;
@@ -93,6 +95,9 @@ export default function CharacterDraftApp() {
 
   const currentPlayer = lobby.players[lobby.currentPlayerIndex] || null;
   const onClockColor = colorStyleForColor(currentPlayer?.color);
+  const openSlotNames = currentPlayer
+    ? getOpenSlotNames(currentPlayer.slots)
+    : [];
 
   // am I in the lobby already?
   const iAmJoined = lobby.players.some(
@@ -415,6 +420,7 @@ export default function CharacterDraftApp() {
     if (!chosen) return;
     if (!hasStarted) { alert("Draft hasn't started yet."); return; }
     if (!currentPlayer || currentPlayer.name.toLowerCase() !== meName.trim().toLowerCase()) { alert("It's not your turn."); return; }
+    if (openSlotNames.length === 0) { alert("Your board is already full."); return; }
     setPendingPick(chosen);
     setShowSlotModal(true);
   }
@@ -829,6 +835,7 @@ export default function CharacterDraftApp() {
             lobby={lobby}
             isHost={Boolean(iAmHost)}
             onTogglePause={handleTogglePause}
+            viewerName={meName}
           />
           <div className="text-right flex-1 min-w-[200px]">
             <div className="text-[10px] uppercase tracking-wide text-neutral-500 font-semibold">Last Pick</div>
@@ -871,6 +878,7 @@ export default function CharacterDraftApp() {
             <button onClick={handleExport} className="bg-neutral-800 px-3 py-1 rounded border border-neutral-700 hover:bg-neutral-700 text-sm">Export</button>
           </div>
         </div>
+        <DraftTurnGuide lobby={lobby} viewerName={meName} />
       </header>
       <main className="grid xl:grid-cols-[1fr_1fr] gap-4">
         <PlayerList
@@ -996,8 +1004,11 @@ export default function CharacterDraftApp() {
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
           <div className="bg-neutral-900 border border-neutral-700 rounded-2xl p-6 w-[500px] max-w-[90vw]">
             <h2 className="text-lg font-bold mb-2 text-white">Choose Slot for {pendingPick.name.full}</h2>
+            <p className="mb-3 text-sm text-neutral-400">
+              {openSlotNames.length} open {openSlotNames.length === 1 ? "slot" : "slots"} remaining
+            </p>
             <div className="grid grid-cols-2 gap-2">
-              {Object.keys(lobby.players[lobby.currentPlayerIndex]?.slots || {}).map((slotName) => (
+              {openSlotNames.map((slotName) => (
                 <button key={slotName} onClick={() => confirmSlot(slotName)} className="bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm hover:bg-neutral-700 text-left">{slotName}</button>
               ))}
             </div>
@@ -1050,8 +1061,6 @@ export default function CharacterDraftApp() {
     </div>
   );
 }
-
-
 
 
 

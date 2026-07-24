@@ -7,11 +7,23 @@ type Props = {
     className?: string;
     isHost?: boolean;
     onTogglePause?: () => void;
+    viewerName?: string;
 };
 
-export function DraftTimer({ lobby, className = "", isHost, onTogglePause }: Props) {
+export function DraftTimer({
+    lobby,
+    className = "",
+    isHost,
+    onTogglePause,
+    viewerName = "",
+}: Props) {
     const currentPlayer = lobby.players[lobby.currentPlayerIndex] || null;
     const onClockColor = colorStyleForColor(currentPlayer?.color);
+    const isViewerTurn = Boolean(
+        currentPlayer &&
+        viewerName.trim() &&
+        currentPlayer.name.toLowerCase() === viewerName.trim().toLowerCase()
+    );
 
     const clockDisplay = `${String(Math.floor(lobby.timerSeconds / 60)).padStart(
         2,
@@ -30,7 +42,7 @@ export function DraftTimer({ lobby, className = "", isHost, onTogglePause }: Pro
             >
                 <div className="text-sm font-bold text-white leading-tight flex flex-wrap items-center justify-center gap-2">
                     <span className="uppercase text-[10px] tracking-wide text-neutral-500 font-semibold">
-                        {isPaused ? "DRAFT PAUSED" : "On the Clock:"}
+                        {isPaused ? "DRAFT PAUSED" : isViewerTurn ? "YOUR PICK:" : "On the Clock:"}
                     </span>
                     {!isPaused && (
                         <span className="text-lg font-extrabold text-white">
