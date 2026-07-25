@@ -26,6 +26,7 @@ import { getOpenSlotNames } from "../../lib/draftTurns";
 import {
   getDraftScoutSlotPlans,
   getDraftShortlist,
+  getUnavailableShortlistIds,
   moveShortlistId,
   pruneDraftScoutSlotPlans,
   rememberDraftScoutSlotPlans,
@@ -67,6 +68,9 @@ export default function PokemonDraftApp() {
   const [shortlistedIds, setShortlistedIds] = useState<number[]>([]);
   const [scoutSlotPlans, setScoutSlotPlans] =
     useState<DraftScoutSlotPlans>({});
+  const [scoutNoticeNames, setScoutNoticeNames] = useState<string[] | null>(
+    null
+  );
   const [showShortlistOnly, setShowShortlistOnly] = useState(false);
 
   // Pokédex deep search modal
@@ -191,23 +195,31 @@ export default function PokemonDraftApp() {
   useEffect(() => {
     setShortlistedIds(getDraftShortlist("pokemon", lobbyId));
     setScoutSlotPlans(getDraftScoutSlotPlans("pokemon", lobbyId));
+    setScoutNoticeNames(null);
     setShowShortlistOnly(false);
   }, [lobbyId]);
 
   useEffect(() => {
-    setShortlistedIds((previousIds) => {
-      const nextIds = removeDraftedShortlistIds(
-        previousIds,
-        lobby.draftedIds ?? []
-      );
-      const unchanged =
-        nextIds.length === previousIds.length &&
-        nextIds.every((id, index) => id === previousIds[index]);
-      if (unchanged) return previousIds;
-      rememberDraftShortlist("pokemon", lobbyId, nextIds);
-      return nextIds;
-    });
-  }, [lobby.draftedIds, lobbyId]);
+    const unavailableIds = getUnavailableShortlistIds(
+      shortlistedIds,
+      lobby.draftedIds ?? []
+    );
+    if (!unavailableIds.length) return;
+
+    const nextIds = removeDraftedShortlistIds(
+      shortlistedIds,
+      lobby.draftedIds ?? []
+    );
+    setScoutNoticeNames(
+      unavailableIds.map(
+        (pokemonId) =>
+          pokemon.find((candidate) => candidate.id === pokemonId)?.name.full ??
+          `Pokémon #${pokemonId}`
+      )
+    );
+    rememberDraftShortlist("pokemon", lobbyId, nextIds);
+    setShortlistedIds(nextIds);
+  }, [lobby.draftedIds, lobbyId, pokemon, shortlistedIds]);
 
   useEffect(() => {
     setScoutSlotPlans((previousPlans) => {
@@ -1158,10 +1170,12 @@ export default function PokemonDraftApp() {
           shortlistOrder={shortlistedIds}
           scoutSlotPlans={scoutSlotPlans}
           availableSlotNames={viewerOpenSlotNames}
+          scoutNoticeNames={scoutNoticeNames}
           showShortlistOnly={showShortlistOnly}
           onToggleShortlist={toggleShortlist}
           onMoveShortlist={moveShortlist}
           onSetScoutSlotPlan={updateScoutSlotPlan}
+          onDismissScoutNotice={() => setScoutNoticeNames(null)}
           onToggleShortlistOnly={() =>
             setShowShortlistOnly((showing) => !showing)
           }

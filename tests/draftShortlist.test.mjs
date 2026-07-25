@@ -4,6 +4,7 @@ import test from "node:test";
 const {
   getDraftScoutSlotPlans,
   getDraftShortlist,
+  getUnavailableShortlistIds,
   moveShortlistId,
   normalizeDraftScoutSlotPlans,
   normalizeShortlistIds,
@@ -22,6 +23,13 @@ test("normalizes, toggles, and removes drafted shortlist entries", () => {
   assert.deepEqual(removeDraftedShortlistIds([25, 94, 133], [94, 999]), [
     25,
     133,
+  ]);
+  assert.deepEqual(getUnavailableShortlistIds([25, 94, 133], [94, 999]), [
+    94,
+  ]);
+  assert.deepEqual(getUnavailableShortlistIds([25, 25, 94], [25, 94]), [
+    25,
+    94,
   ]);
 });
 

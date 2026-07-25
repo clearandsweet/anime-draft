@@ -1,5 +1,6 @@
 import React from "react";
 import { Character } from "../../../api/lobby/logic";
+import { ScoutQueueNotice } from "../../../components/ScoutQueueNotice";
 import type {
   DraftScoutSlotPlans,
   DraftShortlistMove,
@@ -35,10 +36,12 @@ type Props = {
   shortlistOrder: readonly number[];
   scoutSlotPlans: DraftScoutSlotPlans;
   availableSlotNames: readonly string[];
+  scoutNoticeNames: string[] | null;
   showShortlistOnly: boolean;
   onToggleShortlist: (pokemonId: number) => void;
   onMoveShortlist: (pokemonId: number, direction: DraftShortlistMove) => void;
   onSetScoutSlotPlan: (pokemonId: number, slotName: string) => void;
+  onDismissScoutNotice: () => void;
   onToggleShortlistOnly: () => void;
 };
 
@@ -54,14 +57,22 @@ export function PokemonPool({
   shortlistOrder,
   scoutSlotPlans,
   availableSlotNames,
+  scoutNoticeNames,
   showShortlistOnly,
   onToggleShortlist,
   onMoveShortlist,
   onSetScoutSlotPlan,
+  onDismissScoutNotice,
   onToggleShortlistOnly,
 }: Props) {
   return (
     <section className="flex flex-col bg-neutral-900/0">
+      {scoutNoticeNames && scoutNoticeNames.length > 0 && (
+        <ScoutQueueNotice
+          candidateNames={scoutNoticeNames}
+          onDismiss={onDismissScoutNotice}
+        />
+      )}
       <div
         className="mb-3 rounded-xl border border-neutral-700 bg-neutral-900/90 p-3 shadow-[0_10px_20px_rgba(0,0,0,0.6)] backdrop-blur-sm lg:sticky lg:top-0 lg:z-20"
       >

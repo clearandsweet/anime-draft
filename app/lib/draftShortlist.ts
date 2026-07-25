@@ -181,6 +181,14 @@ export function pruneDraftScoutSlotPlans(
   ) as DraftScoutSlotPlans;
 }
 
+export function getUnavailableShortlistIds(
+  ids: number[],
+  draftedIds: number[]
+) {
+  const drafted = new Set(normalizeShortlistIds(draftedIds));
+  return normalizeShortlistIds(ids).filter((id) => drafted.has(id));
+}
+
 export function removeDraftedShortlistIds(
   ids: number[],
   draftedIds: number[]

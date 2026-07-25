@@ -27,6 +27,7 @@ import { getOpenSlotNames } from "../../lib/draftTurns";
 import {
   getDraftScoutSlotPlans,
   getDraftShortlist,
+  getUnavailableShortlistIds,
   moveShortlistId,
   pruneDraftScoutSlotPlans,
   rememberDraftScoutSlotPlans,
@@ -67,6 +68,9 @@ export default function CharacterDraftApp() {
   const [shortlistedIds, setShortlistedIds] = useState<number[]>([]);
   const [scoutSlotPlans, setScoutSlotPlans] =
     useState<DraftScoutSlotPlans>({});
+  const [scoutNoticeNames, setScoutNoticeNames] = useState<string[] | null>(
+    null
+  );
   const [showShortlistOnly, setShowShortlistOnly] = useState(false);
 
   // deep cut modal
@@ -205,23 +209,31 @@ export default function CharacterDraftApp() {
   useEffect(() => {
     setShortlistedIds(getDraftShortlist("anime", lobbyId));
     setScoutSlotPlans(getDraftScoutSlotPlans("anime", lobbyId));
+    setScoutNoticeNames(null);
     setShowShortlistOnly(false);
   }, [lobbyId]);
 
   useEffect(() => {
-    setShortlistedIds((previousIds) => {
-      const nextIds = removeDraftedShortlistIds(
-        previousIds,
-        lobby.draftedIds ?? []
-      );
-      const unchanged =
-        nextIds.length === previousIds.length &&
-        nextIds.every((id, index) => id === previousIds[index]);
-      if (unchanged) return previousIds;
-      rememberDraftShortlist("anime", lobbyId, nextIds);
-      return nextIds;
-    });
-  }, [lobby.draftedIds, lobbyId]);
+    const unavailableIds = getUnavailableShortlistIds(
+      shortlistedIds,
+      lobby.draftedIds ?? []
+    );
+    if (!unavailableIds.length) return;
+
+    const nextIds = removeDraftedShortlistIds(
+      shortlistedIds,
+      lobby.draftedIds ?? []
+    );
+    setScoutNoticeNames(
+      unavailableIds.map(
+        (characterId) =>
+          characters.find((character) => character.id === characterId)?.name
+            .full ?? `Character #${characterId}`
+      )
+    );
+    rememberDraftShortlist("anime", lobbyId, nextIds);
+    setShortlistedIds(nextIds);
+  }, [characters, lobby.draftedIds, lobbyId, shortlistedIds]);
 
   useEffect(() => {
     setScoutSlotPlans((previousPlans) => {
@@ -1242,10 +1254,12 @@ export default function CharacterDraftApp() {
           shortlistOrder={shortlistedIds}
           scoutSlotPlans={scoutSlotPlans}
           availableSlotNames={viewerOpenSlotNames}
+          scoutNoticeNames={scoutNoticeNames}
           showShortlistOnly={showShortlistOnly}
           onToggleShortlist={toggleShortlist}
           onMoveShortlist={moveShortlist}
           onSetScoutSlotPlan={updateScoutSlotPlan}
+          onDismissScoutNotice={() => setScoutNoticeNames(null)}
           onToggleShortlistOnly={() =>
             setShowShortlistOnly((showing) => !showing)
           }
@@ -1471,8 +1485,6 @@ export default function CharacterDraftApp() {
     </div>
   );
 }
-
-
 
 
 
