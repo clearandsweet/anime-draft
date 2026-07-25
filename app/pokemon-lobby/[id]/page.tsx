@@ -25,9 +25,11 @@ import {
 import { getOpenSlotNames } from "../../lib/draftTurns";
 import {
   getDraftShortlist,
+  moveShortlistId,
   rememberDraftShortlist,
   removeDraftedShortlistIds,
   toggleShortlistId,
+  type DraftShortlistMove,
 } from "../../lib/draftShortlist";
 
 import { LobbyState } from "../../api/lobby/logic";
@@ -635,7 +637,7 @@ export default function PokemonDraftApp() {
   // Filtered pool — exclude already-drafted Pokemon, apply filters
   const filteredPool = useMemo(() => {
     const draftedSet = new Set(lobby.draftedIds || []);
-    return pokemon.filter((p) => {
+    const matches = pokemon.filter((p) => {
       if (draftedSet.has(p.id)) return false;
       if (showShortlistOnly && !shortlistedSet.has(p.id)) return false;
 
@@ -659,10 +661,21 @@ export default function PokemonDraftApp() {
 
       return true;
     });
+    if (!showShortlistOnly) return matches;
+
+    const priority = new Map(
+      shortlistedIds.map((pokemonId, index) => [pokemonId, index])
+    );
+    return matches.sort(
+      (left, right) =>
+        (priority.get(left.id) ?? Number.MAX_SAFE_INTEGER) -
+        (priority.get(right.id) ?? Number.MAX_SAFE_INTEGER)
+    );
   }, [
     pokemon,
     filters,
     lobby.draftedIds,
+    shortlistedIds,
     shortlistedSet,
     showShortlistOnly,
   ]);
@@ -680,6 +693,17 @@ export default function PokemonDraftApp() {
   function toggleShortlist(pokemonId: number) {
     setShortlistedIds((previousIds) => {
       const nextIds = toggleShortlistId(previousIds, pokemonId);
+      rememberDraftShortlist("pokemon", lobbyId, nextIds);
+      return nextIds;
+    });
+  }
+
+  function moveShortlist(
+    pokemonId: number,
+    direction: DraftShortlistMove
+  ) {
+    setShortlistedIds((previousIds) => {
+      const nextIds = moveShortlistId(previousIds, pokemonId, direction);
       rememberDraftShortlist("pokemon", lobbyId, nextIds);
       return nextIds;
     });
@@ -1079,8 +1103,10 @@ export default function PokemonDraftApp() {
           }}
           onRandom={handleRandomPick}
           shortlistedIds={shortlistedSet}
+          shortlistOrder={shortlistedIds}
           showShortlistOnly={showShortlistOnly}
           onToggleShortlist={toggleShortlist}
+          onMoveShortlist={moveShortlist}
           onToggleShortlistOnly={() =>
             setShowShortlistOnly((showing) => !showing)
           }

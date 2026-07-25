@@ -26,9 +26,11 @@ import {
 import { getOpenSlotNames } from "../../lib/draftTurns";
 import {
   getDraftShortlist,
+  moveShortlistId,
   rememberDraftShortlist,
   removeDraftedShortlistIds,
   toggleShortlistId,
+  type DraftShortlistMove,
 } from "../../lib/draftShortlist";
 
 type Character = {
@@ -780,17 +782,28 @@ export default function CharacterDraftApp() {
 
   const filteredLocalPool = useMemo(() => {
     const draftedSet = new Set(lobby.draftedIds || []);
-    return characters.filter((c) => {
+    const matches = characters.filter((c) => {
       if (draftedSet.has(c.id)) return false;
       if (showShortlistOnly && !shortlistedSet.has(c.id)) return false;
       const genderOK = filters.gender === "All" || (c.gender && c.gender.toLowerCase().includes(filters.gender.toLowerCase()));
       const textOK = `${c.name.full} ${c.name.native}`.toLowerCase().includes(filters.searchText.toLowerCase());
       return genderOK && textOK;
     });
+    if (!showShortlistOnly) return matches;
+
+    const priority = new Map(
+      shortlistedIds.map((characterId, index) => [characterId, index])
+    );
+    return matches.sort(
+      (left, right) =>
+        (priority.get(left.id) ?? Number.MAX_SAFE_INTEGER) -
+        (priority.get(right.id) ?? Number.MAX_SAFE_INTEGER)
+    );
   }, [
     characters,
     filters,
     lobby.draftedIds,
+    shortlistedIds,
     shortlistedSet,
     showShortlistOnly,
   ]);
@@ -808,6 +821,17 @@ export default function CharacterDraftApp() {
   function toggleShortlist(characterId: number) {
     setShortlistedIds((previousIds) => {
       const nextIds = toggleShortlistId(previousIds, characterId);
+      rememberDraftShortlist("anime", lobbyId, nextIds);
+      return nextIds;
+    });
+  }
+
+  function moveShortlist(
+    characterId: number,
+    direction: DraftShortlistMove
+  ) {
+    setShortlistedIds((previousIds) => {
+      const nextIds = moveShortlistId(previousIds, characterId, direction);
       rememberDraftShortlist("anime", lobbyId, nextIds);
       return nextIds;
     });
@@ -1163,8 +1187,10 @@ export default function CharacterDraftApp() {
           }}
           onRandom={handleRandomPick}
           shortlistedIds={shortlistedSet}
+          shortlistOrder={shortlistedIds}
           showShortlistOnly={showShortlistOnly}
           onToggleShortlist={toggleShortlist}
+          onMoveShortlist={moveShortlist}
           onToggleShortlistOnly={() =>
             setShowShortlistOnly((showing) => !showing)
           }
@@ -1369,7 +1395,6 @@ export default function CharacterDraftApp() {
     </div>
   );
 }
-
 
 
 

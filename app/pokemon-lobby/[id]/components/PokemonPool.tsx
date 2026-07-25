@@ -1,5 +1,6 @@
 import React from "react";
 import { Character } from "../../../api/lobby/logic";
+import type { DraftShortlistMove } from "../../../lib/draftShortlist";
 
 const GENERATIONS = [
   "All", "Gen 1", "Gen 2", "Gen 3", "Gen 4",
@@ -28,8 +29,10 @@ type Props = {
   onSearch: () => void;
   onRandom: () => void;
   shortlistedIds: ReadonlySet<number>;
+  shortlistOrder: readonly number[];
   showShortlistOnly: boolean;
   onToggleShortlist: (pokemonId: number) => void;
+  onMoveShortlist: (pokemonId: number, direction: DraftShortlistMove) => void;
   onToggleShortlistOnly: () => void;
 };
 
@@ -42,8 +45,10 @@ export function PokemonPool({
   onSearch,
   onRandom,
   shortlistedIds,
+  shortlistOrder,
   showShortlistOnly,
   onToggleShortlist,
+  onMoveShortlist,
   onToggleShortlistOnly,
 }: Props) {
   return (
@@ -95,7 +100,7 @@ export function PokemonPool({
 
           <div className="flex flex-col">
             <label className="text-[10px] uppercase text-neutral-500 font-semibold">
-              Scout List
+              Pick Queue
             </label>
             <button
               type="button"
@@ -108,8 +113,8 @@ export function PokemonPool({
               }`}
             >
               {showShortlistOnly
-                ? `Showing saved (${shortlistedIds.size})`
-                : `Saved picks (${shortlistedIds.size})`}
+                ? `Showing queue (${shortlistedIds.size})`
+                : `Scout queue (${shortlistedIds.size})`}
             </button>
           </div>
 
@@ -146,6 +151,7 @@ export function PokemonPool({
       <div className="grid grid-cols-1 gap-3 pr-1 md:grid-cols-2 lg:max-h-[70vh] lg:overflow-y-auto">
         {filteredPool.map((p, idx) => {
           const isShortlisted = shortlistedIds.has(p.id);
+          const priorityIndex = shortlistOrder.indexOf(p.id);
           return (
             <div
               key={p.id}
@@ -189,11 +195,47 @@ export function PokemonPool({
               <div className="text-xs text-neutral-500 mt-0.5">
                 {p.gender} · #{p.id}
               </div>
+              {isShortlisted && priorityIndex >= 0 && (
+                <div className="mt-2 flex items-center justify-between gap-2 rounded-lg border border-amber-500/25 bg-amber-500/10 px-2 py-1.5">
+                  <span className="text-[10px] font-semibold uppercase tracking-wide text-amber-200">
+                    Priority {priorityIndex + 1}
+                  </span>
+                  {showShortlistOnly && (
+                    <span
+                      className="flex gap-1"
+                      role="group"
+                      aria-label={`Change ${p.name.full} priority`}
+                    >
+                      <button
+                        type="button"
+                        disabled={priorityIndex === 0}
+                        aria-label={`Move ${p.name.full} up in your pick queue`}
+                        onClick={() => onMoveShortlist(p.id, "up")}
+                        className="rounded border border-amber-500/30 px-2 py-0.5 text-xs text-amber-100 hover:bg-amber-500/20 disabled:cursor-not-allowed disabled:opacity-30"
+                      >
+                        <span aria-hidden="true">↑</span>
+                      </button>
+                      <button
+                        type="button"
+                        disabled={priorityIndex === shortlistOrder.length - 1}
+                        aria-label={`Move ${p.name.full} down in your pick queue`}
+                        onClick={() => onMoveShortlist(p.id, "down")}
+                        className="rounded border border-amber-500/30 px-2 py-0.5 text-xs text-amber-100 hover:bg-amber-500/20 disabled:cursor-not-allowed disabled:opacity-30"
+                      >
+                        <span aria-hidden="true">↓</span>
+                      </button>
+                    </span>
+                  )}
+                </div>
+              )}
               <button
+                type="button"
                 onClick={() => onPick(p.id)}
                 className="mt-2 text-[11px] bg-neutral-800 border border-neutral-700 rounded px-2 py-1 hover:bg-neutral-700"
               >
-                Pick #{idx + 1}
+                {showShortlistOnly && priorityIndex >= 0
+                  ? `Pick priority #${priorityIndex + 1}`
+                  : `Pick #${idx + 1}`}
               </button>
             </div>
           </div>
@@ -202,11 +244,11 @@ export function PokemonPool({
         {filteredPool.length === 0 && (
           <div className="col-span-full text-center text-neutral-500 text-sm py-12">
             {showShortlistOnly
-              ? "No saved Pokémon match these filters."
+              ? "No queued Pokémon match these filters."
               : "No Pokémon match your filters."}
             <div className="mt-2 text-[11px] text-neutral-600">
               {showShortlistOnly
-                ? "Turn off Scout List or save Pokémon with ☆."
+                ? "Adjust your filters or add Pokémon with ☆ Save."
                 : "Try Pokédex Search to look up by exact name or number."}
             </div>
           </div>

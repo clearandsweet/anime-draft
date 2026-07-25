@@ -1,4 +1,5 @@
 export type DraftShortlistType = "anime" | "pokemon";
+export type DraftShortlistMove = "up" | "down";
 
 const SHORTLIST_KEY_PREFIX = "clearandsweet:draft-shortlist:";
 
@@ -60,6 +61,26 @@ export function toggleShortlistId(ids: number[], id: number) {
   return normalized.includes(id)
     ? normalized.filter((savedId) => savedId !== id)
     : [...normalized, id];
+}
+
+export function moveShortlistId(
+  ids: number[],
+  id: number,
+  direction: DraftShortlistMove
+) {
+  const normalized = normalizeShortlistIds(ids);
+  const currentIndex = normalized.indexOf(id);
+  if (currentIndex === -1) return normalized;
+
+  const nextIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+  if (nextIndex < 0 || nextIndex >= normalized.length) return normalized;
+
+  const reordered = [...normalized];
+  [reordered[currentIndex], reordered[nextIndex]] = [
+    reordered[nextIndex],
+    reordered[currentIndex],
+  ];
+  return reordered;
 }
 
 export function removeDraftedShortlistIds(

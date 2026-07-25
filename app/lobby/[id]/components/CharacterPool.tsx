@@ -1,5 +1,6 @@
 import React from "react";
 import { Character } from "../../../api/lobby/logic";
+import type { DraftShortlistMove } from "../../../lib/draftShortlist";
 
 type Props = {
     characters: Character[];
@@ -12,8 +13,10 @@ type Props = {
     onDeepSearch: () => void;
     onRandom: () => void;
     shortlistedIds: ReadonlySet<number>;
+    shortlistOrder: readonly number[];
     showShortlistOnly: boolean;
     onToggleShortlist: (charId: number) => void;
+    onMoveShortlist: (charId: number, direction: DraftShortlistMove) => void;
     onToggleShortlistOnly: () => void;
 };
 
@@ -26,8 +29,10 @@ export function CharacterPool({
     onDeepSearch,
     onRandom,
     shortlistedIds,
+    shortlistOrder,
     showShortlistOnly,
     onToggleShortlist,
+    onMoveShortlist,
     onToggleShortlistOnly,
 }: Props) {
     return (
@@ -69,7 +74,7 @@ export function CharacterPool({
                     </div>
                     <div className="flex flex-col">
                         <label className="text-[10px] uppercase text-neutral-500 font-semibold">
-                            Scout List
+                            Pick Queue
                         </label>
                         <button
                             type="button"
@@ -82,8 +87,8 @@ export function CharacterPool({
                             }`}
                         >
                             {showShortlistOnly
-                                ? `Showing saved (${shortlistedIds.size})`
-                                : `Saved picks (${shortlistedIds.size})`}
+                                ? `Showing queue (${shortlistedIds.size})`
+                                : `Scout queue (${shortlistedIds.size})`}
                         </button>
                     </div>
                     <div className="flex flex-col">
@@ -116,6 +121,7 @@ export function CharacterPool({
             <div className="grid grid-cols-1 gap-3 pr-1 md:grid-cols-2 lg:max-h-[70vh] lg:overflow-y-auto">
                 {filteredPool.map((c, idx) => {
                     const isShortlisted = shortlistedIds.has(c.id);
+                    const priorityIndex = shortlistOrder.indexOf(c.id);
                     return (
                         <div
                             key={c.id}
@@ -154,11 +160,47 @@ export function CharacterPool({
                                     {c.gender} {"\u2022"} {"\u2764"}{" "}
                                     {c.favourites.toLocaleString()}
                                 </div>
+                                {isShortlisted && priorityIndex >= 0 && (
+                                    <div className="mt-2 flex items-center justify-between gap-2 rounded-lg border border-amber-500/25 bg-amber-500/10 px-2 py-1.5">
+                                        <span className="text-[10px] font-semibold uppercase tracking-wide text-amber-200">
+                                            Priority {priorityIndex + 1}
+                                        </span>
+                                        {showShortlistOnly && (
+                                            <span
+                                                className="flex gap-1"
+                                                role="group"
+                                                aria-label={`Change ${c.name.full} priority`}
+                                            >
+                                                <button
+                                                    type="button"
+                                                    disabled={priorityIndex === 0}
+                                                    aria-label={`Move ${c.name.full} up in your pick queue`}
+                                                    onClick={() => onMoveShortlist(c.id, "up")}
+                                                    className="rounded border border-amber-500/30 px-2 py-0.5 text-xs text-amber-100 hover:bg-amber-500/20 disabled:cursor-not-allowed disabled:opacity-30"
+                                                >
+                                                    <span aria-hidden="true">↑</span>
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    disabled={priorityIndex === shortlistOrder.length - 1}
+                                                    aria-label={`Move ${c.name.full} down in your pick queue`}
+                                                    onClick={() => onMoveShortlist(c.id, "down")}
+                                                    className="rounded border border-amber-500/30 px-2 py-0.5 text-xs text-amber-100 hover:bg-amber-500/20 disabled:cursor-not-allowed disabled:opacity-30"
+                                                >
+                                                    <span aria-hidden="true">↓</span>
+                                                </button>
+                                            </span>
+                                        )}
+                                    </div>
+                                )}
                                 <button
+                                    type="button"
                                     onClick={() => onPick(c.id)}
                                     className="mt-2 text-[11px] bg-neutral-800 border border-neutral-700 rounded px-2 py-1 hover:bg-neutral-700"
                                 >
-                                    Pick #{idx + 1}
+                                    {showShortlistOnly && priorityIndex >= 0
+                                        ? `Pick priority #${priorityIndex + 1}`
+                                        : `Pick #${idx + 1}`}
                                 </button>
                             </div>
                         </div>
@@ -167,11 +209,11 @@ export function CharacterPool({
                 {filteredPool.length === 0 && (
                     <div className="col-span-full text-center text-neutral-500 text-sm py-12">
                         {showShortlistOnly
-                            ? "No saved candidates match these filters."
+                            ? "No queued candidates match these filters."
                             : "No local matches."}
                         <div className="mt-2 text-[11px] text-neutral-600">
                             {showShortlistOnly
-                                ? "Turn off Scout List or save candidates with ☆."
+                                ? "Adjust your filters or add candidates with ☆ Save."
                                 : <>Try Deep Cut Search {"\u2192"} to pull from AniList directly.</>}
                         </div>
                     </div>

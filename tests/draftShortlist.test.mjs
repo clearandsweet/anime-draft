@@ -3,6 +3,7 @@ import test from "node:test";
 
 const {
   getDraftShortlist,
+  moveShortlistId,
   normalizeShortlistIds,
   rememberDraftShortlist,
   removeDraftedShortlistIds,
@@ -17,6 +18,14 @@ test("normalizes, toggles, and removes drafted shortlist entries", () => {
     25,
     133,
   ]);
+});
+
+test("moves saved candidates without losing or duplicating priorities", () => {
+  assert.deepEqual(moveShortlistId([25, 94, 133], 94, "up"), [94, 25, 133]);
+  assert.deepEqual(moveShortlistId([25, 94, 133], 94, "down"), [25, 133, 94]);
+  assert.deepEqual(moveShortlistId([25, 94, 133], 25, "up"), [25, 94, 133]);
+  assert.deepEqual(moveShortlistId([25, 94, 133], 133, "down"), [25, 94, 133]);
+  assert.deepEqual(moveShortlistId([25, 25, 94], 999, "up"), [25, 94]);
 });
 
 test("stores shortlist entries separately by room and draft type", () => {
