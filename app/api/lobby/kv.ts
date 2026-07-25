@@ -98,6 +98,7 @@ function normalizeLobbyState(state: LobbyState): LobbyState {
   );
   if (state.startedAt === undefined) state.startedAt = null;
   if (state.completedAt === undefined) state.completedAt = null;
+  if (state.orderShuffled === undefined) state.orderShuffled = false;
   if (state.version === undefined) state.version = 0;
   if (!state.draftType) state.draftType = "anime";
   if (!isDraftPreset(state.preset)) state.preset = "classic";

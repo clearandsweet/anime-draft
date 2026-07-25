@@ -12,6 +12,7 @@ type DraftStartReviewDialogProps = {
   draftType: "anime" | "pokemon";
   players: Array<{ id: string; name: string; color: string }>;
   readyPlayerIds: string[];
+  orderShuffled?: boolean;
   slotNames: string[];
   preset?: DraftPreflightPreset;
   timerDuration?: number;
@@ -41,6 +42,7 @@ export function DraftStartReviewDialog({
   draftType,
   players,
   readyPlayerIds,
+  orderShuffled = false,
   slotNames,
   preset,
   timerDuration,
@@ -109,7 +111,10 @@ export function DraftStartReviewDialog({
             className="mt-2 text-sm leading-relaxed text-neutral-400"
           >
             Review the room before the {draftLabel} draft begins. Starting
-            locks these settings and randomizes the first-round player order.
+            locks these settings and{" "}
+            {orderShuffled
+              ? "uses the previewed first-round player order."
+              : "randomizes the first-round player order."}
           </p>
         </div>
 
@@ -207,7 +212,7 @@ export function DraftStartReviewDialog({
           <div className="grid gap-4 md:grid-cols-2">
             <div className="rounded-xl border border-neutral-800 bg-neutral-900/70 p-4">
               <div className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
-                Players in room
+                First-round order
               </div>
               <ol className="mt-3 space-y-2">
                 {summary.playerNames.map((name, index) => (
@@ -232,7 +237,9 @@ export function DraftStartReviewDialog({
                 ))}
               </ol>
               <div className="mt-3 text-[11px] text-neutral-500">
-                Listed by join time; draft order randomizes at launch.
+                {orderShuffled
+                  ? "Preview locked; the draft will launch in this exact order."
+                  : "Listed by join time; draft order randomizes at launch."}
               </div>
             </div>
 

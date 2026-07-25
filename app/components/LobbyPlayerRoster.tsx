@@ -9,8 +9,11 @@ type LobbyPlayerRosterProps = {
   currentPlayerName: string;
   readyPlayerIds: string[];
   canManage: boolean;
+  orderShuffled: boolean;
+  shufflingOrder: boolean;
   removingPlayerId: string | null;
   updatingReady: boolean;
+  onShuffleOrder: () => void;
   onRemovePlayer: (playerId: string, playerName: string) => void;
   onToggleReady: (ready: boolean) => void;
 };
@@ -21,8 +24,11 @@ export function LobbyPlayerRoster({
   currentPlayerName,
   readyPlayerIds,
   canManage,
+  orderShuffled,
+  shufflingOrder,
   removingPlayerId,
   updatingReady,
+  onShuffleOrder,
   onRemovePlayer,
   onToggleReady,
 }: LobbyPlayerRosterProps) {
@@ -46,8 +52,46 @@ export function LobbyPlayerRoster({
         </div>
       </div>
 
+      <div
+        className={`mb-3 flex flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between ${
+          orderShuffled
+            ? "border-violet-400/30 bg-violet-500/10"
+            : "border-neutral-700 bg-neutral-900/70"
+        }`}
+      >
+        <div>
+          <div className="text-xs font-semibold text-neutral-200">
+            First-round snake order
+          </div>
+          <div
+            aria-live="polite"
+            className={`mt-1 text-[11px] ${
+              orderShuffled ? "text-violet-200/80" : "text-neutral-500"
+            }`}
+          >
+            {orderShuffled
+              ? "Preview locked. Starting will use this exact order."
+              : "Join order is shown for now. Launch will randomize automatically."}
+          </div>
+        </div>
+        {canManage && (
+          <button
+            type="button"
+            onClick={onShuffleOrder}
+            disabled={players.length < 2 || shufflingOrder}
+            className="shrink-0 rounded-lg border border-violet-400/40 bg-violet-500/15 px-3 py-2 text-xs font-semibold text-violet-100 transition hover:bg-violet-500/25 disabled:cursor-not-allowed disabled:opacity-45"
+          >
+            {shufflingOrder
+              ? "Shuffling…"
+              : orderShuffled
+                ? "Shuffle Again"
+                : "Shuffle & Preview"}
+          </button>
+        )}
+      </div>
+
       <div className="space-y-2">
-        {players.map((player) => {
+        {players.map((player, index) => {
           const playerStyles = colorStyleForColor(player.color);
           const isHost =
             Boolean(hostName) &&
@@ -68,7 +112,7 @@ export function LobbyPlayerRoster({
                 aria-hidden="true"
                 className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border bg-neutral-950 text-xs font-bold ${playerStyles.border} ${playerStyles.text}`}
               >
-                {player.name.trim().charAt(0).toUpperCase() || "?"}
+                {index + 1}
               </span>
               <span className="min-w-0 flex-1 truncate text-sm font-medium text-neutral-200">
                 {player.name}

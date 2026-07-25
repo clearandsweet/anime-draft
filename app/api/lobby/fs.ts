@@ -126,6 +126,7 @@ export async function loadLobby(id: string): Promise<LobbyState> {
     );
     if (state.startedAt === undefined) state.startedAt = null;
     if (state.completedAt === undefined) state.completedAt = null;
+    if (state.orderShuffled === undefined) state.orderShuffled = false;
     if (!state.draftType) state.draftType = "anime";
     return state;
   } catch {

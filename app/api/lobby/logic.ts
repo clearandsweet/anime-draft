@@ -11,6 +11,7 @@ import {
 } from "../../lib/lobbyPlayers";
 import { setLobbyPlayerReady } from "../../lib/draftReadiness";
 import { rerollLobbyCategory } from "../../lib/draftCategories";
+import { getDraftLaunchOrder } from "../../lib/draftOrder";
 
 export type Character = {
   id: number;
@@ -61,6 +62,7 @@ export type LobbyState = {
   completedAt: string | null;
   draftedIds: number[];
   readyPlayerIds: string[];
+  orderShuffled: boolean;
   categoryMode: "default" | "random";
   slotNames: string[];
   version: number;
@@ -144,6 +146,7 @@ export function makeFreshLobby(
     completedAt: null,
     draftedIds: [],
     readyPlayerIds: [],
+    orderShuffled: false,
     categoryMode: presetSlots.categoryMode,
     slotNames: presetSlots.slotNames,
     version: 0,
@@ -205,6 +208,7 @@ export function join(state: LobbyState, name: string): { ok: boolean; error?: st
     state.slotNames
   );
   state.players.push(newPlayer);
+  state.orderShuffled = false;
   if (!state.hostName) state.hostName = trimmed;
   state.version += 1;
   return { ok: true };
@@ -215,7 +219,9 @@ export function removePlayer(
   requesterName: string,
   playerId: string
 ): { ok: boolean; error?: string; removedName?: string } {
-  return removeLobbyPlayer(state, requesterName, playerId);
+  const result = removeLobbyPlayer(state, requesterName, playerId);
+  if (result.ok) state.orderShuffled = false;
+  return result;
 }
 
 export function setPlayerReady(
@@ -292,7 +298,8 @@ export function start(state: LobbyState, requesterName: string) {
   if (state.players.length < 1)
     return { ok: false, error: "Need at least 1 player to start." };
 
-  state.players = shuffle(state.players);
+  state.players = getDraftLaunchOrder(state.players, state.orderShuffled);
+  state.orderShuffled = true;
   state.round = 1;
   state.currentPlayerIndex = 0;
   state.timerSeconds = state.timerDuration;

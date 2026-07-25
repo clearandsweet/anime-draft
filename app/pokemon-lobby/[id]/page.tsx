@@ -82,12 +82,17 @@ export default function PokemonDraftApp() {
   const [removingPlayerId, setRemovingPlayerId] = useState<string | null>(null);
   const [updatingReady, setUpdatingReady] = useState(false);
   const [updatingCategory, setUpdatingCategory] = useState<string | null>(null);
+  const [shufflingOrder, setShufflingOrder] = useState(false);
 
   const [lobby, setLobby] = useState<LobbyState>({
     players: [],
     round: 1,
     currentPlayerIndex: 0,
-    timerSeconds: 180,
+    timerSeconds: 300,
+    timerDuration: 300,
+    preset: "classic",
+    lastTickAt: 0,
+    isPaused: false,
     lastPick: null,
     history: [],
     targetPlayers: 4,
@@ -96,12 +101,16 @@ export default function PokemonDraftApp() {
     startedAt: null,
     completedAt: null,
     draftedIds: [],
+    readyPlayerIds: [],
+    orderShuffled: false,
+    categoryMode: "random",
+    slotNames: [],
     version: 0,
+    competitions: [],
     draftType: "pokemon",
-  } as any);
+  });
 
   const currentPlayer = lobby.players[lobby.currentPlayerIndex] || null;
-  const onClockColor = colorStyleForColor(currentPlayer?.color);
   const openSlotNames = currentPlayer
     ? getOpenSlotNames(currentPlayer.slots)
     : [];
@@ -373,6 +382,35 @@ export default function PokemonDraftApp() {
     }
   }
 
+  async function shufflePlayerOrder() {
+    if (!iAmHost || shufflingOrder || lobby.players.length < 2) return;
+    setShufflingOrder(true);
+    try {
+      const res = await fetch(`/api/lobby/${lobbyId}/order`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ meName: meName.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || "Could not shuffle draft order.");
+        return;
+      }
+      setLobby((prev) => ({
+        ...prev,
+        ...data,
+        draftedIds: data.draftedIds ?? prev.draftedIds ?? [],
+        readyPlayerIds: data.readyPlayerIds ?? prev.readyPlayerIds ?? [],
+        startedAt: data.startedAt ?? prev.startedAt ?? null,
+        completedAt: data.completedAt ?? prev.completedAt ?? null,
+      }));
+    } catch {
+      alert("Network error while shuffling draft order.");
+    } finally {
+      setShufflingOrder(false);
+    }
+  }
+
   async function startDraft() {
     try {
       const res = await fetch(`/api/lobby/${lobbyId}/start`, {
@@ -407,9 +445,11 @@ export default function PokemonDraftApp() {
       } else {
         setSearchResults(Array.isArray(data.pokemon) ? data.pokemon : []);
       }
-    } catch (e: any) {
+    } catch (error: unknown) {
       setSearchResults([]);
-      setSearchError(e.message || "Network error during search");
+      setSearchError(
+        error instanceof Error ? error.message : "Network error during search"
+      );
     } finally {
       setSearchLoading(false);
     }
@@ -730,8 +770,13 @@ export default function PokemonDraftApp() {
               currentPlayerName={iAmJoined ? meName : ""}
               readyPlayerIds={lobby.readyPlayerIds ?? []}
               canManage={Boolean(iAmHost)}
+              orderShuffled={lobby.orderShuffled ?? false}
+              shufflingOrder={shufflingOrder}
               removingPlayerId={removingPlayerId}
               updatingReady={updatingReady}
+              onShuffleOrder={() => {
+                void shufflePlayerOrder();
+              }}
               onRemovePlayer={(playerId, playerName) => {
                 void removeLobbyPlayer(playerId, playerName);
               }}
@@ -756,6 +801,7 @@ export default function PokemonDraftApp() {
           draftType="pokemon"
           players={lobby.players}
           readyPlayerIds={lobby.readyPlayerIds ?? []}
+          orderShuffled={lobby.orderShuffled ?? false}
           slotNames={lobby.slotNames ?? []}
           preset={lobby.preset}
           timerDuration={lobby.timerDuration}
