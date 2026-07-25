@@ -2,11 +2,16 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 const {
+  getDraftScoutSlotPlans,
   getDraftShortlist,
   moveShortlistId,
+  normalizeDraftScoutSlotPlans,
   normalizeShortlistIds,
+  pruneDraftScoutSlotPlans,
+  rememberDraftScoutSlotPlans,
   rememberDraftShortlist,
   removeDraftedShortlistIds,
+  setDraftScoutSlotPlan,
   toggleShortlistId,
 } = await import("../app/lib/draftShortlist.ts");
 
@@ -28,6 +33,34 @@ test("moves saved candidates without losing or duplicating priorities", () => {
   assert.deepEqual(moveShortlistId([25, 25, 94], 999, "up"), [25, 94]);
 });
 
+test("normalizes, updates, and prunes private category plans", () => {
+  assert.deepEqual(
+    normalizeDraftScoutSlotPlans({
+      25: "  Mascot  ",
+      94: "Ghost / Dark",
+      "-1": "Invalid",
+      nope: "Invalid",
+      133: "",
+      150: 42,
+    }),
+    {
+      25: "Mascot",
+      94: "Ghost / Dark",
+    }
+  );
+
+  const planned = setDraftScoutSlotPlan({}, 25, "Little Guy");
+  assert.deepEqual(planned, { 25: "Little Guy" });
+  assert.deepEqual(setDraftScoutSlotPlan(planned, 25, ""), {});
+  assert.deepEqual(
+    pruneDraftScoutSlotPlans(
+      { 25: "Little Guy", 94: "Ghost / Dark", 133: "Wildcard" },
+      [94, 133]
+    ),
+    { 94: "Ghost / Dark", 133: "Wildcard" }
+  );
+});
+
 test("stores shortlist entries separately by room and draft type", () => {
   const values = new Map();
   globalThis.window = {
@@ -44,8 +77,31 @@ test("stores shortlist entries separately by room and draft type", () => {
   assert.deepEqual(getDraftShortlist("pokemon", "42"), [25]);
   assert.deepEqual(getDraftShortlist("anime", "43"), []);
 
+  assert.equal(
+    rememberDraftScoutSlotPlans("anime", "42", {
+      1: "Waifu",
+      2: "Wildcard",
+    }),
+    true
+  );
+  assert.equal(
+    rememberDraftScoutSlotPlans("pokemon", "42", {
+      25: "Little Guy",
+    }),
+    true
+  );
+  assert.deepEqual(getDraftScoutSlotPlans("anime", "42"), {
+    1: "Waifu",
+    2: "Wildcard",
+  });
+  assert.deepEqual(getDraftScoutSlotPlans("pokemon", "42"), {
+    25: "Little Guy",
+  });
+
   assert.equal(rememberDraftShortlist("anime", "42", []), true);
   assert.deepEqual(getDraftShortlist("anime", "42"), []);
+  assert.equal(rememberDraftScoutSlotPlans("anime", "42", {}), true);
+  assert.deepEqual(getDraftScoutSlotPlans("anime", "42"), {});
 });
 
 test("fails safely when device storage is unavailable", () => {
@@ -65,4 +121,9 @@ test("fails safely when device storage is unavailable", () => {
 
   assert.equal(rememberDraftShortlist("pokemon", "9", [25]), false);
   assert.deepEqual(getDraftShortlist("pokemon", "9"), []);
+  assert.equal(
+    rememberDraftScoutSlotPlans("pokemon", "9", { 25: "Mascot" }),
+    false
+  );
+  assert.deepEqual(getDraftScoutSlotPlans("pokemon", "9"), {});
 });

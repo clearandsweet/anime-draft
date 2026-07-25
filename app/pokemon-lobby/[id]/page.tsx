@@ -24,11 +24,16 @@ import {
 } from "../../lib/lobbyIdentity";
 import { getOpenSlotNames } from "../../lib/draftTurns";
 import {
+  getDraftScoutSlotPlans,
   getDraftShortlist,
   moveShortlistId,
+  pruneDraftScoutSlotPlans,
+  rememberDraftScoutSlotPlans,
   rememberDraftShortlist,
   removeDraftedShortlistIds,
+  setDraftScoutSlotPlan,
   toggleShortlistId,
+  type DraftScoutSlotPlans,
   type DraftShortlistMove,
 } from "../../lib/draftShortlist";
 
@@ -60,6 +65,8 @@ export default function PokemonDraftApp() {
     generation: "All",
   });
   const [shortlistedIds, setShortlistedIds] = useState<number[]>([]);
+  const [scoutSlotPlans, setScoutSlotPlans] =
+    useState<DraftScoutSlotPlans>({});
   const [showShortlistOnly, setShowShortlistOnly] = useState(false);
 
   // Pokédex deep search modal
@@ -132,9 +139,23 @@ export default function PokemonDraftApp() {
     ? getOpenSlotNames(currentPlayer.slots)
     : [];
 
-  const iAmJoined = lobby.players.some(
+  const viewerPlayer = lobby.players.find(
     (p) => p.name.toLowerCase() === meName.trim().toLowerCase()
   );
+  const iAmJoined = Boolean(viewerPlayer);
+  const viewerOpenSlotNames = viewerPlayer
+    ? getOpenSlotNames(viewerPlayer.slots)
+    : [];
+  const plannedSlotName = pendingPick
+    ? scoutSlotPlans[pendingPick.id] ?? ""
+    : "";
+  const orderedOpenSlotNames =
+    plannedSlotName && openSlotNames.includes(plannedSlotName)
+      ? [
+          plannedSlotName,
+          ...openSlotNames.filter((slotName) => slotName !== plannedSlotName),
+        ]
+      : openSlotNames;
   const iAmHost =
     lobby.hostName &&
     meName.trim().toLowerCase() === lobby.hostName.toLowerCase();
@@ -169,6 +190,7 @@ export default function PokemonDraftApp() {
 
   useEffect(() => {
     setShortlistedIds(getDraftShortlist("pokemon", lobbyId));
+    setScoutSlotPlans(getDraftScoutSlotPlans("pokemon", lobbyId));
     setShowShortlistOnly(false);
   }, [lobbyId]);
 
@@ -186,6 +208,24 @@ export default function PokemonDraftApp() {
       return nextIds;
     });
   }, [lobby.draftedIds, lobbyId]);
+
+  useEffect(() => {
+    setScoutSlotPlans((previousPlans) => {
+      const nextPlans = pruneDraftScoutSlotPlans(
+        previousPlans,
+        shortlistedIds
+      );
+      const previousEntries = Object.entries(previousPlans);
+      const unchanged =
+        Object.keys(nextPlans).length === previousEntries.length &&
+        previousEntries.every(
+          ([id, slotName]) => nextPlans[Number(id)] === slotName
+        );
+      if (unchanged) return previousPlans;
+      rememberDraftScoutSlotPlans("pokemon", lobbyId, nextPlans);
+      return nextPlans;
+    });
+  }, [lobbyId, shortlistedIds]);
 
   useEffect(() => {
     if (!everyoneFull) setCompletionDismissed(false);
@@ -709,6 +749,18 @@ export default function PokemonDraftApp() {
     });
   }
 
+  function updateScoutSlotPlan(pokemonId: number, slotName: string) {
+    setScoutSlotPlans((previousPlans) => {
+      const nextPlans = setDraftScoutSlotPlan(
+        previousPlans,
+        pokemonId,
+        slotName
+      );
+      rememberDraftScoutSlotPlans("pokemon", lobbyId, nextPlans);
+      return nextPlans;
+    });
+  }
+
   // ─── Loading screen ────────────────────────────────────────────────────────
   if (loadingPokemon) {
     return (
@@ -1104,9 +1156,12 @@ export default function PokemonDraftApp() {
           onRandom={handleRandomPick}
           shortlistedIds={shortlistedSet}
           shortlistOrder={shortlistedIds}
+          scoutSlotPlans={scoutSlotPlans}
+          availableSlotNames={viewerOpenSlotNames}
           showShortlistOnly={showShortlistOnly}
           onToggleShortlist={toggleShortlist}
           onMoveShortlist={moveShortlist}
+          onSetScoutSlotPlan={updateScoutSlotPlan}
           onToggleShortlistOnly={() =>
             setShowShortlistOnly((showing) => !showing)
           }
@@ -1267,14 +1322,29 @@ export default function PokemonDraftApp() {
             <p className="text-sm text-neutral-400 mb-3">
               Choose from {openSlotNames.length} open {openSlotNames.length === 1 ? "category" : "categories"}:
             </p>
+            {plannedSlotName && !openSlotNames.includes(plannedSlotName) && (
+              <p className="mb-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+                Your planned category, {plannedSlotName}, is already filled. Choose another.
+              </p>
+            )}
             <div className="grid grid-cols-2 gap-2">
-              {openSlotNames.map((slotName) => (
+              {orderedOpenSlotNames.map((slotName) => (
                 <button
                   key={slotName}
+                  type="button"
                   onClick={() => confirmSlot(slotName)}
-                  className="bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm hover:bg-neutral-700 text-left"
+                  className={`rounded border px-3 py-2 text-left text-sm transition ${
+                    slotName === plannedSlotName
+                      ? "border-amber-400 bg-amber-500/15 text-amber-100 hover:bg-amber-500/25"
+                      : "border-neutral-700 bg-neutral-800 hover:bg-neutral-700"
+                  }`}
                 >
-                  {slotName}
+                  <span className="block">{slotName}</span>
+                  {slotName === plannedSlotName && (
+                    <span className="mt-1 block text-[10px] font-semibold uppercase tracking-wide text-amber-300">
+                      Scout plan
+                    </span>
+                  )}
                 </button>
               ))}
             </div>

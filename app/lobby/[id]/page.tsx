@@ -25,11 +25,16 @@ import {
 } from "../../lib/lobbyIdentity";
 import { getOpenSlotNames } from "../../lib/draftTurns";
 import {
+  getDraftScoutSlotPlans,
   getDraftShortlist,
   moveShortlistId,
+  pruneDraftScoutSlotPlans,
+  rememberDraftScoutSlotPlans,
   rememberDraftShortlist,
   removeDraftedShortlistIds,
+  setDraftScoutSlotPlan,
   toggleShortlistId,
+  type DraftScoutSlotPlans,
   type DraftShortlistMove,
 } from "../../lib/draftShortlist";
 
@@ -60,6 +65,8 @@ export default function CharacterDraftApp() {
     { searchText: "", gender: "All" }
   );
   const [shortlistedIds, setShortlistedIds] = useState<number[]>([]);
+  const [scoutSlotPlans, setScoutSlotPlans] =
+    useState<DraftScoutSlotPlans>({});
   const [showShortlistOnly, setShowShortlistOnly] = useState(false);
 
   // deep cut modal
@@ -139,9 +146,23 @@ export default function CharacterDraftApp() {
     : [];
 
   // am I in the lobby already?
-  const iAmJoined = lobby.players.some(
+  const viewerPlayer = lobby.players.find(
     (p) => p.name.toLowerCase() === meName.trim().toLowerCase()
   );
+  const iAmJoined = Boolean(viewerPlayer);
+  const viewerOpenSlotNames = viewerPlayer
+    ? getOpenSlotNames(viewerPlayer.slots)
+    : [];
+  const plannedSlotName = pendingPick
+    ? scoutSlotPlans[pendingPick.id] ?? ""
+    : "";
+  const orderedOpenSlotNames =
+    plannedSlotName && openSlotNames.includes(plannedSlotName)
+      ? [
+          plannedSlotName,
+          ...openSlotNames.filter((slotName) => slotName !== plannedSlotName),
+        ]
+      : openSlotNames;
   // am I host
   const iAmHost =
     lobby.hostName &&
@@ -183,6 +204,7 @@ export default function CharacterDraftApp() {
 
   useEffect(() => {
     setShortlistedIds(getDraftShortlist("anime", lobbyId));
+    setScoutSlotPlans(getDraftScoutSlotPlans("anime", lobbyId));
     setShowShortlistOnly(false);
   }, [lobbyId]);
 
@@ -200,6 +222,24 @@ export default function CharacterDraftApp() {
       return nextIds;
     });
   }, [lobby.draftedIds, lobbyId]);
+
+  useEffect(() => {
+    setScoutSlotPlans((previousPlans) => {
+      const nextPlans = pruneDraftScoutSlotPlans(
+        previousPlans,
+        shortlistedIds
+      );
+      const previousEntries = Object.entries(previousPlans);
+      const unchanged =
+        Object.keys(nextPlans).length === previousEntries.length &&
+        previousEntries.every(
+          ([id, slotName]) => nextPlans[Number(id)] === slotName
+        );
+      if (unchanged) return previousPlans;
+      rememberDraftScoutSlotPlans("anime", lobbyId, nextPlans);
+      return nextPlans;
+    });
+  }, [lobbyId, shortlistedIds]);
 
   useEffect(() => {
     if (!everyoneFull) {
@@ -837,6 +877,18 @@ export default function CharacterDraftApp() {
     });
   }
 
+  function updateScoutSlotPlan(characterId: number, slotName: string) {
+    setScoutSlotPlans((previousPlans) => {
+      const nextPlans = setDraftScoutSlotPlan(
+        previousPlans,
+        characterId,
+        slotName
+      );
+      rememberDraftScoutSlotPlans("anime", lobbyId, nextPlans);
+      return nextPlans;
+    });
+  }
+
   if (loadingChars) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-neutral-900 text-neutral-400 text-lg">
@@ -1188,9 +1240,12 @@ export default function CharacterDraftApp() {
           onRandom={handleRandomPick}
           shortlistedIds={shortlistedSet}
           shortlistOrder={shortlistedIds}
+          scoutSlotPlans={scoutSlotPlans}
+          availableSlotNames={viewerOpenSlotNames}
           showShortlistOnly={showShortlistOnly}
           onToggleShortlist={toggleShortlist}
           onMoveShortlist={moveShortlist}
+          onSetScoutSlotPlan={updateScoutSlotPlan}
           onToggleShortlistOnly={() =>
             setShowShortlistOnly((showing) => !showing)
           }
@@ -1341,9 +1396,30 @@ export default function CharacterDraftApp() {
             <p className="mb-3 text-sm text-neutral-400">
               {openSlotNames.length} open {openSlotNames.length === 1 ? "slot" : "slots"} remaining
             </p>
+            {plannedSlotName && !openSlotNames.includes(plannedSlotName) && (
+              <p className="mb-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+                Your planned slot, {plannedSlotName}, is already filled. Choose another.
+              </p>
+            )}
             <div className="grid grid-cols-2 gap-2">
-              {openSlotNames.map((slotName) => (
-                <button key={slotName} onClick={() => confirmSlot(slotName)} className="bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm hover:bg-neutral-700 text-left">{slotName}</button>
+              {orderedOpenSlotNames.map((slotName) => (
+                <button
+                  key={slotName}
+                  type="button"
+                  onClick={() => confirmSlot(slotName)}
+                  className={`rounded border px-3 py-2 text-left text-sm transition ${
+                    slotName === plannedSlotName
+                      ? "border-amber-400 bg-amber-500/15 text-amber-100 hover:bg-amber-500/25"
+                      : "border-neutral-700 bg-neutral-800 hover:bg-neutral-700"
+                  }`}
+                >
+                  <span className="block">{slotName}</span>
+                  {slotName === plannedSlotName && (
+                    <span className="mt-1 block text-[10px] font-semibold uppercase tracking-wide text-amber-300">
+                      Scout plan
+                    </span>
+                  )}
+                </button>
               ))}
             </div>
             <button onClick={() => { setShowSlotModal(false); setPendingPick(null); }} className="mt-4 text-xs text-neutral-500 hover:text-neutral-300">Cancel</button>
@@ -1395,12 +1471,6 @@ export default function CharacterDraftApp() {
     </div>
   );
 }
-
-
-
-
-
-
 
 
 

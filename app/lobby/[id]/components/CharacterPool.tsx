@@ -1,6 +1,9 @@
 import React from "react";
 import { Character } from "../../../api/lobby/logic";
-import type { DraftShortlistMove } from "../../../lib/draftShortlist";
+import type {
+    DraftScoutSlotPlans,
+    DraftShortlistMove,
+} from "../../../lib/draftShortlist";
 
 type Props = {
     characters: Character[];
@@ -14,9 +17,12 @@ type Props = {
     onRandom: () => void;
     shortlistedIds: ReadonlySet<number>;
     shortlistOrder: readonly number[];
+    scoutSlotPlans: DraftScoutSlotPlans;
+    availableSlotNames: readonly string[];
     showShortlistOnly: boolean;
     onToggleShortlist: (charId: number) => void;
     onMoveShortlist: (charId: number, direction: DraftShortlistMove) => void;
+    onSetScoutSlotPlan: (charId: number, slotName: string) => void;
     onToggleShortlistOnly: () => void;
 };
 
@@ -30,9 +36,12 @@ export function CharacterPool({
     onRandom,
     shortlistedIds,
     shortlistOrder,
+    scoutSlotPlans,
+    availableSlotNames,
     showShortlistOnly,
     onToggleShortlist,
     onMoveShortlist,
+    onSetScoutSlotPlan,
     onToggleShortlistOnly,
 }: Props) {
     return (
@@ -122,6 +131,10 @@ export function CharacterPool({
                 {filteredPool.map((c, idx) => {
                     const isShortlisted = shortlistedIds.has(c.id);
                     const priorityIndex = shortlistOrder.indexOf(c.id);
+                    const plannedSlotName = scoutSlotPlans[c.id] ?? "";
+                    const plannedSlotIsFilled =
+                        Boolean(plannedSlotName) &&
+                        !availableSlotNames.includes(plannedSlotName);
                     return (
                         <div
                             key={c.id}
@@ -161,35 +174,75 @@ export function CharacterPool({
                                     {c.favourites.toLocaleString()}
                                 </div>
                                 {isShortlisted && priorityIndex >= 0 && (
-                                    <div className="mt-2 flex items-center justify-between gap-2 rounded-lg border border-amber-500/25 bg-amber-500/10 px-2 py-1.5">
-                                        <span className="text-[10px] font-semibold uppercase tracking-wide text-amber-200">
-                                            Priority {priorityIndex + 1}
-                                        </span>
-                                        {showShortlistOnly && (
-                                            <span
-                                                className="flex gap-1"
-                                                role="group"
-                                                aria-label={`Change ${c.name.full} priority`}
-                                            >
-                                                <button
-                                                    type="button"
-                                                    disabled={priorityIndex === 0}
-                                                    aria-label={`Move ${c.name.full} up in your pick queue`}
-                                                    onClick={() => onMoveShortlist(c.id, "up")}
-                                                    className="rounded border border-amber-500/30 px-2 py-0.5 text-xs text-amber-100 hover:bg-amber-500/20 disabled:cursor-not-allowed disabled:opacity-30"
-                                                >
-                                                    <span aria-hidden="true">↑</span>
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    disabled={priorityIndex === shortlistOrder.length - 1}
-                                                    aria-label={`Move ${c.name.full} down in your pick queue`}
-                                                    onClick={() => onMoveShortlist(c.id, "down")}
-                                                    className="rounded border border-amber-500/30 px-2 py-0.5 text-xs text-amber-100 hover:bg-amber-500/20 disabled:cursor-not-allowed disabled:opacity-30"
-                                                >
-                                                    <span aria-hidden="true">↓</span>
-                                                </button>
+                                    <div className="mt-2 rounded-lg border border-amber-500/25 bg-amber-500/10 p-2">
+                                        <div className="flex items-center justify-between gap-2">
+                                            <span className="text-[10px] font-semibold uppercase tracking-wide text-amber-200">
+                                                Priority {priorityIndex + 1}
                                             </span>
+                                            {showShortlistOnly && (
+                                                <span
+                                                    className="flex gap-1"
+                                                    role="group"
+                                                    aria-label={`Change ${c.name.full} priority`}
+                                                >
+                                                    <button
+                                                        type="button"
+                                                        disabled={priorityIndex === 0}
+                                                        aria-label={`Move ${c.name.full} up in your pick queue`}
+                                                        onClick={() => onMoveShortlist(c.id, "up")}
+                                                        className="rounded border border-amber-500/30 px-2 py-0.5 text-xs text-amber-100 hover:bg-amber-500/20 disabled:cursor-not-allowed disabled:opacity-30"
+                                                    >
+                                                        <span aria-hidden="true">↑</span>
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        disabled={priorityIndex === shortlistOrder.length - 1}
+                                                        aria-label={`Move ${c.name.full} down in your pick queue`}
+                                                        onClick={() => onMoveShortlist(c.id, "down")}
+                                                        className="rounded border border-amber-500/30 px-2 py-0.5 text-xs text-amber-100 hover:bg-amber-500/20 disabled:cursor-not-allowed disabled:opacity-30"
+                                                    >
+                                                        <span aria-hidden="true">↓</span>
+                                                    </button>
+                                                </span>
+                                            )}
+                                        </div>
+                                        {showShortlistOnly && (
+                                            <div className="mt-2">
+                                                <label
+                                                    htmlFor={`anime-scout-slot-${c.id}`}
+                                                    className="mb-1 block text-[9px] font-semibold uppercase tracking-wide text-neutral-500"
+                                                >
+                                                    Planned slot · private
+                                                </label>
+                                                <select
+                                                    id={`anime-scout-slot-${c.id}`}
+                                                    value={plannedSlotName}
+                                                    onChange={(event) =>
+                                                        onSetScoutSlotPlan(c.id, event.target.value)
+                                                    }
+                                                    disabled={
+                                                        availableSlotNames.length === 0 &&
+                                                        !plannedSlotName
+                                                    }
+                                                    className="w-full rounded border border-neutral-700 bg-neutral-950 px-2 py-1.5 text-[11px] text-neutral-200 disabled:opacity-50"
+                                                >
+                                                    <option value="">
+                                                        {availableSlotNames.length
+                                                            ? "Choose a category…"
+                                                            : "No open categories"}
+                                                    </option>
+                                                    {plannedSlotIsFilled && (
+                                                        <option value={plannedSlotName} disabled>
+                                                            {plannedSlotName} (filled)
+                                                        </option>
+                                                    )}
+                                                    {availableSlotNames.map((slotName) => (
+                                                        <option key={slotName} value={slotName}>
+                                                            {slotName}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
                                         )}
                                     </div>
                                 )}
