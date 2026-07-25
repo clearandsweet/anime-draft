@@ -14,6 +14,7 @@
     "test:activity": "node --experimental-strip-types --test tests/draftActivity.test.mjs",
     "test:awards": "node --experimental-strip-types --test tests/draftAwards.test.mjs",
     "test:ballot": "node --experimental-strip-types --test tests/ballotInteraction.test.mjs",
+    "test:categories": "node --experimental-strip-types --test tests/draftCategories.test.mjs",
     "test:identity": "node --experimental-strip-types --test tests/lobbyIdentity.test.mjs",
     "test:invite": "node --experimental-strip-types --test tests/lobbyInvite.test.mjs",
     "test:lobby-players": "node --experimental-strip-types --test tests/lobbyPlayers.test.mjs",

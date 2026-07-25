@@ -10,6 +10,7 @@ import {
   removeLobbyPlayer,
 } from "../../lib/lobbyPlayers";
 import { setLobbyPlayerReady } from "../../lib/draftReadiness";
+import { rerollLobbyCategory } from "../../lib/draftCategories";
 
 export type Character = {
   id: number;
@@ -227,7 +228,12 @@ export function setPlayerReady(
 
 export function setCategoryMode(state: LobbyState, requesterName: string, mode: "default" | "random") {
   if (!isHost(state, requesterName)) return { ok: false, error: "Only host can change settings." };
-  if (state.draftActive) return { ok: false, error: "Draft already started." };
+  if (state.startedAt || state.draftActive || state.completedAt) {
+    return { ok: false, error: "Categories can only change before the draft starts." };
+  }
+  if (mode !== "default" && mode !== "random") {
+    return { ok: false, error: "Invalid category mode." };
+  }
 
   state.categoryMode = mode;
 
@@ -254,6 +260,21 @@ export function setCategoryMode(state: LobbyState, requesterName: string, mode: 
   }
   state.version += 1;
   return { ok: true };
+}
+
+export function rerollCategory(
+  state: LobbyState,
+  requesterName: string,
+  slotName: string
+) {
+  const categoryPool =
+    state.draftType === "pokemon" ? POKEMON_CATEGORY_POOL : CATEGORY_POOL;
+  return rerollLobbyCategory(
+    state,
+    requesterName,
+    slotName,
+    categoryPool
+  );
 }
 
 export function setTarget(state: LobbyState, requesterName: string, newTarget: number) {

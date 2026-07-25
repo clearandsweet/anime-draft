@@ -13,6 +13,7 @@ import { DraftProgressPanel } from "../../components/DraftProgressPanel";
 import { LobbyInvitePanel } from "../../components/LobbyInvitePanel";
 import { DraftStartReviewDialog } from "../../components/DraftStartReviewDialog";
 import { LobbyPlayerRoster } from "../../components/LobbyPlayerRoster";
+import { DraftCategoryControls } from "../../components/DraftCategoryControls";
 import {
   forgetLobbyIdentity,
   getLobbyIdentity,
@@ -93,6 +94,7 @@ export default function CharacterDraftApp() {
   const [showStartReview, setShowStartReview] = useState(false);
   const [removingPlayerId, setRemovingPlayerId] = useState<string | null>(null);
   const [updatingReady, setUpdatingReady] = useState(false);
+  const [updatingCategory, setUpdatingCategory] = useState<string | null>(null);
   const [lobby, setLobby] = useState<LobbyState>({
     players: [],
     round: 1,
@@ -422,6 +424,10 @@ export default function CharacterDraftApp() {
   }
 
   async function setCategoryMode(mode: "default" | "random") {
+    if (!iAmHost || updatingCategory) return;
+    setUpdatingCategory(
+      mode === "random" && lobby.categoryMode === "random" ? "all" : mode
+    );
     try {
       const res = await fetch(`/api/lobby/${lobbyId}/category`, {
         method: "POST",
@@ -429,14 +435,52 @@ export default function CharacterDraftApp() {
         body: JSON.stringify({ mode, meName: meName.trim() }),
       });
       const data = await res.json();
-      if (res.ok) setLobby((prev) => ({
+      if (!res.ok) {
+        alert(data.error || "Could not update the categories.");
+        return;
+      }
+      setLobby((prev) => ({
         ...prev,
         ...data,
         draftedIds: data.draftedIds ?? prev.draftedIds ?? [],
+        readyPlayerIds: data.readyPlayerIds ?? prev.readyPlayerIds ?? [],
         startedAt: data.startedAt ?? prev.startedAt ?? null,
         completedAt: data.completedAt ?? prev.completedAt ?? null,
       }));
-    } catch { }
+    } catch {
+      alert("Network error while updating the categories.");
+    } finally {
+      setUpdatingCategory(null);
+    }
+  }
+
+  async function rerollSingleCategory(slotName: string) {
+    if (!iAmHost || updatingCategory) return;
+    setUpdatingCategory(slotName);
+    try {
+      const res = await fetch(`/api/lobby/${lobbyId}/category/reroll`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slotName, meName: meName.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || "Could not reroll that category.");
+        return;
+      }
+      setLobby((prev) => ({
+        ...prev,
+        ...data,
+        draftedIds: data.draftedIds ?? prev.draftedIds ?? [],
+        readyPlayerIds: data.readyPlayerIds ?? prev.readyPlayerIds ?? [],
+        startedAt: data.startedAt ?? prev.startedAt ?? null,
+        completedAt: data.completedAt ?? prev.completedAt ?? null,
+      }));
+    } catch {
+      alert("Network error while rerolling that category.");
+    } finally {
+      setUpdatingCategory(null);
+    }
   }
 
   async function startDraft() {
@@ -741,32 +785,19 @@ export default function CharacterDraftApp() {
             playerCount={joinedCount}
           />
           <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-neutral-800/40 border border-neutral-700 rounded-xl p-4">
-              <div className="text-xs uppercase text-neutral-500 font-semibold mb-2 text-center">Categories</div>
-              <div className="flex justify-center gap-2 mb-3">
-                <button
-                  onClick={() => iAmHost && setCategoryMode("default")}
-                  disabled={!iAmHost}
-                  className={`px-3 py-1 rounded text-xs border ${lobby.categoryMode === "default" || !lobby.categoryMode ? "bg-fuchsia-600/20 border-fuchsia-500 text-white" : "bg-neutral-900 border-neutral-700 text-neutral-400"} ${iAmHost ? "hover:bg-neutral-800" : ""}`}
-                >
-                  Default
-                </button>
-                <button
-                  onClick={() => iAmHost && setCategoryMode("random")}
-                  disabled={!iAmHost}
-                  className={`px-3 py-1 rounded text-xs border ${lobby.categoryMode === "random" ? "bg-fuchsia-600/20 border-fuchsia-500 text-white" : "bg-neutral-900 border-neutral-700 text-neutral-400"} ${iAmHost ? "hover:bg-neutral-800" : ""}`}
-                >
-                  Random 10
-                </button>
-              </div>
-              <div className="flex flex-wrap gap-1 justify-center">
-                {(lobby.slotNames || []).map((s) => (
-                  <span key={s} className="text-[10px] px-2 py-1 bg-neutral-900 rounded border border-neutral-800 text-neutral-300">
-                    {s}
-                  </span>
-                ))}
-              </div>
-            </div>
+            <DraftCategoryControls
+              mode={lobby.categoryMode ?? "default"}
+              slotNames={lobby.slotNames ?? []}
+              accent="fuchsia"
+              canManage={Boolean(iAmHost)}
+              busyCategory={updatingCategory}
+              onChangeMode={(mode) => {
+                void setCategoryMode(mode);
+              }}
+              onRerollCategory={(slotName) => {
+                void rerollSingleCategory(slotName);
+              }}
+            />
             <div className="bg-neutral-800/40 border border-neutral-700 rounded-xl p-4 flex flex-col items-center justify-center">
               <div className="text-xs uppercase text-neutral-500 font-semibold mb-2">Status</div>
               <div className="text-2xl font-bold text-white mb-1">{joinedCount} Joined</div>
@@ -1212,7 +1243,6 @@ export default function CharacterDraftApp() {
     </div>
   );
 }
-
 
 
 
