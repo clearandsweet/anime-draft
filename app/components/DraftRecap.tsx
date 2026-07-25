@@ -1,8 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { colorStyleForColor } from "../lib/colors";
 import { getDraftAwards } from "../lib/draftAwards";
+import {
+  getDraftRecapRoute,
+  getDraftRecapText,
+  getDraftRecapTitle,
+} from "../lib/draftRecapShare";
 import type { DraftPreset } from "./DraftPresetPicker";
 
 type RecapCharacter = {
@@ -59,6 +64,19 @@ function formatDuration(startedAt?: string | null, completedAt?: string | null) 
   return minutes ? `${hours} hr ${minutes} min` : `${hours} hr`;
 }
 
+function copyWithTextArea(value: string) {
+  const textArea = document.createElement("textarea");
+  textArea.value = value;
+  textArea.setAttribute("readonly", "");
+  textArea.style.position = "fixed";
+  textArea.style.opacity = "0";
+  document.body.appendChild(textArea);
+  textArea.select();
+  const copied = document.execCommand("copy");
+  document.body.removeChild(textArea);
+  return copied;
+}
+
 export function DraftRecap({
   lobbyId,
   draftType,
@@ -69,7 +87,10 @@ export function DraftRecap({
   completedAt,
 }: Props) {
   const [expanded, setExpanded] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [recapUrl, setRecapUrl] = useState("");
+  const [canShare, setCanShare] = useState(false);
+  const [shareStatus, setShareStatus] = useState("");
+  const statusTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const recap = useMemo(
     () =>
@@ -93,14 +114,87 @@ export function DraftRecap({
   const visibleEntries = expanded ? recap : recap.slice(0, 12);
   const rematchPath = draftType === "pokemon" ? "/draft/pokemon" : "/draft";
   const rematchHref = `${rematchPath}?preset=${preset}&rematchOf=${encodeURIComponent(lobbyId)}`;
+  const recapRoute = useMemo(
+    () => getDraftRecapRoute(draftType, lobbyId),
+    [draftType, lobbyId]
+  );
+  const recapTitle = getDraftRecapTitle(draftType, lobbyId);
+  const recapText = useMemo(
+    () =>
+      getDraftRecapText({
+        draftType,
+        lobbyId,
+        playerNames: players.map((player) => player.name),
+        completedPicks,
+        presetLabel: PRESET_LABELS[preset],
+        awards,
+      }),
+    [awards, completedPicks, draftType, lobbyId, players, preset]
+  );
 
-  async function copyArchiveLink() {
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      setRecapUrl(`${window.location.origin}${recapRoute}`);
+      setCanShare(typeof navigator.share === "function");
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      if (statusTimer.current) clearTimeout(statusTimer.current);
+    };
+  }, [recapRoute]);
+
+  function showShareStatus(message: string) {
+    setShareStatus(message);
+    if (statusTimer.current) clearTimeout(statusTimer.current);
+    statusTimer.current = setTimeout(() => setShareStatus(""), 3000);
+  }
+
+  async function copyRecap() {
+    if (!recapUrl) return;
+    const value = `${recapTitle}\n${recapText}\n${recapUrl}`;
+    let copied = false;
+
     try {
-      await navigator.clipboard.writeText(window.location.href);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1800);
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(value);
+        copied = true;
+      }
     } catch {
-      setCopied(false);
+      // Some browsers expose clipboard access but block it until permission is granted.
+    }
+
+    if (!copied) {
+      try {
+        copied = copyWithTextArea(value);
+      } catch {
+        // The status message below points to the visible link as a manual fallback.
+      }
+    }
+
+    showShareStatus(
+      copied
+        ? "Recap copied with results and link."
+        : "Select the recap link below to copy it."
+    );
+  }
+
+  async function shareRecap() {
+    if (!recapUrl || typeof navigator.share !== "function") {
+      await copyRecap();
+      return;
+    }
+
+    try {
+      await navigator.share({
+        title: recapTitle,
+        text: recapText,
+        url: recapUrl,
+      });
+      showShareStatus("Recap ready to send.");
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      await copyRecap();
     }
   }
 
@@ -118,13 +212,6 @@ export function DraftRecap({
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={copyArchiveLink}
-              className="rounded-lg border border-neutral-700 bg-neutral-950/70 px-3 py-2 text-xs font-semibold text-neutral-200 transition hover:bg-neutral-800"
-            >
-              {copied ? "Link copied" : "Copy archive link"}
-            </button>
             <a
               href={rematchHref}
               className="rounded-lg bg-emerald-400 px-3 py-2 text-xs font-bold text-emerald-950 transition hover:bg-emerald-300"
@@ -147,6 +234,58 @@ export function DraftRecap({
             </div>
           ))}
         </dl>
+
+        <section
+          aria-labelledby={`share-recap-${draftType}-${lobbyId}`}
+          className="mt-4 rounded-xl border border-emerald-500/25 bg-emerald-950/20 p-4"
+        >
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-300">
+                Shareable final recap
+              </p>
+              <h3
+                id={`share-recap-${draftType}-${lobbyId}`}
+                className="mt-1 text-sm font-semibold text-white"
+              >
+                Send the whole result, not just a link
+              </h3>
+              <p className="mt-1 max-w-2xl text-xs leading-relaxed text-neutral-400">
+                Includes the format, player boards, pick total, award highlights,
+                and this permanent results page.
+              </p>
+              <p className="mt-2 truncate font-mono text-[10px] text-neutral-500">
+                {recapUrl || recapRoute}
+              </p>
+            </div>
+
+            <div className="flex shrink-0 flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={copyRecap}
+                disabled={!recapUrl}
+                className="rounded-lg border border-emerald-500 bg-emerald-500/15 px-3 py-2 text-xs font-bold text-emerald-100 transition hover:bg-emerald-500/25 disabled:cursor-wait disabled:opacity-50"
+              >
+                Copy Full Recap
+              </button>
+              {canShare && (
+                <button
+                  type="button"
+                  onClick={shareRecap}
+                  className="rounded-lg border border-neutral-700 bg-neutral-950/70 px-3 py-2 text-xs font-semibold text-neutral-200 transition hover:bg-neutral-800"
+                >
+                  Share Recap
+                </button>
+              )}
+            </div>
+          </div>
+          <p
+            aria-live="polite"
+            className="mt-2 min-h-4 text-xs text-emerald-300"
+          >
+            {shareStatus}
+          </p>
+        </section>
       </div>
 
       <div className="p-5">
