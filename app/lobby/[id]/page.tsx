@@ -15,6 +15,7 @@ import { LobbyInvitePanel } from "../../components/LobbyInvitePanel";
 import { DraftStartReviewDialog } from "../../components/DraftStartReviewDialog";
 import { LobbyPlayerRoster } from "../../components/LobbyPlayerRoster";
 import { DraftCategoryControls } from "../../components/DraftCategoryControls";
+import { DraftSearchResultCard } from "../../components/DraftSearchResultCard";
 import {
   forgetLobbyIdentity,
   getLobbyIdentity,
@@ -67,6 +68,19 @@ export default function CharacterDraftApp() {
 
   // Ref to track if deep search is running, to pause background fetch
   const deepSearchRunningRef = useRef<boolean>(false);
+
+  useEffect(() => {
+    if (!showDeepSearchModal) return;
+
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      setShowDeepSearchModal(false);
+      deepSearchRunningRef.current = false;
+    };
+
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [showDeepSearchModal]);
 
   // slot selection modal (after you click Pick)
   const [showSlotModal, setShowSlotModal] = useState<boolean>(false);
@@ -1141,17 +1155,36 @@ export default function CharacterDraftApp() {
 
         {showDeepSearchModal && (
           <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 backdrop-blur-sm p-4">
-            <div className="bg-neutral-900 border border-neutral-700 rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl">
+            <section
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="anime-deep-search-title"
+              aria-describedby="anime-deep-search-help"
+              className="bg-neutral-900 border border-neutral-700 rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl"
+            >
               <div className="p-4 border-b border-neutral-800 flex justify-between items-center">
-                <h3 className="text-lg font-bold text-white">Deep Cut Search</h3>
-                <button onClick={() => {
-                  setShowDeepSearchModal(false);
-                  deepSearchRunningRef.current = false;
-                }} className="text-neutral-400 hover:text-white">✕</button>
+                <h2 id="anime-deep-search-title" className="text-lg font-bold text-white">
+                  Deep Cut Search
+                </h2>
+                <button
+                  type="button"
+                  aria-label="Close anime character search"
+                  onClick={() => {
+                    setShowDeepSearchModal(false);
+                    deepSearchRunningRef.current = false;
+                  }}
+                  className="rounded p-1 text-neutral-400 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400"
+                >
+                  <span aria-hidden="true">×</span>
+                </button>
               </div>
               <div className="p-4 border-b border-neutral-800 bg-neutral-800/20">
                 <div className="flex gap-2">
+                  <label htmlFor="anime-deep-search-input" className="sr-only">
+                    Anime character name
+                  </label>
                   <input
+                    id="anime-deep-search-input"
                     className="flex-1 bg-neutral-950 border border-neutral-700 rounded-lg px-3 py-2 text-white focus:border-fuchsia-500 outline-none"
                     placeholder="Search by exact name (e.g. 'Goku')"
                     value={deepSearchQuery}
@@ -1160,6 +1193,7 @@ export default function CharacterDraftApp() {
                     autoFocus
                   />
                   <button
+                    type="button"
                     onClick={runDeepSearch}
                     disabled={deepSearchLoading}
                     className="bg-fuchsia-600 hover:bg-fuchsia-500 text-white font-semibold px-4 rounded-lg disabled:opacity-50"
@@ -1167,45 +1201,66 @@ export default function CharacterDraftApp() {
                     {deepSearchLoading ? "Searching..." : "Search"}
                   </button>
                 </div>
-                <div className="text-[10px] text-neutral-500 mt-2">
+                <div id="anime-deep-search-help" className="text-[10px] text-neutral-500 mt-2">
                   Search AniList directly. Good for characters not in the top 4000.
                 </div>
               </div>
-              <div className="flex-1 overflow-y-auto p-4 min-h-[300px]">
+              <div
+                className="flex-1 overflow-y-auto p-4 min-h-[300px]"
+                aria-busy={deepSearchLoading}
+              >
                 {deepSearchLoading ? (
-                  <div className="flex flex-col items-center justify-center h-full text-neutral-500 gap-2">
+                  <div
+                    role="status"
+                    className="flex flex-col items-center justify-center h-full text-neutral-500 gap-2"
+                  >
                     <div className="w-6 h-6 border-2 border-neutral-600 border-t-neutral-200 rounded-full animate-spin" />
                     <div>Searching AniList...</div>
                   </div>
                 ) : deepSearchError ? (
-                  <div className="flex flex-col items-center justify-center h-full text-red-400 gap-2">
-                    <div className="text-lg">⚠</div>
+                  <div
+                    role="alert"
+                    className="flex flex-col items-center justify-center h-full text-red-400 gap-2"
+                  >
+                    <div className="text-lg" aria-hidden="true">⚠</div>
                     <div className="text-center">{deepSearchError}</div>
-                    <button onClick={runDeepSearch} className="text-xs underline hover:text-red-300">Try Again</button>
+                    <button
+                      type="button"
+                      onClick={runDeepSearch}
+                      className="text-xs underline hover:text-red-300"
+                    >
+                      Try Again
+                    </button>
                   </div>
                 ) : deepSearchResults.length > 0 ? (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {deepSearchResults.map(c => (
-                      <div key={c.id} className="bg-neutral-800/40 border border-neutral-700 rounded-lg p-2 flex gap-2 hover:bg-neutral-800 cursor-pointer transition" onClick={() => {
-                        beginDraftPick(c);
-                        setShowDeepSearchModal(false);
-                      }}>
-                        <img src={c.image.large} className="w-12 h-16 object-cover rounded bg-neutral-950" />
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm font-bold text-white truncate" title={c.name.full}>{c.name.full}</div>
-                          <div className="text-[10px] text-neutral-400 truncate">{c.name.native}</div>
-                          <div className="text-[10px] text-neutral-500 mt-1">{c.favourites} favs</div>
-                        </div>
-                      </div>
+                  <ul
+                    aria-label="Anime character search results"
+                    className="grid grid-cols-1 gap-3 sm:grid-cols-2"
+                  >
+                    {deepSearchResults.map((character) => (
+                      <li key={character.id}>
+                        <DraftSearchResultCard
+                          character={character}
+                          draftType="anime"
+                          metadata={`${character.favourites.toLocaleString()} favourites`}
+                          onSelect={() => {
+                            beginDraftPick(character);
+                            setShowDeepSearchModal(false);
+                          }}
+                        />
+                      </li>
                     ))}
-                  </div>
+                  </ul>
                 ) : (
-                  <div className="flex flex-col items-center justify-center h-full text-neutral-600">
+                  <div
+                    role="status"
+                    className="flex flex-col items-center justify-center h-full text-neutral-600"
+                  >
                     {deepSearchQuery ? "No results found." : "Enter a name to search."}
                   </div>
                 )}
               </div>
-            </div>
+            </section>
           </div>
         )}
       </main>
@@ -1297,10 +1352,6 @@ export default function CharacterDraftApp() {
     </div>
   );
 }
-
-
-
-
 
 
 
