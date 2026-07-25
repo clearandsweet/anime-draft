@@ -15,6 +15,8 @@ import { DraftStartReviewDialog } from "../../components/DraftStartReviewDialog"
 import { LobbyPlayerRoster } from "../../components/LobbyPlayerRoster";
 import { DraftCategoryControls } from "../../components/DraftCategoryControls";
 import { DraftSearchResultCard } from "../../components/DraftSearchResultCard";
+import { HostUndoControl } from "../../components/HostUndoControl";
+import type { DraftUndoExpectation } from "../../lib/draftUndo";
 import {
   forgetLobbyIdentity,
   getLobbyIdentity,
@@ -522,22 +524,33 @@ export default function PokemonDraftApp() {
     }
   }
 
-  async function handleUndo() {
+  async function handleUndo(expectation: DraftUndoExpectation) {
     try {
       const res = await fetch(`/api/lobby/${lobbyId}/undo`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ meName: meName.trim() }),
+        body: JSON.stringify({ meName: meName.trim(), expectation }),
       });
       const data = await res.json();
-      if (!res.ok) { alert(data.error || "Undo failed"); return; }
+      if (!res.ok) {
+        return {
+          ok: false,
+          error: data.error || "The last draft action could not be undone.",
+        };
+      }
       setLobby((prev) => ({
         ...prev, ...data,
         draftedIds: data.draftedIds ?? prev.draftedIds ?? [],
         startedAt: data.startedAt ?? prev.startedAt ?? null,
         completedAt: data.completedAt ?? prev.completedAt ?? null,
       }));
-    } catch {}
+      return { ok: true };
+    } catch {
+      return {
+        ok: false,
+        error: "The draft room could not be reached. Try again.",
+      };
+    }
   }
 
   function handleExport() {
@@ -994,9 +1007,11 @@ export default function PokemonDraftApp() {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex items-center gap-2">
             {iAmHost && (
-              <button onClick={handleUndo} className="bg-neutral-800 px-3 py-1 rounded border border-neutral-700 hover:bg-neutral-700 text-sm">
-                Undo (Host)
-              </button>
+              <HostUndoControl
+                lobby={lobby}
+                draftType="pokemon"
+                onUndo={handleUndo}
+              />
             )}
             {iAmHost && canPromptFinish && (
               <button

@@ -12,6 +12,10 @@ import {
 import { setLobbyPlayerReady } from "../../lib/draftReadiness";
 import { rerollLobbyCategory } from "../../lib/draftCategories";
 import { getDraftLaunchOrder } from "../../lib/draftOrder";
+import {
+  matchesDraftUndoExpectation,
+  type DraftUndoExpectation,
+} from "../../lib/draftUndo";
 
 export type Character = {
   id: number;
@@ -352,9 +356,23 @@ export function pick(
   return { ok: true };
 }
 
-export function undo(state: LobbyState, requesterName: string) {
+export function undo(
+  state: LobbyState,
+  requesterName: string,
+  expectation?: DraftUndoExpectation
+) {
   if (!isHost(state, requesterName)) return { ok: false, error: "Only host can undo." };
   if (!state.history.length) return { ok: false, error: "Nothing to undo." };
+  if (
+    expectation &&
+    !matchesDraftUndoExpectation(state.history, expectation)
+  ) {
+    return {
+      ok: false,
+      error:
+        "The draft changed before the undo was confirmed. Review the latest pick and try again.",
+    };
+  }
   const last = state.history.pop()!;
   const { playerIndex, char, slot } = last;
   const pl = state.players[playerIndex];

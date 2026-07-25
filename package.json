@@ -26,6 +26,7 @@
     "test:room-discovery": "node --experimental-strip-types --test tests/draftRoomDiscovery.test.mjs",
     "test:shortlist": "node --experimental-strip-types --test tests/draftShortlist.test.mjs",
     "test:turn-alerts": "node --experimental-strip-types --test tests/draftTurnAlerts.test.mjs",
+    "test:undo": "node --experimental-strip-types --test tests/draftUndo.test.mjs",
     "test:voting": "node --experimental-strip-types --test tests/votesLogic.test.mjs",
     "db:generate": "drizzle-kit generate"
   },
