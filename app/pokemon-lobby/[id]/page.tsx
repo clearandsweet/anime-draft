@@ -7,6 +7,7 @@ import { DraftTimer } from "../../lobby/[id]/components/DraftTimer";
 import { PlayerList } from "../../lobby/[id]/components/PlayerList";
 import { PokemonPool, PokemonFilters } from "./components/PokemonPool";
 import { DraftTurnGuide } from "../../components/DraftTurnGuide";
+import { DraftTurnAlerts } from "../../components/DraftTurnAlerts";
 import { DraftActivityStrip } from "../../components/DraftActivityStrip";
 import { DraftProgressPanel } from "../../components/DraftProgressPanel";
 import { LobbyInvitePanel } from "../../components/LobbyInvitePanel";
@@ -994,7 +995,19 @@ export default function PokemonDraftApp() {
               </button>
             )}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            {iAmJoined && (
+              <DraftTurnAlerts
+                lobbyId={lobbyId}
+                draftType="pokemon"
+                viewerName={meName}
+                currentPlayer={currentPlayer}
+                round={lobby.round}
+                completedTurnCount={lobby.history?.length ?? 0}
+                draftActive={lobby.draftActive}
+                isPaused={lobby.isPaused}
+              />
+            )}
             {iAmJoined && (
               <button
                 type="button"
