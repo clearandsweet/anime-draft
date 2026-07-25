@@ -22,6 +22,7 @@
     "test:preflight": "node --experimental-strip-types --test tests/draftPreflight.test.mjs",
     "test:recap-share": "node --experimental-strip-types --test tests/draftRecapShare.test.mjs",
     "test:readiness": "node --experimental-strip-types --test tests/draftReadiness.test.mjs",
+    "test:room-discovery": "node --experimental-strip-types --test tests/draftRoomDiscovery.test.mjs",
     "test:shortlist": "node --experimental-strip-types --test tests/draftShortlist.test.mjs",
     "test:voting": "node --experimental-strip-types --test tests/votesLogic.test.mjs",
     "db:generate": "drizzle-kit generate"

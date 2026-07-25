@@ -28,6 +28,12 @@ export function getLobbyIdentity(lobbyId: string) {
   }
 }
 
+export function rememberedLobbyIds(lobbyIds: string[]) {
+  return new Set(
+    lobbyIds.filter((lobbyId) => Boolean(getLobbyIdentity(lobbyId)))
+  );
+}
+
 export function forgetLobbyIdentity(lobbyId: string) {
   if (typeof window === "undefined") return;
 

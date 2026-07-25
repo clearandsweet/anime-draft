@@ -17,6 +17,10 @@ test("remembers, scopes, and forgets a lobby identity", () => {
   assert.equal(identity.rememberLobbyIdentity("anime-42", "  Kai  "), true);
   assert.equal(identity.getLobbyIdentity("anime-42"), "Kai");
   assert.equal(identity.getLobbyIdentity("pokemon-42"), "");
+  assert.deepEqual(
+    [...identity.rememberedLobbyIds(["anime-42", "pokemon-42", "missing"])],
+    ["anime-42"]
+  );
 
   identity.forgetLobbyIdentity("anime-42");
   assert.equal(identity.getLobbyIdentity("anime-42"), "");
@@ -39,5 +43,6 @@ test("fails safely when browser storage is unavailable", () => {
 
   assert.equal(identity.rememberLobbyIdentity("9", "Misty"), false);
   assert.equal(identity.getLobbyIdentity("9"), "");
+  assert.deepEqual([...identity.rememberedLobbyIds(["9"])], []);
   assert.doesNotThrow(() => identity.forgetLobbyIdentity("9"));
 });

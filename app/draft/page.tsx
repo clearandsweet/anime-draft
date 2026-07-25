@@ -15,6 +15,7 @@ import {
   ownedLobbyIds as findOwnedLobbyIds,
   rememberLobbyManagementKey,
 } from "../lib/lobbyOwnership";
+import { rememberedLobbyIds as findRememberedLobbyIds } from "../lib/lobbyIdentity";
 
 export default function DraftLobbyPage() {
   const [hostName, setHostName] = useState("");
@@ -26,6 +27,9 @@ export default function DraftLobbyPage() {
   const [lastCreatedId, setLastCreatedId] = useState<string | null>(null);
   const [rematchOf, setRematchOf] = useState<string | null>(null);
   const [ownedLobbyIds, setOwnedLobbyIds] = useState<Set<string>>(new Set());
+  const [rememberedLobbyIds, setRememberedLobbyIds] = useState<Set<string>>(
+    new Set()
+  );
 
   async function refreshLobbies() {
     try {
@@ -36,7 +40,9 @@ export default function DraftLobbyPage() {
       const data = await response.json();
       const nextLobbies: LobbyMeta[] = Array.isArray(data.lobbies) ? data.lobbies : [];
       setLobbies(nextLobbies);
-      setOwnedLobbyIds(findOwnedLobbyIds(nextLobbies.map((lobby) => lobby.id)));
+      const lobbyIds = nextLobbies.map((lobby) => lobby.id);
+      setOwnedLobbyIds(findOwnedLobbyIds(lobbyIds));
+      setRememberedLobbyIds(findRememberedLobbyIds(lobbyIds));
     } finally {
       setLoading(false);
     }
@@ -284,6 +290,7 @@ export default function DraftLobbyPage() {
           basePath="/lobby"
           accent="fuchsia"
           ownedLobbyIds={ownedLobbyIds}
+          rememberedLobbyIds={rememberedLobbyIds}
           onDelete={handleDelete}
         />
       </main>
