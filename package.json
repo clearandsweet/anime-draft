@@ -21,6 +21,7 @@
     "test:progress": "node --experimental-strip-types --test tests/draftProgress.test.mjs",
     "test:preflight": "node --experimental-strip-types --test tests/draftPreflight.test.mjs",
     "test:order": "node --experimental-strip-types --test tests/draftOrder.test.mjs",
+    "test:pick-availability": "node --experimental-strip-types --test tests/draftPickAvailability.test.mjs",
     "test:recap-share": "node --experimental-strip-types --test tests/draftRecapShare.test.mjs",
     "test:readiness": "node --experimental-strip-types --test tests/draftReadiness.test.mjs",
     "test:room-discovery": "node --experimental-strip-types --test tests/draftRoomDiscovery.test.mjs",

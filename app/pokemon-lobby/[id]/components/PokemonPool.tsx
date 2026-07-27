@@ -1,6 +1,8 @@
 import React from "react";
 import { Character } from "../../../api/lobby/logic";
+import { DraftPoolStatus } from "../../../components/DraftPoolStatus";
 import { ScoutQueueNotice } from "../../../components/ScoutQueueNotice";
+import type { DraftPickAvailability } from "../../../lib/draftPickAvailability";
 import type {
   DraftScoutSlotPlans,
   DraftShortlistMove,
@@ -36,6 +38,7 @@ type Props = {
   shortlistOrder: readonly number[];
   scoutSlotPlans: DraftScoutSlotPlans;
   availableSlotNames: readonly string[];
+  pickAvailability: DraftPickAvailability;
   scoutNoticeNames: string[] | null;
   showShortlistOnly: boolean;
   onToggleShortlist: (pokemonId: number) => void;
@@ -57,6 +60,7 @@ export function PokemonPool({
   shortlistOrder,
   scoutSlotPlans,
   availableSlotNames,
+  pickAvailability,
   scoutNoticeNames,
   showShortlistOnly,
   onToggleShortlist,
@@ -73,6 +77,10 @@ export function PokemonPool({
           onDismiss={onDismissScoutNotice}
         />
       )}
+      <DraftPoolStatus
+        availability={pickAvailability}
+        draftType="pokemon"
+      />
       <div
         className="mb-3 rounded-xl border border-neutral-700 bg-neutral-900/90 p-3 shadow-[0_10px_20px_rgba(0,0,0,0.6)] backdrop-blur-sm lg:sticky lg:top-0 lg:z-20"
       >
@@ -294,8 +302,14 @@ export function PokemonPool({
               )}
               <button
                 type="button"
+                disabled={!pickAvailability.canPick}
+                title={
+                  pickAvailability.canPick
+                    ? `Draft ${p.name.full}`
+                    : pickAvailability.label
+                }
                 onClick={() => onPick(p.id)}
-                className="mt-2 text-[11px] bg-neutral-800 border border-neutral-700 rounded px-2 py-1 hover:bg-neutral-700"
+                className="mt-2 rounded border border-neutral-700 bg-neutral-800 px-2 py-1 text-[11px] hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-neutral-800"
               >
                 {showShortlistOnly && priorityIndex >= 0
                   ? `Pick priority #${priorityIndex + 1}`

@@ -38,6 +38,7 @@ import {
   type DraftScoutSlotPlans,
   type DraftShortlistMove,
 } from "../../lib/draftShortlist";
+import { getDraftPickAvailability } from "../../lib/draftPickAvailability";
 
 type Character = {
   id: number;
@@ -157,6 +158,14 @@ export default function CharacterDraftApp() {
   const viewerOpenSlotNames = viewerPlayer
     ? getOpenSlotNames(viewerPlayer.slots)
     : [];
+  const pickAvailability = getDraftPickAvailability({
+    draftActive: lobby.draftActive,
+    isPaused: lobby.isPaused,
+    completedAt: lobby.completedAt,
+    currentPlayerName: currentPlayer?.name,
+    viewerName: iAmJoined ? meName : "",
+    viewerOpenSlotCount: viewerOpenSlotNames.length,
+  });
   const plannedSlotName = pendingPick
     ? scoutSlotPlans[pendingPick.id] ?? ""
     : "";
@@ -1254,6 +1263,7 @@ export default function CharacterDraftApp() {
           shortlistOrder={shortlistedIds}
           scoutSlotPlans={scoutSlotPlans}
           availableSlotNames={viewerOpenSlotNames}
+          pickAvailability={pickAvailability}
           scoutNoticeNames={scoutNoticeNames}
           showShortlistOnly={showShortlistOnly}
           onToggleShortlist={toggleShortlist}
@@ -1485,7 +1495,6 @@ export default function CharacterDraftApp() {
     </div>
   );
 }
-
 
 
 

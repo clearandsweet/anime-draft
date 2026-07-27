@@ -37,6 +37,7 @@ import {
   type DraftScoutSlotPlans,
   type DraftShortlistMove,
 } from "../../lib/draftShortlist";
+import { getDraftPickAvailability } from "../../lib/draftPickAvailability";
 
 import { LobbyState } from "../../api/lobby/logic";
 
@@ -150,6 +151,14 @@ export default function PokemonDraftApp() {
   const viewerOpenSlotNames = viewerPlayer
     ? getOpenSlotNames(viewerPlayer.slots)
     : [];
+  const pickAvailability = getDraftPickAvailability({
+    draftActive: lobby.draftActive,
+    isPaused: lobby.isPaused,
+    completedAt: lobby.completedAt,
+    currentPlayerName: currentPlayer?.name,
+    viewerName: iAmJoined ? meName : "",
+    viewerOpenSlotCount: viewerOpenSlotNames.length,
+  });
   const plannedSlotName = pendingPick
     ? scoutSlotPlans[pendingPick.id] ?? ""
     : "";
@@ -1170,6 +1179,7 @@ export default function PokemonDraftApp() {
           shortlistOrder={shortlistedIds}
           scoutSlotPlans={scoutSlotPlans}
           availableSlotNames={viewerOpenSlotNames}
+          pickAvailability={pickAvailability}
           scoutNoticeNames={scoutNoticeNames}
           showShortlistOnly={showShortlistOnly}
           onToggleShortlist={toggleShortlist}
