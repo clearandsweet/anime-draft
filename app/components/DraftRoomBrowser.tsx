@@ -59,7 +59,7 @@ function RoomCard({
       : "border-red-500/50 bg-red-500/15 text-red-100 hover:bg-red-500/25";
 
   return (
-    <article className="group rounded-xl border border-neutral-800 bg-neutral-950/80 p-4 transition hover:border-neutral-700">
+    <article className="club-room-card group rounded-xl border border-neutral-800 bg-neutral-950/80 p-4 transition hover:border-neutral-700">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="flex flex-wrap items-center gap-2">
@@ -167,17 +167,17 @@ export function DraftRoomBrowser({
 
   if (loading) {
     return (
-      <div className="rounded-2xl border border-neutral-800 bg-neutral-900/70 p-5 text-sm text-neutral-500">
+      <div className="club-room-browser rounded-2xl border border-neutral-800 bg-neutral-900/70 p-5 text-sm text-neutral-500">
         Loading rooms…
       </div>
     );
   }
 
   return (
-    <div className="space-y-5">
+    <div className="club-room-browser space-y-5">
       <section
         aria-labelledby={`find-${basePath.slice(1)}-rooms`}
-        className="rounded-2xl border border-neutral-800 bg-neutral-900/70 p-4"
+        className="club-room-section rounded-2xl border border-neutral-800 bg-neutral-900/70 p-4"
       >
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <label className="min-w-0 flex-1">
@@ -249,7 +249,7 @@ export function DraftRoomBrowser({
       </section>
 
       <div className="grid gap-5 lg:grid-cols-[1.05fr_0.95fr]">
-        <section className="rounded-2xl border border-neutral-800 bg-neutral-900/70 p-5">
+        <section className="club-room-section rounded-2xl border border-neutral-800 bg-neutral-900/70 p-5">
           <div className="mb-4 flex items-center justify-between">
             <div>
               <p className="text-xs uppercase tracking-[0.18em] text-amber-300">
@@ -284,7 +284,7 @@ export function DraftRoomBrowser({
           </div>
         </section>
 
-        <section className="rounded-2xl border border-neutral-800 bg-neutral-900/70 p-5">
+        <section className="club-room-section rounded-2xl border border-neutral-800 bg-neutral-900/70 p-5">
           <div className="mb-4 flex items-center justify-between">
             <div>
               <p className="text-xs uppercase tracking-[0.18em] text-emerald-300">

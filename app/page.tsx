@@ -222,44 +222,59 @@ export default function HomePage() {
 
   return (
     <main className="site-page-v2">
+      <header className="club-masthead">
+        <Image
+          src="/club-draft-night-v1.png"
+          alt="Clear & Sweet Draft Night — Anime, Pokémon, Video Essays"
+          width={1728}
+          height={905}
+          priority
+        />
+      </header>
+
       <section className="v2-top-grid">
         <article className="v2-panel v2-main-hero">
-          <p className="v2-kicker">Clearandsweet / Kai Andersen</p>
-          <h1>Anime criticism built on formal analysis.</h1>
+          <p className="v2-kicker">Essays, panels &amp; ongoing arguments</p>
+          <h1>Come for the close reading. Stay for draft night.</h1>
           <p>
-            Visual storytelling breakdowns, convention panels, interviews, and long-form critical work focused on anime craft.
+            Kai Andersen makes careful video essays about how anime works, then
+            invites everyone over to disagree, compare notes, and build
+            wonderfully questionable draft boards.
           </p>
           <div className="v2-actions">
             <a href="https://www.youtube.com/@clearandsweet" target="_blank" rel="noreferrer" className="v2-btn primary">
-              YouTube Channel
+              Watch on YouTube
             </a>
             <a href="https://www.patreon.com/clearandsweet" target="_blank" rel="noreferrer" className="v2-btn ghost">
-              Patreon
+              Join the Patreon
             </a>
             <a href="https://suno.com/playlist/b4ac130d-3ccd-46f2-9bf6-9f79d8271542" target="_blank" rel="noreferrer" className="v2-btn ghost">
-              Suno Playlist
+              Put on some music
             </a>
           </div>
         </article>
 
         <article className="v2-panel v2-draft-feature">
-          <p className="v2-kicker">Featured Apps</p>
-          <h2>Draft Games</h2>
-          <p>Spin up a room in seconds, share the code, run a live snake draft, and settle it with instant voting.</p>
+          <p className="v2-kicker">Tonight&apos;s clubhouse tools</p>
+          <h2>Grab a seat. Make a room.</h2>
+          <p>
+            Share a room code, snake-draft live, and preserve every finished
+            board for the inevitable post-game case-making.
+          </p>
           <ul className="v2-draft-points">
-            <li>Fast lobby creation and joining</li>
-            <li>Built-in timer + live state sync</li>
-            <li>Best for streams, servers, and watch parties</li>
+            <li>Easy to run on stream or at a watch party</li>
+            <li>Private Scout queues for your next few picks</li>
+            <li>Permanent history, voting, and rematches</li>
           </ul>
           <div className="v2-actions stack">
-            <a href="/draft" className="v2-btn primary">
+            <a href="/draft" className="v2-btn primary anime">
               Anime Character Draft
             </a>
-            <a href="/draft/pokemon" className="v2-btn primary" style={{background: "linear-gradient(135deg, #dc2626, #ea580c)"}}>
+            <a href="/draft/pokemon" className="v2-btn primary pokemon">
               Pokémon Draft
             </a>
-            <a href="/amq" className="v2-btn primary" style={{background: "linear-gradient(135deg, #7c3aed, #db2777)"}}>
-              Anime Music Quiz ↩
+            <a href="/amq" className="v2-btn primary quiz">
+              Anime Music Quiz
             </a>
           </div>
         </article>
@@ -267,7 +282,7 @@ export default function HomePage() {
 
       <section className="v2-section">
         <div className="v2-section-head">
-          <h2>Latest Uploads</h2>
+          <h2>Fresh from the channel</h2>
           <div className="v2-feed-meta">
             <span>Last sync: {formatTimestamp(latestFetchedAt)}</span>
             <button onClick={fetchLatest} disabled={feedLoading} className="v2-refresh-btn">
@@ -295,7 +310,7 @@ export default function HomePage() {
 
       <section className="v2-section">
         <div className="v2-section-head">
-          <h2>Featured Series</h2>
+          <h2>Series shelf</h2>
         </div>
         <div className="v2-feature-grid">
           {featured.map((item) => (
@@ -327,7 +342,7 @@ export default function HomePage() {
           <input
             type="text"
             className="v2-search"
-            placeholder="Search title or series"
+            placeholder="Find a title, series, or half-remembered topic"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
           />
@@ -352,7 +367,7 @@ export default function HomePage() {
 
         <article className="v2-panel">
           <div className="v2-section-head compact">
-            <h2>Playlists + Links</h2>
+            <h2>Playlists + odds &amp; ends</h2>
           </div>
           <div className="v2-link-list">
             {collections.map((collection) => (

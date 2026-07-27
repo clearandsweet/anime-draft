@@ -140,11 +140,11 @@ export default function PokemonDraftLobbyPage() {
   }
 
   return (
-    <div className="min-h-screen overflow-hidden bg-neutral-950 text-neutral-100">
-      <div className="pointer-events-none fixed inset-x-0 top-0 h-96 bg-[radial-gradient(circle_at_20%_10%,rgba(239,68,68,0.16),transparent_45%),radial-gradient(circle_at_80%_0%,rgba(250,204,21,0.09),transparent_40%)]" />
+    <div className="club-draft-page pokemon min-h-screen overflow-hidden bg-neutral-950 text-neutral-100">
+      <div className="club-draft-texture pointer-events-none fixed inset-x-0 top-0 h-96" />
 
       <main className="relative mx-auto max-w-6xl space-y-7 px-5 py-10">
-        <header className="rounded-3xl border border-red-500/20 bg-neutral-900/75 p-6 shadow-2xl shadow-red-950/20 backdrop-blur md:p-8">
+        <header className="club-draft-header rounded-3xl border border-red-500/20 bg-neutral-900/75 p-6 shadow-2xl shadow-red-950/20 backdrop-blur md:p-8">
           <div className="flex flex-wrap items-start justify-between gap-6">
             <div className="max-w-2xl">
               <p className="text-xs uppercase tracking-[0.24em] text-red-300">
@@ -158,7 +158,7 @@ export default function PokemonDraftLobbyPage() {
                 the final teams for votes, bragging rights, and rematches.
               </p>
             </div>
-            <div className="rounded-2xl border border-neutral-800 bg-neutral-950/80 px-5 py-4 text-sm">
+            <div className="club-room-count rounded-2xl border border-neutral-800 bg-neutral-950/80 px-5 py-4 text-sm">
               <p className="text-neutral-500">Rooms in this lab</p>
               <p className="mt-1 text-2xl font-bold text-white">{lobbies.length}</p>
             </div>
@@ -206,7 +206,7 @@ export default function PokemonDraftLobbyPage() {
         <section className="grid gap-5 lg:grid-cols-[1.5fr_0.75fr]">
           <form
             onSubmit={handleCreate}
-            className="space-y-5 rounded-2xl border border-neutral-800 bg-neutral-900/75 p-5 backdrop-blur"
+            className="club-sheet space-y-5 rounded-2xl border border-neutral-800 bg-neutral-900/75 p-5 backdrop-blur"
           >
             <div>
               <p className="text-xs uppercase tracking-[0.18em] text-red-300">
@@ -221,7 +221,7 @@ export default function PokemonDraftLobbyPage() {
               <label className="flex-1">
                 <span className="sr-only">Host name</span>
                 <input
-                  className="w-full rounded-xl border border-neutral-700 bg-neutral-950 px-4 py-3 text-sm outline-none transition placeholder:text-neutral-600 focus:border-red-400"
+                  className="club-draft-input w-full rounded-xl border border-neutral-700 bg-neutral-950 px-4 py-3 text-sm outline-none transition placeholder:text-neutral-600 focus:border-red-400"
                   placeholder="Host name (recommended)"
                   value={hostName}
                   onChange={(event) => setHostName(event.target.value)}
@@ -230,7 +230,7 @@ export default function PokemonDraftLobbyPage() {
               <button
                 type="submit"
                 disabled={createBusy}
-                className="rounded-xl bg-red-500 px-6 py-3 text-sm font-bold text-white transition hover:bg-red-400 disabled:opacity-60"
+                className="club-action-button pokemon rounded-xl bg-red-500 px-6 py-3 text-sm font-bold text-white transition hover:bg-red-400 disabled:opacity-60"
               >
                 {createBusy ? "Creating…" : `Create ${preset} room`}
               </button>
@@ -239,7 +239,7 @@ export default function PokemonDraftLobbyPage() {
 
           <form
             onSubmit={handleJoin}
-            className="flex flex-col justify-between rounded-2xl border border-neutral-800 bg-neutral-900/75 p-5"
+            className="club-sheet flex flex-col justify-between rounded-2xl border border-neutral-800 bg-neutral-900/75 p-5"
           >
             <div>
               <p className="text-xs uppercase tracking-[0.18em] text-neutral-400">
@@ -252,7 +252,7 @@ export default function PokemonDraftLobbyPage() {
             </div>
             <div className="mt-6 space-y-3">
               <input
-                className="w-full rounded-xl border border-neutral-700 bg-neutral-950 px-4 py-3 text-sm outline-none transition placeholder:text-neutral-600 focus:border-red-400"
+                className="club-draft-input w-full rounded-xl border border-neutral-700 bg-neutral-950 px-4 py-3 text-sm outline-none transition placeholder:text-neutral-600 focus:border-red-400"
                 placeholder="Room number"
                 inputMode="numeric"
                 value={joinCode}
@@ -260,7 +260,7 @@ export default function PokemonDraftLobbyPage() {
               />
               <button
                 type="submit"
-                className="w-full rounded-xl border border-neutral-700 bg-neutral-800 py-3 text-sm font-semibold text-white transition hover:bg-neutral-700"
+                className="club-join-button w-full rounded-xl border border-neutral-700 bg-neutral-800 py-3 text-sm font-semibold text-white transition hover:bg-neutral-700"
               >
                 Open lobby
               </button>
@@ -278,7 +278,7 @@ export default function PokemonDraftLobbyPage() {
           <button
             type="button"
             onClick={refreshLobbies}
-            className="rounded-lg border border-neutral-700 bg-neutral-900 px-4 py-2 text-sm text-neutral-300 transition hover:bg-neutral-800"
+            className="club-join-button rounded-lg border border-neutral-700 bg-neutral-900 px-4 py-2 text-sm text-neutral-300 transition hover:bg-neutral-800"
           >
             Refresh rooms
           </button>

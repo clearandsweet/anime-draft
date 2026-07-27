@@ -17,7 +17,7 @@ export async function generateMetadata(): Promise<Metadata> {
     requestHeaders.get("x-forwarded-proto") ??
     (host.startsWith("localhost") ? "http" : "https");
   const origin = new URL(`${protocol}://${host}`);
-  const socialImage = new URL("/og.png", origin).toString();
+  const socialImage = new URL("/club-draft-night-v1.png", origin).toString();
 
   return {
     metadataBase: origin,
@@ -37,7 +37,7 @@ export async function generateMetadata(): Promise<Metadata> {
           url: socialImage,
           width: 1728,
           height: 905,
-          alt: "Clearandsweet — Anime criticism built on formal analysis.",
+          alt: "Clear & Sweet Draft Night — Anime, Pokémon, and video essays.",
         },
       ],
     },

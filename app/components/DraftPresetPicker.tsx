@@ -42,7 +42,7 @@ export function DraftPresetPicker({ value, onChange, accent }: Props) {
   const eyebrowClass = accent === "fuchsia" ? "text-fuchsia-300" : "text-red-300";
 
   return (
-    <fieldset>
+    <fieldset className="club-preset-picker">
       <legend className="text-xs uppercase tracking-[0.18em] text-neutral-400 mb-3">
         Choose the experiment
       </legend>
