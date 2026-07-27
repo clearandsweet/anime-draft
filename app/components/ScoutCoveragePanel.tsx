@@ -2,9 +2,15 @@ import type { DraftScoutCoverage } from "../lib/draftShortlist";
 
 type Props = {
   coverage: DraftScoutCoverage;
+  focusedSlotName: string;
+  onFocusSlot: (slotName: string) => void;
 };
 
-export function ScoutCoveragePanel({ coverage }: Props) {
+export function ScoutCoveragePanel({
+  coverage,
+  focusedSlotName,
+  onFocusSlot,
+}: Props) {
   if (!coverage.queuedCandidateCount) return null;
 
   return (
@@ -31,14 +37,36 @@ export function ScoutCoveragePanel({ coverage }: Props) {
       </div>
 
       {coverage.openSlotCount > 0 ? (
-        <div className="mt-3 flex flex-wrap gap-2">
+        <div
+          className="mt-3 flex flex-wrap gap-2"
+          role="group"
+          aria-label="Focus Scout queue by planned category"
+        >
+          <button
+            type="button"
+            aria-pressed={!focusedSlotName}
+            onClick={() => onFocusSlot("")}
+            className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold transition ${
+              !focusedSlotName
+                ? "border-amber-400 bg-amber-500/20 text-amber-100"
+                : "border-neutral-700 bg-neutral-950/70 text-neutral-400 hover:border-amber-500/50"
+            }`}
+          >
+            All queue
+          </button>
           {coverage.slots.map((slot) => (
-            <span
+            <button
+              type="button"
               key={slot.name}
+              disabled={slot.candidateCount === 0}
+              aria-pressed={focusedSlotName === slot.name}
+              onClick={() => onFocusSlot(slot.name)}
               className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold ${
-                slot.candidateCount > 0
-                  ? "border-emerald-500/35 bg-emerald-500/10 text-emerald-200"
-                  : "border-neutral-700 bg-neutral-950/70 text-neutral-500"
+                focusedSlotName === slot.name
+                  ? "border-amber-400 bg-amber-500/20 text-amber-100"
+                  : slot.candidateCount > 0
+                    ? "border-emerald-500/35 bg-emerald-500/10 text-emerald-200 hover:border-emerald-400/60"
+                    : "cursor-not-allowed border-neutral-700 bg-neutral-950/70 text-neutral-600"
               }`}
               aria-label={`${slot.name}: ${
                 slot.candidateCount > 0
@@ -52,7 +80,7 @@ export function ScoutCoveragePanel({ coverage }: Props) {
               <span className="ml-1.5 opacity-70">
                 {slot.candidateCount > 0 ? slot.candidateCount : "gap"}
               </span>
-            </span>
+            </button>
           ))}
         </div>
       ) : (

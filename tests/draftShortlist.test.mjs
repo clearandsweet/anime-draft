@@ -4,6 +4,7 @@ import test from "node:test";
 const {
   getDraftScoutSlotPlans,
   getDraftScoutCoverage,
+  filterDraftScoutCandidateIds,
   getDraftShortlist,
   getUnavailableShortlistIds,
   moveShortlistId,
@@ -95,6 +96,29 @@ test("summarizes Scout coverage across the viewer's open categories", () => {
     }
   );
   assert.equal(getDraftScoutCoverage([], {}, ["Mascot"]).coveredSlotCount, 0);
+});
+
+test("focuses Scout candidates on one planned category", () => {
+  assert.deepEqual(
+    filterDraftScoutCandidateIds(
+      [25, 94, 133, 150],
+      {
+        25: "Mascot",
+        94: "Ghost / Dark",
+        133: "Mascot",
+      },
+      "Mascot"
+    ),
+    [25, 133]
+  );
+  assert.deepEqual(
+    filterDraftScoutCandidateIds([25, 94], { 25: "Mascot" }, ""),
+    [25, 94]
+  );
+  assert.deepEqual(
+    filterDraftScoutCandidateIds([25, 94], { 25: "Mascot" }, "Wildcard"),
+    []
+  );
 });
 
 test("stores shortlist entries separately by room and draft type", () => {

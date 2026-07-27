@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useMemo, useState } from "react";
 import { Character } from "../../../api/lobby/logic";
 import { DraftPoolStatus } from "../../../components/DraftPoolStatus";
 import { ScoutCoveragePanel } from "../../../components/ScoutCoveragePanel";
 import { ScoutQueueNotice } from "../../../components/ScoutQueueNotice";
 import type { DraftPickAvailability } from "../../../lib/draftPickAvailability";
+import { filterDraftScoutCandidateIds } from "../../../lib/draftShortlist";
 import type {
     DraftScoutSlotPlans,
     DraftScoutCoverage,
@@ -57,6 +58,28 @@ export function CharacterPool({
     onDismissScoutNotice,
     onToggleShortlistOnly,
 }: Props) {
+    const [focusedScoutSlotName, setFocusedScoutSlotName] = useState("");
+    const activeFocusedScoutSlotName =
+        showShortlistOnly &&
+        availableSlotNames.includes(focusedScoutSlotName)
+            ? focusedScoutSlotName
+            : "";
+    const visiblePool = useMemo(() => {
+        if (!activeFocusedScoutSlotName) return filteredPool;
+        const focusedIds = new Set(
+            filterDraftScoutCandidateIds(
+                filteredPool.map((candidate) => candidate.id),
+                scoutSlotPlans,
+                activeFocusedScoutSlotName
+            )
+        );
+        return filteredPool.filter((candidate) => focusedIds.has(candidate.id));
+    }, [
+        activeFocusedScoutSlotName,
+        filteredPool,
+        scoutSlotPlans,
+    ]);
+
     return (
         <section className="flex flex-col bg-neutral-900/0">
             {scoutNoticeNames && scoutNoticeNames.length > 0 && (
@@ -70,7 +93,11 @@ export function CharacterPool({
                 draftType="anime"
             />
             {showShortlistOnly && (
-                <ScoutCoveragePanel coverage={scoutCoverage} />
+                <ScoutCoveragePanel
+                    coverage={scoutCoverage}
+                    focusedSlotName={activeFocusedScoutSlotName}
+                    onFocusSlot={setFocusedScoutSlotName}
+                />
             )}
             <div
                 className="mb-3 rounded-xl border border-neutral-700 bg-neutral-900/90 p-3 shadow-[0_10px_20px_rgba(0,0,0,0.6)] backdrop-blur-sm lg:sticky lg:top-0 lg:z-20"
@@ -147,14 +174,14 @@ export function CharacterPool({
                         </div>
                     </div>
                     <div className="text-[10px] text-neutral-500 leading-tight">
-                        {filteredPool.length} matches in local pool
+                        {visiblePool.length} matches in local pool
                         <br />
                         total loaded: {characters.length}
                     </div>
                 </div>
             </div>
             <div className="grid grid-cols-1 gap-3 pr-1 md:grid-cols-2 lg:max-h-[70vh] lg:overflow-y-auto">
-                {filteredPool.map((c, idx) => {
+                {visiblePool.map((c, idx) => {
                     const isShortlisted = shortlistedIds.has(c.id);
                     const priorityIndex = shortlistOrder.indexOf(c.id);
                     const plannedSlotName = scoutSlotPlans[c.id] ?? "";
@@ -291,13 +318,17 @@ export function CharacterPool({
                         </div>
                     );
                 })}
-                {filteredPool.length === 0 && (
+                {visiblePool.length === 0 && (
                     <div className="col-span-full text-center text-neutral-500 text-sm py-12">
-                        {showShortlistOnly
+                        {activeFocusedScoutSlotName
+                            ? `No visible candidates are planned for ${activeFocusedScoutSlotName}.`
+                            : showShortlistOnly
                             ? "No queued candidates match these filters."
                             : "No local matches."}
                         <div className="mt-2 text-[11px] text-neutral-600">
-                            {showShortlistOnly
+                            {activeFocusedScoutSlotName
+                                ? "Clear the other filters or show the full queue."
+                                : showShortlistOnly
                                 ? "Adjust your filters or add candidates with ☆ Save."
                                 : <>Try Deep Cut Search {"\u2192"} to pull from AniList directly.</>}
                         </div>

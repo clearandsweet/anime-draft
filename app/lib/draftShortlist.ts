@@ -233,6 +233,19 @@ export function getDraftScoutCoverage(
   };
 }
 
+export function filterDraftScoutCandidateIds(
+  candidateIds: number[],
+  plans: DraftScoutSlotPlans,
+  focusedSlotName: string
+) {
+  const ids = normalizeShortlistIds(candidateIds);
+  const slotName = focusedSlotName.trim();
+  if (!slotName) return ids;
+
+  const normalizedPlans = normalizeDraftScoutSlotPlans(plans);
+  return ids.filter((id) => normalizedPlans[id] === slotName);
+}
+
 export function getUnavailableShortlistIds(
   ids: number[],
   draftedIds: number[]

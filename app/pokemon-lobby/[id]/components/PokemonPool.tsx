@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useMemo, useState } from "react";
 import { Character } from "../../../api/lobby/logic";
 import { DraftPoolStatus } from "../../../components/DraftPoolStatus";
 import { ScoutCoveragePanel } from "../../../components/ScoutCoveragePanel";
 import { ScoutQueueNotice } from "../../../components/ScoutQueueNotice";
 import type { DraftPickAvailability } from "../../../lib/draftPickAvailability";
+import { filterDraftScoutCandidateIds } from "../../../lib/draftShortlist";
 import type {
   DraftScoutSlotPlans,
   DraftScoutCoverage,
@@ -73,6 +74,27 @@ export function PokemonPool({
   onDismissScoutNotice,
   onToggleShortlistOnly,
 }: Props) {
+  const [focusedScoutSlotName, setFocusedScoutSlotName] = useState("");
+  const activeFocusedScoutSlotName =
+    showShortlistOnly && availableSlotNames.includes(focusedScoutSlotName)
+      ? focusedScoutSlotName
+      : "";
+  const visiblePool = useMemo(() => {
+    if (!activeFocusedScoutSlotName) return filteredPool;
+    const focusedIds = new Set(
+      filterDraftScoutCandidateIds(
+        filteredPool.map((candidate) => candidate.id),
+        scoutSlotPlans,
+        activeFocusedScoutSlotName
+      )
+    );
+    return filteredPool.filter((candidate) => focusedIds.has(candidate.id));
+  }, [
+    activeFocusedScoutSlotName,
+    filteredPool,
+    scoutSlotPlans,
+  ]);
+
   return (
     <section className="flex flex-col bg-neutral-900/0">
       {scoutNoticeNames && scoutNoticeNames.length > 0 && (
@@ -86,7 +108,11 @@ export function PokemonPool({
         draftType="pokemon"
       />
       {showShortlistOnly && (
-        <ScoutCoveragePanel coverage={scoutCoverage} />
+        <ScoutCoveragePanel
+          coverage={scoutCoverage}
+          focusedSlotName={activeFocusedScoutSlotName}
+          onFocusSlot={setFocusedScoutSlotName}
+        />
       )}
       <div
         className="mb-3 rounded-xl border border-neutral-700 bg-neutral-900/90 p-3 shadow-[0_10px_20px_rgba(0,0,0,0.6)] backdrop-blur-sm lg:sticky lg:top-0 lg:z-20"
@@ -176,7 +202,7 @@ export function PokemonPool({
           </div>
 
           <div className="text-[10px] text-neutral-500 leading-tight self-end">
-            {filteredPool.length} shown
+            {visiblePool.length} shown
             <br />
             {pokemon.length} total loaded
           </div>
@@ -184,7 +210,7 @@ export function PokemonPool({
       </div>
 
       <div className="grid grid-cols-1 gap-3 pr-1 md:grid-cols-2 lg:max-h-[70vh] lg:overflow-y-auto">
-        {filteredPool.map((p, idx) => {
+        {visiblePool.map((p, idx) => {
           const isShortlisted = shortlistedIds.has(p.id);
           const priorityIndex = shortlistOrder.indexOf(p.id);
           const plannedSlotName = scoutSlotPlans[p.id] ?? "";
@@ -326,13 +352,17 @@ export function PokemonPool({
           </div>
           );
         })}
-        {filteredPool.length === 0 && (
+        {visiblePool.length === 0 && (
           <div className="col-span-full text-center text-neutral-500 text-sm py-12">
-            {showShortlistOnly
+            {activeFocusedScoutSlotName
+              ? `No visible Pokémon are planned for ${activeFocusedScoutSlotName}.`
+              : showShortlistOnly
               ? "No queued Pokémon match these filters."
               : "No Pokémon match your filters."}
             <div className="mt-2 text-[11px] text-neutral-600">
-              {showShortlistOnly
+              {activeFocusedScoutSlotName
+                ? "Clear the other filters or show the full queue."
+                : showShortlistOnly
                 ? "Adjust your filters or add Pokémon with ☆ Save."
                 : "Try Pokédex Search to look up by exact name or number."}
             </div>
