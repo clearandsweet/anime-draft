@@ -4,10 +4,15 @@ import {
   handleImageOptimization,
 } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
+import {
+  setCloudflareDb,
+  setRuntimeGoogleApiKey,
+} from "../app/api/runtimeStorage";
 
 interface Env {
   ASSETS: Fetcher;
   DB: D1Database;
+  GOOGLE_API_KEY?: string;
   IMAGES: {
     input(stream: ReadableStream): {
       transform(options: Record<string, unknown>): {
@@ -31,6 +36,8 @@ const worker = {
     env: Env,
     ctx: ExecutionContext
   ): Promise<Response> {
+    setCloudflareDb(env.DB);
+    setRuntimeGoogleApiKey(env.GOOGLE_API_KEY);
     const url = new URL(request.url);
 
     if (url.pathname === "/_vinext/image") {

@@ -1,13 +1,11 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { env } from "cloudflare:workers";
 import { NextResponse } from "next/server";
 import { getSavedBroadcast, saveBroadcast } from "../broadcasts";
 import { loadLobbyIfExists } from "../../lobby/kv";
+import { getRuntimeGoogleApiKey } from "../../runtimeStorage";
 
 function getGoogleApiKey() {
-  const workerKey = env.GOOGLE_API_KEY;
-  if (typeof workerKey === "string" && workerKey.trim()) return workerKey.trim();
-  return process.env.GOOGLE_API_KEY?.trim() || "";
+  return getRuntimeGoogleApiKey();
 }
 
 function normalizeRequestValues(lobbyIdValue: unknown, competitionValue: unknown) {
