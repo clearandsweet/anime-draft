@@ -4,8 +4,10 @@ export function ThanksgivingTheme() {
   const [isNovember, setIsNovember] = useState(false);
 
   useEffect(() => {
-    const month = new Date().getMonth();
-    setIsNovember(month === 10); // 0-indexed, 10 is November
+    const frame = window.requestAnimationFrame(() => {
+      setIsNovember(new Date().getMonth() === 10);
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, []);
 
   if (!isNovember) return null;
