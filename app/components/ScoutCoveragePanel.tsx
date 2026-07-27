@@ -1,16 +1,22 @@
+"use client";
+
+import { useState } from "react";
 import type { DraftScoutCoverage } from "../lib/draftShortlist";
 
 type Props = {
   coverage: DraftScoutCoverage;
   focusedSlotName: string;
   onFocusSlot: (slotName: string) => void;
+  onClearQueue: () => void;
 };
 
 export function ScoutCoveragePanel({
   coverage,
   focusedSlotName,
   onFocusSlot,
+  onClearQueue,
 }: Props) {
+  const [confirmingClear, setConfirmingClear] = useState(false);
   if (!coverage.queuedCandidateCount) return null;
 
   return (
@@ -31,10 +37,56 @@ export function ScoutCoveragePanel({
             {coverage.openSlotCount === 1 ? "category" : "categories"} covered
           </h3>
         </div>
-        <div className="rounded-full border border-neutral-700 bg-neutral-950/70 px-3 py-1 text-[10px] text-neutral-400">
-          {coverage.queuedCandidateCount} queued
+        <div className="flex items-center gap-2">
+          <div className="rounded-full border border-neutral-700 bg-neutral-950/70 px-3 py-1 text-[10px] text-neutral-400">
+            {coverage.queuedCandidateCount} queued
+          </div>
+          <button
+            type="button"
+            aria-expanded={confirmingClear}
+            onClick={() => setConfirmingClear(true)}
+            className="rounded-full border border-rose-500/30 bg-rose-500/10 px-2.5 py-1 text-[10px] font-semibold text-rose-200 transition hover:border-rose-400/60 hover:bg-rose-500/20"
+          >
+            Clear queue
+          </button>
         </div>
       </div>
+
+      {confirmingClear && (
+        <div
+          className="mt-3 rounded-xl border border-rose-500/35 bg-rose-950/30 p-3"
+          role="group"
+          aria-label="Confirm clearing Scout queue"
+        >
+          <p className="text-xs font-semibold text-rose-100">
+            Clear all {coverage.queuedCandidateCount} private Scout{" "}
+            {coverage.queuedCandidateCount === 1 ? "candidate" : "candidates"}?
+          </p>
+          <p className="mt-1 text-[10px] leading-relaxed text-rose-100/65">
+            This removes the queue and its category plans from this device only.
+            Shared draft picks and room history will not change.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => setConfirmingClear(false)}
+              className="rounded-lg border border-neutral-700 px-3 py-1.5 text-xs font-semibold text-neutral-300 hover:bg-neutral-800"
+            >
+              Keep queue
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setConfirmingClear(false);
+                onClearQueue();
+              }}
+              className="rounded-lg bg-rose-500 px-3 py-1.5 text-xs font-bold text-white hover:bg-rose-400"
+            >
+              Clear private queue
+            </button>
+          </div>
+        </div>
+      )}
 
       {coverage.openSlotCount > 0 ? (
         <div

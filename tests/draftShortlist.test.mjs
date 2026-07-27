@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 const {
+  clearDraftScoutState,
   getDraftScoutSlotPlans,
   getDraftScoutCoverage,
   filterDraftScoutCandidateIds,
@@ -162,10 +163,13 @@ test("stores shortlist entries separately by room and draft type", () => {
     25: "Little Guy",
   });
 
-  assert.equal(rememberDraftShortlist("anime", "42", []), true);
+  assert.equal(clearDraftScoutState("anime", "42"), true);
   assert.deepEqual(getDraftShortlist("anime", "42"), []);
-  assert.equal(rememberDraftScoutSlotPlans("anime", "42", {}), true);
   assert.deepEqual(getDraftScoutSlotPlans("anime", "42"), {});
+  assert.deepEqual(getDraftShortlist("pokemon", "42"), [25]);
+  assert.deepEqual(getDraftScoutSlotPlans("pokemon", "42"), {
+    25: "Little Guy",
+  });
 });
 
 test("fails safely when device storage is unavailable", () => {
@@ -190,4 +194,5 @@ test("fails safely when device storage is unavailable", () => {
     false
   );
   assert.deepEqual(getDraftScoutSlotPlans("pokemon", "9"), {});
+  assert.equal(clearDraftScoutState("pokemon", "9"), false);
 });

@@ -25,6 +25,7 @@ import {
 } from "../../lib/lobbyIdentity";
 import { getOpenSlotNames } from "../../lib/draftTurns";
 import {
+  clearDraftScoutState,
   getDraftScoutSlotPlans,
   getDraftScoutCoverage,
   getDraftShortlist,
@@ -913,6 +914,14 @@ export default function CharacterDraftApp() {
     });
   }
 
+  function clearScoutQueue() {
+    clearDraftScoutState("anime", lobbyId);
+    setShortlistedIds([]);
+    setScoutSlotPlans({});
+    setScoutNoticeNames(null);
+    setShowShortlistOnly(false);
+  }
+
   function updateScoutSlotPlan(characterId: number, slotName: string) {
     setScoutSlotPlans((previousPlans) => {
       const nextPlans = setDraftScoutSlotPlan(
@@ -1285,6 +1294,7 @@ export default function CharacterDraftApp() {
           onToggleShortlist={toggleShortlist}
           onMoveShortlist={moveShortlist}
           onPrioritizeShortlist={prioritizeShortlist}
+          onClearScoutQueue={clearScoutQueue}
           onSetScoutSlotPlan={updateScoutSlotPlan}
           onDismissScoutNotice={() => setScoutNoticeNames(null)}
           onToggleShortlistOnly={() =>
@@ -1512,6 +1522,4 @@ export default function CharacterDraftApp() {
     </div>
   );
 }
-
-
 

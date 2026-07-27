@@ -24,6 +24,7 @@ import {
 } from "../../lib/lobbyIdentity";
 import { getOpenSlotNames } from "../../lib/draftTurns";
 import {
+  clearDraftScoutState,
   getDraftScoutSlotPlans,
   getDraftScoutCoverage,
   getDraftShortlist,
@@ -785,6 +786,14 @@ export default function PokemonDraftApp() {
     });
   }
 
+  function clearScoutQueue() {
+    clearDraftScoutState("pokemon", lobbyId);
+    setShortlistedIds([]);
+    setScoutSlotPlans({});
+    setScoutNoticeNames(null);
+    setShowShortlistOnly(false);
+  }
+
   function updateScoutSlotPlan(pokemonId: number, slotName: string) {
     setScoutSlotPlans((previousPlans) => {
       const nextPlans = setDraftScoutSlotPlan(
@@ -1201,6 +1210,7 @@ export default function PokemonDraftApp() {
           onToggleShortlist={toggleShortlist}
           onMoveShortlist={moveShortlist}
           onPrioritizeShortlist={prioritizeShortlist}
+          onClearScoutQueue={clearScoutQueue}
           onSetScoutSlotPlan={updateScoutSlotPlan}
           onDismissScoutNotice={() => setScoutNoticeNames(null)}
           onToggleShortlistOnly={() =>

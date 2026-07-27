@@ -32,6 +32,7 @@ type Props = {
     onToggleShortlist: (charId: number) => void;
     onMoveShortlist: (charId: number, direction: DraftShortlistMove) => void;
     onPrioritizeShortlist: (charId: number) => void;
+    onClearScoutQueue: () => void;
     onSetScoutSlotPlan: (charId: number, slotName: string) => void;
     onDismissScoutNotice: () => void;
     onToggleShortlistOnly: () => void;
@@ -56,6 +57,7 @@ export function CharacterPool({
     onToggleShortlist,
     onMoveShortlist,
     onPrioritizeShortlist,
+    onClearScoutQueue,
     onSetScoutSlotPlan,
     onDismissScoutNotice,
     onToggleShortlistOnly,
@@ -99,6 +101,7 @@ export function CharacterPool({
                     coverage={scoutCoverage}
                     focusedSlotName={activeFocusedScoutSlotName}
                     onFocusSlot={setFocusedScoutSlotName}
+                    onClearQueue={onClearScoutQueue}
                 />
             )}
             <div

@@ -169,6 +169,15 @@ export function rememberDraftScoutSlotPlans(
   }
 }
 
+export function clearDraftScoutState(
+  draftType: DraftShortlistType,
+  lobbyId: string
+) {
+  const shortlistCleared = rememberDraftShortlist(draftType, lobbyId, []);
+  const plansCleared = rememberDraftScoutSlotPlans(draftType, lobbyId, {});
+  return shortlistCleared && plansCleared;
+}
+
 export function setDraftScoutSlotPlan(
   plans: DraftScoutSlotPlans,
   id: number,

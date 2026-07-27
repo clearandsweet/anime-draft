@@ -48,6 +48,7 @@ type Props = {
   onToggleShortlist: (pokemonId: number) => void;
   onMoveShortlist: (pokemonId: number, direction: DraftShortlistMove) => void;
   onPrioritizeShortlist: (pokemonId: number) => void;
+  onClearScoutQueue: () => void;
   onSetScoutSlotPlan: (pokemonId: number, slotName: string) => void;
   onDismissScoutNotice: () => void;
   onToggleShortlistOnly: () => void;
@@ -72,6 +73,7 @@ export function PokemonPool({
   onToggleShortlist,
   onMoveShortlist,
   onPrioritizeShortlist,
+  onClearScoutQueue,
   onSetScoutSlotPlan,
   onDismissScoutNotice,
   onToggleShortlistOnly,
@@ -114,6 +116,7 @@ export function PokemonPool({
           coverage={scoutCoverage}
           focusedSlotName={activeFocusedScoutSlotName}
           onFocusSlot={setFocusedScoutSlotName}
+          onClearQueue={onClearScoutQueue}
         />
       )}
       <div
