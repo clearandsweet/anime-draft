@@ -148,18 +148,14 @@ export default function PokemonDraftLobbyPage() {
           <div className="flex flex-wrap items-start justify-between gap-6">
             <div className="max-w-2xl">
               <p className="text-xs uppercase tracking-[0.24em] text-red-300">
-                Clear &amp; Sweet Draft Lab
+                Pokémon draft
               </p>
               <h1 className="mt-3 text-3xl font-black tracking-tight text-white md:text-5xl">
-                Assemble a Pokémon squad nobody can counter.
+                Create or join a room.
               </h1>
-              <p className="mt-4 max-w-xl text-sm leading-relaxed text-neutral-400 md:text-base">
-                Draft across every generation and form, survive the timer, then archive
-                the final teams for votes, bragging rights, and rematches.
-              </p>
             </div>
             <div className="club-room-count rounded-2xl border border-neutral-800 bg-neutral-950/80 px-5 py-4 text-sm">
-              <p className="text-neutral-500">Rooms in this lab</p>
+              <p className="text-neutral-500">Rooms</p>
               <p className="mt-1 text-2xl font-bold text-white">{lobbies.length}</p>
             </div>
           </div>
@@ -210,9 +206,9 @@ export default function PokemonDraftLobbyPage() {
           >
             <div>
               <p className="text-xs uppercase tracking-[0.18em] text-red-300">
-                Create a room
+                Create
               </p>
-              <h2 className="mt-1 text-xl font-semibold text-white">Pick your pace</h2>
+              <h2 className="mt-1 text-xl font-semibold text-white">Format</h2>
             </div>
 
             <DraftPresetPicker value={preset} onChange={setPreset} accent="red" />
@@ -243,12 +239,9 @@ export default function PokemonDraftLobbyPage() {
           >
             <div>
               <p className="text-xs uppercase tracking-[0.18em] text-neutral-400">
-                Have a code?
+                Join
               </p>
-              <h2 className="mt-1 text-xl font-semibold text-white">Join a draft</h2>
-              <p className="mt-2 text-sm leading-relaxed text-neutral-500">
-                Enter the room number your host shared. Your name is chosen inside.
-              </p>
+              <h2 className="mt-1 text-xl font-semibold text-white">Room code</h2>
             </div>
             <div className="mt-6 space-y-3">
               <input
@@ -270,17 +263,14 @@ export default function PokemonDraftLobbyPage() {
 
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">
-              Room browser
-            </p>
-            <h2 className="mt-1 text-2xl font-bold text-white">Drafts past and present</h2>
+            <h2 className="text-2xl font-bold text-white">Rooms</h2>
           </div>
           <button
             type="button"
             onClick={refreshLobbies}
             className="club-join-button rounded-lg border border-neutral-700 bg-neutral-900 px-4 py-2 text-sm text-neutral-300 transition hover:bg-neutral-800"
           >
-            Refresh rooms
+            Refresh
           </button>
         </div>
 

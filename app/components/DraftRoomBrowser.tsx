@@ -78,12 +78,12 @@ function RoomCard({
             </span>
             {owned && (
               <span className="rounded-full bg-cyan-500/15 px-2 py-0.5 text-[10px] uppercase tracking-wide text-cyan-200">
-                You host
+                Host
               </span>
             )}
             {!owned && remembered && (
               <span className="rounded-full bg-violet-500/15 px-2 py-0.5 text-[10px] uppercase tracking-wide text-violet-200">
-                You played
+                Played
               </span>
             )}
           </div>
@@ -101,14 +101,14 @@ function RoomCard({
             href={completed ? `${basePath}/${lobby.id}/vote` : `${basePath}/${lobby.id}`}
             className={`rounded-lg border px-3 py-2 text-xs font-semibold transition ${primaryClass}`}
           >
-            {completed ? "Results & recap" : "Enter room"}
+            {completed ? "Results" : "Enter room"}
           </a>
           {completed && (
             <a
               href={`${basePath}/${lobby.id}`}
               className="rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-xs text-neutral-300 transition hover:bg-neutral-800"
             >
-              Draft board
+              Board
             </a>
           )}
           {owned && (
@@ -185,22 +185,18 @@ export function DraftRoomBrowser({
               id={`find-${basePath.slice(1)}-rooms`}
               className="text-xs font-semibold text-neutral-300"
             >
-              Find a room
-            </span>
-            <span className="mt-1 block text-[11px] text-neutral-500">
-              Search by room number, host, format, or status.
+              Find
             </span>
             <input
               type="search"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Try a room number or host name"
+              placeholder="Room, host, format, or status"
               className={`mt-3 w-full rounded-xl border border-neutral-700 bg-neutral-950 px-4 py-3 text-sm text-white outline-none transition placeholder:text-neutral-600 ${accentFocus}`}
             />
           </label>
 
           <div>
-            <p className="mb-2 text-[11px] text-neutral-500">Room view</p>
             <div className="flex rounded-xl border border-neutral-800 bg-neutral-950/60 p-1">
               <button
                 type="button"
@@ -210,7 +206,7 @@ export function DraftRoomBrowser({
                   !deviceOnly ? activeScope : inactiveScope
                 }`}
               >
-                All rooms{" "}
+                All{" "}
                 <span className="ml-1 text-[10px] opacity-70">{lobbies.length}</span>
               </button>
               <button
@@ -221,7 +217,7 @@ export function DraftRoomBrowser({
                   deviceOnly ? activeScope : inactiveScope
                 }`}
               >
-                On this device{" "}
+                Mine{" "}
                 <span className="ml-1 text-[10px] opacity-70">
                   {deviceLobbyCount}
                 </span>
@@ -253,7 +249,7 @@ export function DraftRoomBrowser({
           <div className="mb-4 flex items-center justify-between">
             <div>
               <p className="text-xs uppercase tracking-[0.18em] text-amber-300">
-                Now drafting
+                Live
               </p>
               <h3 className="mt-1 text-lg font-semibold text-white">Live rooms</h3>
             </div>
@@ -277,8 +273,8 @@ export function DraftRoomBrowser({
             ) : (
               <p className="rounded-xl border border-dashed border-neutral-800 p-5 text-sm text-neutral-500">
                 {hasFilters
-                  ? "No live rooms match this view."
-                  : "No live rooms. Start the next one above."}
+                  ? "No matching live rooms."
+                  : "No live rooms."}
               </p>
             )}
           </div>
@@ -288,10 +284,10 @@ export function DraftRoomBrowser({
           <div className="mb-4 flex items-center justify-between">
             <div>
               <p className="text-xs uppercase tracking-[0.18em] text-emerald-300">
-                Never auto-deleted
+                Archive
               </p>
               <h3 className="mt-1 text-lg font-semibold text-white">
-                Draft history
+                History
               </h3>
             </div>
             <span className="rounded-full bg-neutral-950 px-3 py-1 text-xs text-neutral-400">
@@ -314,8 +310,8 @@ export function DraftRoomBrowser({
             ) : (
               <p className="rounded-xl border border-dashed border-neutral-800 p-5 text-sm text-neutral-500">
                 {hasFilters
-                  ? "No completed drafts match this view."
-                  : "Completed drafts will collect here with their boards, votes, and results."}
+                  ? "No matching archived rooms."
+                  : "No archived rooms."}
               </p>
             )}
           </div>

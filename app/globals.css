@@ -1811,3 +1811,415 @@ a {
     font-size: clamp(2rem, 12vw, 3rem);
   }
 }
+
+/* Botanical editorial direction */
+body {
+  background-color: #e8ede7;
+  background-image:
+    radial-gradient(circle at 10% 0%, rgba(91, 122, 89, 0.12), transparent 30%),
+    radial-gradient(circle at 90% 20%, rgba(181, 155, 94, 0.1), transparent 24%);
+  color: #24382b;
+}
+
+.site-page-v2 {
+  max-width: 1160px;
+  color: #294332;
+}
+
+.club-masthead {
+  border: 1px solid #42634d;
+  border-radius: 0.12rem;
+  background: #f5f0e5;
+  box-shadow: 0 16px 38px rgba(32, 58, 40, 0.12);
+}
+
+.site-page-v2 .v2-top-grid {
+  grid-template-columns: 1.35fr 0.65fr;
+}
+
+.site-page-v2 .v2-panel,
+.site-page-v2 .v2-main-hero,
+.site-page-v2 .v2-draft-feature {
+  border: 1px solid #78907d;
+  border-radius: 0.18rem;
+  background: rgba(249, 247, 240, 0.96);
+  color: #263c2d;
+  box-shadow: 0 10px 28px rgba(36, 61, 43, 0.08);
+}
+
+.site-page-v2 .v2-main-hero::before,
+.site-page-v2 .v2-draft-feature::before {
+  display: none;
+}
+
+.site-page-v2 .v2-kicker {
+  border: 0;
+  color: #667b62;
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+}
+
+.site-page-v2 .v2-main-hero h1 {
+  max-width: 13ch;
+  color: #243f2e;
+  font-size: clamp(2.4rem, 5vw, 4.5rem);
+  line-height: 0.96;
+}
+
+.site-page-v2 .v2-draft-feature h2 {
+  color: #243f2e;
+  font-size: clamp(1.65rem, 2.8vw, 2.3rem);
+}
+
+.site-page-v2 .v2-actions {
+  margin-top: 1.4rem;
+}
+
+.site-page-v2 .v2-btn {
+  border: 1px solid #496a52;
+  border-radius: 0.12rem;
+  background: transparent;
+  color: #2f513a;
+  box-shadow: none;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.site-page-v2 .v2-btn:hover {
+  transform: translateY(-1px);
+  background: #edf1e8;
+  box-shadow: none;
+}
+
+.site-page-v2 .v2-btn.primary,
+.site-page-v2 .v2-btn.primary.anime {
+  border-color: #2f543c;
+  background: #31583f;
+  color: #fffdf7;
+}
+
+.site-page-v2 .v2-btn.primary.pokemon {
+  border-color: #53683f;
+  background: #5b7146;
+}
+
+.site-page-v2 .v2-btn.primary.quiz {
+  border-color: #6c7150;
+  background: #757b58;
+}
+
+.site-page-v2 .v2-btn.ghost {
+  background: transparent;
+  color: #2f513a;
+}
+
+.site-page-v2 .v2-section-head h2 {
+  color: #294b35;
+  font-size: clamp(1.35rem, 2.6vw, 1.8rem);
+}
+
+.site-page-v2 .v2-feed-meta {
+  color: #708074;
+}
+
+.site-page-v2 .v2-refresh-btn {
+  border-color: #849787;
+  background: transparent;
+  color: #385c43;
+}
+
+.site-page-v2 .v2-refresh-btn:hover {
+  background: #f8f6ef;
+  color: #294b35;
+}
+
+.site-page-v2 .v2-video-card,
+.site-page-v2 .v2-feature-card {
+  border: 1px solid #91a295;
+  border-radius: 0.16rem;
+  background: #f8f6ef;
+  color: #2b4433;
+  box-shadow: none;
+}
+
+.site-page-v2 .v2-video-card:hover,
+.site-page-v2 .v2-feature-card:hover {
+  transform: translateY(-2px);
+  border-color: #4d7056;
+  box-shadow: 0 8px 20px rgba(36, 61, 43, 0.08);
+}
+
+.site-page-v2 .v2-video-card img {
+  border-bottom: 1px solid #91a295;
+  filter: saturate(0.78) contrast(0.98);
+}
+
+.site-page-v2 .v2-video-meta h3,
+.site-page-v2 .v2-feature-card h3 {
+  color: #2b4433;
+}
+
+.site-page-v2 .v2-video-meta p {
+  color: #718074;
+}
+
+.site-page-v2 .v2-chip {
+  border-color: #a1afa3;
+  border-radius: 0.12rem;
+  background: #f2f2e9;
+  color: #46604d;
+}
+
+.site-page-v2 .v2-chip.active {
+  border-color: #3d6549;
+  background: #496e53;
+  color: #fffdf7;
+  box-shadow: none;
+}
+
+.site-page-v2 .v2-search,
+.site-page-v2 .v2-contact-textarea {
+  border-color: #91a295;
+  border-radius: 0.12rem;
+  background: #fffdf7;
+  color: #24382b;
+}
+
+.site-page-v2 .v2-search:focus,
+.site-page-v2 .v2-contact-textarea:focus {
+  border-color: #3f684b;
+  box-shadow: 0 0 0 2px rgba(63, 104, 75, 0.14);
+}
+
+.site-page-v2 .v2-link-list a {
+  border: 0;
+  border-bottom: 1px solid #c3cdc3;
+  border-radius: 0;
+  background: transparent;
+  color: #355640;
+  padding-inline: 0;
+}
+
+.site-page-v2 .v2-link-list a:hover {
+  border-color: #4c7056;
+  color: #24472f;
+}
+
+.site-page-v2 .v2-empty {
+  border-color: #9dac9f;
+  color: #6d7d70;
+}
+
+.site-page-v2 .v2-tweet-marquee {
+  border-color: #829586;
+  background: #eef1e9;
+}
+
+.site-page-v2 .v2-tweet-chip {
+  border-color: #a5b2a7;
+  background: #f8f6ef;
+  color: #355640;
+}
+
+.club-draft-page {
+  background-color: #e7ece5 !important;
+  background-image:
+    radial-gradient(circle at 8% 2%, rgba(63, 103, 72, 0.13), transparent 26%),
+    radial-gradient(circle at 92% 14%, rgba(180, 155, 91, 0.11), transparent 23%) !important;
+  color: #263c2d !important;
+}
+
+.club-draft-texture,
+.club-draft-page.pokemon .club-draft-texture {
+  background:
+    radial-gradient(ellipse at 14% 22%, rgba(111, 139, 105, 0.12), transparent 32%),
+    radial-gradient(ellipse at 86% 8%, rgba(167, 146, 84, 0.1), transparent 28%);
+}
+
+.club-draft-header,
+.club-sheet,
+.club-room-section {
+  border: 1px solid #728a77 !important;
+  border-radius: 0.18rem !important;
+  background: rgba(249, 247, 240, 0.97) !important;
+  color: #263c2d !important;
+  box-shadow: 0 12px 28px rgba(35, 66, 44, 0.08) !important;
+}
+
+.club-draft-header::after,
+.club-draft-page.pokemon .club-draft-header::after {
+  content: "❦";
+  top: 0.75rem;
+  right: 1.1rem;
+  width: auto;
+  height: auto;
+  border: 0;
+  background: transparent;
+  color: #a58c4f;
+  font-family: Georgia, serif;
+  font-size: clamp(3.2rem, 8vw, 6.6rem);
+  line-height: 1;
+  opacity: 0.42;
+}
+
+.club-draft-header h1,
+.club-draft-header .text-white,
+.club-sheet h2,
+.club-sheet .text-white,
+.club-room-section h3,
+.club-room-section h4,
+.club-room-section .text-white,
+.club-room-browser .text-white,
+.club-draft-page main > div h2 {
+  color: #294b35 !important;
+}
+
+.club-draft-header > div > div:first-child > p:first-child,
+.club-sheet > div:first-child > p:first-child {
+  color: #647a60 !important;
+}
+
+.club-draft-header p,
+.club-sheet p,
+.club-room-browser p,
+.club-room-browser label,
+.club-room-browser span {
+  color: #66766a;
+}
+
+.club-room-count {
+  border: 1px solid #7d927f !important;
+  border-radius: 0.14rem !important;
+  background: #e3e9db !important;
+  box-shadow: none;
+}
+
+.club-room-count p {
+  color: #35533e !important;
+}
+
+.club-draft-input,
+.club-room-browser input {
+  border-color: #90a092 !important;
+  border-radius: 0.12rem !important;
+  background: #fffdf7 !important;
+  color: #263c2d !important;
+}
+
+.club-draft-input:focus,
+.club-room-browser input:focus {
+  border-color: #3f684b !important;
+  box-shadow: 0 0 0 2px rgba(63, 104, 75, 0.14);
+}
+
+.club-action-button,
+.club-action-button.pokemon {
+  border: 1px solid #2f543c !important;
+  border-radius: 0.12rem !important;
+  background: #31583f !important;
+  color: #fffdf7 !important;
+  box-shadow: none;
+}
+
+.club-join-button {
+  border: 1px solid #6e8874 !important;
+  border-radius: 0.12rem !important;
+  background: transparent !important;
+  color: #31543c !important;
+  box-shadow: none;
+}
+
+.club-action-button:hover,
+.club-join-button:hover {
+  transform: translateY(-1px);
+  box-shadow: none;
+}
+
+.club-preset-picker button,
+.club-draft-page.pokemon .club-preset-picker button {
+  border: 1px solid #9aaa9c !important;
+  border-radius: 0.14rem !important;
+  background: #f3f3ea !important;
+  color: #2f4937 !important;
+  box-shadow: none !important;
+}
+
+.club-preset-picker button[aria-pressed="true"],
+.club-draft-page.pokemon .club-preset-picker button[aria-pressed="true"] {
+  border: 1px solid #456a50 !important;
+  background: #dfe8dc !important;
+  box-shadow: inset 3px 0 0 #4f7559 !important;
+}
+
+.club-room-browser {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.club-room-browser > .club-room-section:first-child {
+  box-shadow: none !important;
+}
+
+.club-room-browser > .grid .club-room-section:first-child,
+.club-room-browser > .grid .club-room-section:last-child {
+  background: rgba(249, 247, 240, 0.97) !important;
+}
+
+.club-room-card {
+  border: 1px solid #a0aea2 !important;
+  border-radius: 0.14rem !important;
+  background: #fffdf7 !important;
+  color: #294332 !important;
+}
+
+.club-room-card:hover {
+  border-color: #4f7358 !important;
+}
+
+.club-room-card a {
+  border-color: #3f654a !important;
+  background: #456a50 !important;
+  color: #fffdf7 !important;
+}
+
+.club-room-card a + a {
+  background: transparent !important;
+  color: #31543c !important;
+}
+
+.club-room-card button {
+  border-color: #866257 !important;
+  background: transparent !important;
+  color: #784f46 !important;
+}
+
+.club-room-browser button[aria-pressed="true"] {
+  border-color: #3e6449 !important;
+  background: #496e53 !important;
+  color: #fffdf7 !important;
+}
+
+.club-room-browser button[aria-pressed="false"] {
+  border-color: #9cac9f !important;
+  background: #f3f3ea !important;
+  color: #45604c !important;
+}
+
+@media (max-width: 980px) {
+  .site-page-v2 .v2-top-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .club-masthead,
+  .site-page-v2 .v2-panel,
+  .site-page-v2 .v2-video-card,
+  .site-page-v2 .v2-feature-card,
+  .club-draft-header,
+  .club-sheet,
+  .club-room-section {
+    box-shadow: 0 8px 20px rgba(35, 66, 44, 0.07) !important;
+  }
+}

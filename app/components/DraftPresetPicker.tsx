@@ -12,19 +12,19 @@ const PRESETS: Array<{
     id: "classic",
     name: "Classic",
     eyebrow: "5 min · full board",
-    description: "The original, strategic draft with room to debate every pick.",
+    description: "Standard full-board draft.",
   },
   {
     id: "blitz",
     name: "Blitz",
     eyebrow: "60 sec · 6 random slots",
-    description: "A shorter pressure-cooker draft built for quick rematches.",
+    description: "Short, fast draft.",
   },
   {
     id: "chaos",
     name: "Chaos",
     eyebrow: "90 sec · 10 random slots",
-    description: "A wild board where nobody knows which categories are coming.",
+    description: "Random category draft.",
   },
 ];
 
@@ -44,7 +44,7 @@ export function DraftPresetPicker({ value, onChange, accent }: Props) {
   return (
     <fieldset className="club-preset-picker">
       <legend className="text-xs uppercase tracking-[0.18em] text-neutral-400 mb-3">
-        Choose the experiment
+        Format
       </legend>
       <div className="grid gap-3 lg:grid-cols-3">
         {PRESETS.map((preset) => {

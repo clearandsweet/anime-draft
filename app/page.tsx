@@ -224,57 +224,43 @@ export default function HomePage() {
     <main className="site-page-v2">
       <header className="club-masthead">
         <Image
-          src="/club-draft-night-v1.png"
-          alt="Clear & Sweet Draft Night — Anime, Pokémon, Video Essays"
-          width={1728}
-          height={905}
+          src="/clear-and-sweet-botanical-v1.png"
+          alt="Clear & Sweet in a botanical print frame"
+          width={1717}
+          height={916}
           priority
         />
       </header>
 
       <section className="v2-top-grid">
         <article className="v2-panel v2-main-hero">
-          <p className="v2-kicker">Essays, panels &amp; ongoing arguments</p>
-          <h1>Come for the close reading. Stay for draft night.</h1>
-          <p>
-            Kai Andersen makes careful video essays about how anime works, then
-            invites everyone over to disagree, compare notes, and build
-            wonderfully questionable draft boards.
-          </p>
+          <p className="v2-kicker">Kai Andersen</p>
+          <h1>Anime, considered closely.</h1>
           <div className="v2-actions">
             <a href="https://www.youtube.com/@clearandsweet" target="_blank" rel="noreferrer" className="v2-btn primary">
-              Watch on YouTube
+              YouTube
             </a>
             <a href="https://www.patreon.com/clearandsweet" target="_blank" rel="noreferrer" className="v2-btn ghost">
-              Join the Patreon
+              Patreon
             </a>
             <a href="https://suno.com/playlist/b4ac130d-3ccd-46f2-9bf6-9f79d8271542" target="_blank" rel="noreferrer" className="v2-btn ghost">
-              Put on some music
+              Music
             </a>
           </div>
         </article>
 
         <article className="v2-panel v2-draft-feature">
-          <p className="v2-kicker">Tonight&apos;s clubhouse tools</p>
-          <h2>Grab a seat. Make a room.</h2>
-          <p>
-            Share a room code, snake-draft live, and preserve every finished
-            board for the inevitable post-game case-making.
-          </p>
-          <ul className="v2-draft-points">
-            <li>Easy to run on stream or at a watch party</li>
-            <li>Private Scout queues for your next few picks</li>
-            <li>Permanent history, voting, and rematches</li>
-          </ul>
+          <p className="v2-kicker">Interactive</p>
+          <h2>Drafts &amp; quizzes</h2>
           <div className="v2-actions stack">
             <a href="/draft" className="v2-btn primary anime">
-              Anime Character Draft
+              Anime draft
             </a>
             <a href="/draft/pokemon" className="v2-btn primary pokemon">
-              Pokémon Draft
+              Pokémon draft
             </a>
             <a href="/amq" className="v2-btn primary quiz">
-              Anime Music Quiz
+              Music quiz
             </a>
           </div>
         </article>
@@ -282,18 +268,18 @@ export default function HomePage() {
 
       <section className="v2-section">
         <div className="v2-section-head">
-          <h2>Fresh from the channel</h2>
+          <h2>Latest</h2>
           <div className="v2-feed-meta">
-            <span>Last sync: {formatTimestamp(latestFetchedAt)}</span>
+            <span>{formatTimestamp(latestFetchedAt)}</span>
             <button onClick={fetchLatest} disabled={feedLoading} className="v2-refresh-btn">
-              {feedLoading ? "Refreshing..." : "Refresh feed"}
+              {feedLoading ? "Refreshing..." : "Refresh"}
             </button>
           </div>
         </div>
 
         <div className="v2-video-grid latest">
           {latestFeed.length === 0 ? (
-            <p className="v2-empty">No live feed data yet. Click refresh.</p>
+            <p className="v2-empty">No feed data.</p>
           ) : (
             latestFeed.slice(0, 8).map((video) => (
               <a key={video.id} className="v2-video-card" href={video.url} target="_blank" rel="noreferrer">
@@ -310,13 +296,12 @@ export default function HomePage() {
 
       <section className="v2-section">
         <div className="v2-section-head">
-          <h2>Series shelf</h2>
+          <h2>Series</h2>
         </div>
         <div className="v2-feature-grid">
           {featured.map((item) => (
             <a key={item.title} className="v2-feature-card" href={item.href} target="_blank" rel="noreferrer">
               <h3>{item.title}</h3>
-              <p>{item.blurb}</p>
             </a>
           ))}
         </div>
@@ -325,7 +310,7 @@ export default function HomePage() {
       <section className="v2-section v2-split">
         <article className="v2-panel">
           <div className="v2-section-head compact">
-            <h2>Browse Library</h2>
+            <h2>Library</h2>
           </div>
           <div className="v2-chip-row">
             {categories.map((category) => (
@@ -342,7 +327,7 @@ export default function HomePage() {
           <input
             type="text"
             className="v2-search"
-            placeholder="Find a title, series, or half-remembered topic"
+            placeholder="Search"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
           />
@@ -367,7 +352,7 @@ export default function HomePage() {
 
         <article className="v2-panel">
           <div className="v2-section-head compact">
-            <h2>Playlists + odds &amp; ends</h2>
+            <h2>Links</h2>
           </div>
           <div className="v2-link-list">
             {collections.map((collection) => (
@@ -381,7 +366,7 @@ export default function HomePage() {
             <a href="https://bsky.app/profile/clearandsweet.bsky.social" target="_blank" rel="noreferrer">Bluesky</a>
             <a href="https://www.patreon.com/clearandsweet" target="_blank" rel="noreferrer">Patreon</a>
             <a href="/contact">Contact</a>
-            <a href="https://animesummit.net" target="_blank" rel="noreferrer">Anime Summit (Partner & Guest)</a>
+            <a href="https://animesummit.net" target="_blank" rel="noreferrer">Anime Summit</a>
           </div>
         </article>
       </section>
