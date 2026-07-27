@@ -31,6 +31,7 @@ type Props = {
     showShortlistOnly: boolean;
     onToggleShortlist: (charId: number) => void;
     onMoveShortlist: (charId: number, direction: DraftShortlistMove) => void;
+    onPrioritizeShortlist: (charId: number) => void;
     onSetScoutSlotPlan: (charId: number, slotName: string) => void;
     onDismissScoutNotice: () => void;
     onToggleShortlistOnly: () => void;
@@ -54,6 +55,7 @@ export function CharacterPool({
     showShortlistOnly,
     onToggleShortlist,
     onMoveShortlist,
+    onPrioritizeShortlist,
     onSetScoutSlotPlan,
     onDismissScoutNotice,
     onToggleShortlistOnly,
@@ -238,6 +240,15 @@ export function CharacterPool({
                                                     role="group"
                                                     aria-label={`Change ${c.name.full} priority`}
                                                 >
+                                                    <button
+                                                        type="button"
+                                                        disabled={priorityIndex === 0}
+                                                        aria-label={`Make ${c.name.full} your top pick`}
+                                                        onClick={() => onPrioritizeShortlist(c.id)}
+                                                        className="rounded border border-amber-500/30 px-2 py-0.5 text-[10px] font-bold text-amber-100 hover:bg-amber-500/20 disabled:cursor-not-allowed disabled:opacity-30"
+                                                    >
+                                                        Top
+                                                    </button>
                                                     <button
                                                         type="button"
                                                         disabled={priorityIndex === 0}

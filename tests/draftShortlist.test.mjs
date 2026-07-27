@@ -11,6 +11,7 @@ const {
   normalizeDraftScoutSlotPlans,
   normalizeShortlistIds,
   pruneDraftScoutSlotPlans,
+  prioritizeShortlistId,
   rememberDraftScoutSlotPlans,
   rememberDraftShortlist,
   removeDraftedShortlistIds,
@@ -41,6 +42,9 @@ test("moves saved candidates without losing or duplicating priorities", () => {
   assert.deepEqual(moveShortlistId([25, 94, 133], 25, "up"), [25, 94, 133]);
   assert.deepEqual(moveShortlistId([25, 94, 133], 133, "down"), [25, 94, 133]);
   assert.deepEqual(moveShortlistId([25, 25, 94], 999, "up"), [25, 94]);
+  assert.deepEqual(prioritizeShortlistId([25, 94, 133], 133), [133, 25, 94]);
+  assert.deepEqual(prioritizeShortlistId([25, 94, 133], 25), [25, 94, 133]);
+  assert.deepEqual(prioritizeShortlistId([25, 25, 94], 999), [25, 94]);
 });
 
 test("normalizes, updates, and prunes private category plans", () => {

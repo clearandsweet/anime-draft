@@ -30,6 +30,7 @@ import {
   getUnavailableShortlistIds,
   moveShortlistId,
   pruneDraftScoutSlotPlans,
+  prioritizeShortlistId,
   rememberDraftScoutSlotPlans,
   rememberDraftShortlist,
   removeDraftedShortlistIds,
@@ -776,6 +777,14 @@ export default function PokemonDraftApp() {
     });
   }
 
+  function prioritizeShortlist(pokemonId: number) {
+    setShortlistedIds((previousIds) => {
+      const nextIds = prioritizeShortlistId(previousIds, pokemonId);
+      rememberDraftShortlist("pokemon", lobbyId, nextIds);
+      return nextIds;
+    });
+  }
+
   function updateScoutSlotPlan(pokemonId: number, slotName: string) {
     setScoutSlotPlans((previousPlans) => {
       const nextPlans = setDraftScoutSlotPlan(
@@ -1191,6 +1200,7 @@ export default function PokemonDraftApp() {
           showShortlistOnly={showShortlistOnly}
           onToggleShortlist={toggleShortlist}
           onMoveShortlist={moveShortlist}
+          onPrioritizeShortlist={prioritizeShortlist}
           onSetScoutSlotPlan={updateScoutSlotPlan}
           onDismissScoutNotice={() => setScoutNoticeNames(null)}
           onToggleShortlistOnly={() =>

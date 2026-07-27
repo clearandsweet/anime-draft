@@ -102,6 +102,14 @@ export function moveShortlistId(
   return reordered;
 }
 
+export function prioritizeShortlistId(ids: number[], id: number) {
+  const normalized = normalizeShortlistIds(ids);
+  const currentIndex = normalized.indexOf(id);
+  if (currentIndex <= 0) return normalized;
+
+  return [id, ...normalized.filter((savedId) => savedId !== id)];
+}
+
 export function normalizeDraftScoutSlotPlans(
   value: unknown
 ): DraftScoutSlotPlans {

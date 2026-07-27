@@ -31,6 +31,7 @@ import {
   getUnavailableShortlistIds,
   moveShortlistId,
   pruneDraftScoutSlotPlans,
+  prioritizeShortlistId,
   rememberDraftScoutSlotPlans,
   rememberDraftShortlist,
   removeDraftedShortlistIds,
@@ -904,6 +905,14 @@ export default function CharacterDraftApp() {
     });
   }
 
+  function prioritizeShortlist(characterId: number) {
+    setShortlistedIds((previousIds) => {
+      const nextIds = prioritizeShortlistId(previousIds, characterId);
+      rememberDraftShortlist("anime", lobbyId, nextIds);
+      return nextIds;
+    });
+  }
+
   function updateScoutSlotPlan(characterId: number, slotName: string) {
     setScoutSlotPlans((previousPlans) => {
       const nextPlans = setDraftScoutSlotPlan(
@@ -1275,6 +1284,7 @@ export default function CharacterDraftApp() {
           showShortlistOnly={showShortlistOnly}
           onToggleShortlist={toggleShortlist}
           onMoveShortlist={moveShortlist}
+          onPrioritizeShortlist={prioritizeShortlist}
           onSetScoutSlotPlan={updateScoutSlotPlan}
           onDismissScoutNotice={() => setScoutNoticeNames(null)}
           onToggleShortlistOnly={() =>
@@ -1502,7 +1512,6 @@ export default function CharacterDraftApp() {
     </div>
   );
 }
-
 
 
 
