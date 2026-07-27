@@ -1,0 +1,73 @@
+import type { DraftScoutCoverage } from "../lib/draftShortlist";
+
+type Props = {
+  coverage: DraftScoutCoverage;
+};
+
+export function ScoutCoveragePanel({ coverage }: Props) {
+  if (!coverage.queuedCandidateCount) return null;
+
+  return (
+    <section
+      className="mb-3 rounded-xl border border-amber-500/25 bg-gradient-to-br from-amber-950/35 via-neutral-900/90 to-neutral-900/90 p-4"
+      aria-labelledby="scout-coverage-title"
+    >
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-amber-300">
+            Private Scout plan
+          </p>
+          <h3
+            id="scout-coverage-title"
+            className="mt-1 text-sm font-bold text-white"
+          >
+            {coverage.coveredSlotCount} of {coverage.openSlotCount} open{" "}
+            {coverage.openSlotCount === 1 ? "category" : "categories"} covered
+          </h3>
+        </div>
+        <div className="rounded-full border border-neutral-700 bg-neutral-950/70 px-3 py-1 text-[10px] text-neutral-400">
+          {coverage.queuedCandidateCount} queued
+        </div>
+      </div>
+
+      {coverage.openSlotCount > 0 ? (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {coverage.slots.map((slot) => (
+            <span
+              key={slot.name}
+              className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold ${
+                slot.candidateCount > 0
+                  ? "border-emerald-500/35 bg-emerald-500/10 text-emerald-200"
+                  : "border-neutral-700 bg-neutral-950/70 text-neutral-500"
+              }`}
+              aria-label={`${slot.name}: ${
+                slot.candidateCount > 0
+                  ? `${slot.candidateCount} planned ${
+                      slot.candidateCount === 1 ? "candidate" : "candidates"
+                    }`
+                  : "no planned candidates"
+              }`}
+            >
+              {slot.name}
+              <span className="ml-1.5 opacity-70">
+                {slot.candidateCount > 0 ? slot.candidateCount : "gap"}
+              </span>
+            </span>
+          ))}
+        </div>
+      ) : (
+        <p className="mt-3 text-xs text-neutral-500">
+          Your board has no open categories.
+        </p>
+      )}
+
+      {coverage.needsOpenPlanCount > 0 && coverage.openSlotCount > 0 && (
+        <p className="mt-3 text-xs text-amber-100/70">
+          {coverage.needsOpenPlanCount} queued{" "}
+          {coverage.needsOpenPlanCount === 1 ? "candidate needs" : "candidates need"}{" "}
+          an open-category plan.
+        </p>
+      )}
+    </section>
+  );
+}

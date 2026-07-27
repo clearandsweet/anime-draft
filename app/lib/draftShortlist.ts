@@ -1,6 +1,16 @@
 export type DraftShortlistType = "anime" | "pokemon";
 export type DraftShortlistMove = "up" | "down";
 export type DraftScoutSlotPlans = Record<number, string>;
+export type DraftScoutCoverage = {
+  queuedCandidateCount: number;
+  openSlotCount: number;
+  coveredSlotCount: number;
+  needsOpenPlanCount: number;
+  slots: Array<{
+    name: string;
+    candidateCount: number;
+  }>;
+};
 
 const SHORTLIST_KEY_PREFIX = "clearandsweet:draft-shortlist:";
 const SCOUT_SLOT_PLAN_KEY_PREFIX = "clearandsweet:draft-scout-slots:";
@@ -179,6 +189,48 @@ export function pruneDraftScoutSlotPlans(
       allowedIds.has(Number(rawId))
     )
   ) as DraftScoutSlotPlans;
+}
+
+export function getDraftScoutCoverage(
+  shortlistedIds: number[],
+  plans: DraftScoutSlotPlans,
+  openSlotNames: readonly string[]
+): DraftScoutCoverage {
+  const ids = normalizeShortlistIds(shortlistedIds);
+  const normalizedPlans = normalizeDraftScoutSlotPlans(plans);
+  const openSlots = Array.from(
+    new Set(
+      openSlotNames
+        .filter((slotName): slotName is string => typeof slotName === "string")
+        .map((slotName) => slotName.trim())
+        .filter(Boolean)
+    )
+  );
+  const openSlotSet = new Set(openSlots);
+  const counts = new Map(openSlots.map((slotName) => [slotName, 0]));
+
+  let needsOpenPlanCount = 0;
+  for (const id of ids) {
+    const plannedSlotName = normalizedPlans[id];
+    if (!plannedSlotName || !openSlotSet.has(plannedSlotName)) {
+      needsOpenPlanCount += 1;
+      continue;
+    }
+    counts.set(plannedSlotName, (counts.get(plannedSlotName) ?? 0) + 1);
+  }
+
+  const slots = openSlots.map((name) => ({
+    name,
+    candidateCount: counts.get(name) ?? 0,
+  }));
+
+  return {
+    queuedCandidateCount: ids.length,
+    openSlotCount: slots.length,
+    coveredSlotCount: slots.filter((slot) => slot.candidateCount > 0).length,
+    needsOpenPlanCount,
+    slots,
+  };
 }
 
 export function getUnavailableShortlistIds(

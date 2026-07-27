@@ -1,10 +1,12 @@
 import React from "react";
 import { Character } from "../../../api/lobby/logic";
 import { DraftPoolStatus } from "../../../components/DraftPoolStatus";
+import { ScoutCoveragePanel } from "../../../components/ScoutCoveragePanel";
 import { ScoutQueueNotice } from "../../../components/ScoutQueueNotice";
 import type { DraftPickAvailability } from "../../../lib/draftPickAvailability";
 import type {
     DraftScoutSlotPlans,
+    DraftScoutCoverage,
     DraftShortlistMove,
 } from "../../../lib/draftShortlist";
 
@@ -21,6 +23,7 @@ type Props = {
     shortlistedIds: ReadonlySet<number>;
     shortlistOrder: readonly number[];
     scoutSlotPlans: DraftScoutSlotPlans;
+    scoutCoverage: DraftScoutCoverage;
     availableSlotNames: readonly string[];
     pickAvailability: DraftPickAvailability;
     scoutNoticeNames: string[] | null;
@@ -43,6 +46,7 @@ export function CharacterPool({
     shortlistedIds,
     shortlistOrder,
     scoutSlotPlans,
+    scoutCoverage,
     availableSlotNames,
     pickAvailability,
     scoutNoticeNames,
@@ -65,6 +69,9 @@ export function CharacterPool({
                 availability={pickAvailability}
                 draftType="anime"
             />
+            {showShortlistOnly && (
+                <ScoutCoveragePanel coverage={scoutCoverage} />
+            )}
             <div
                 className="mb-3 rounded-xl border border-neutral-700 bg-neutral-900/90 p-3 shadow-[0_10px_20px_rgba(0,0,0,0.6)] backdrop-blur-sm lg:sticky lg:top-0 lg:z-20"
             >

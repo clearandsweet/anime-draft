@@ -25,6 +25,7 @@ import {
 import { getOpenSlotNames } from "../../lib/draftTurns";
 import {
   getDraftScoutSlotPlans,
+  getDraftScoutCoverage,
   getDraftShortlist,
   getUnavailableShortlistIds,
   moveShortlistId,
@@ -159,6 +160,11 @@ export default function PokemonDraftApp() {
     viewerName: iAmJoined ? meName : "",
     viewerOpenSlotCount: viewerOpenSlotNames.length,
   });
+  const scoutCoverage = getDraftScoutCoverage(
+    shortlistedIds,
+    scoutSlotPlans,
+    viewerOpenSlotNames
+  );
   const plannedSlotName = pendingPick
     ? scoutSlotPlans[pendingPick.id] ?? ""
     : "";
@@ -1178,6 +1184,7 @@ export default function PokemonDraftApp() {
           shortlistedIds={shortlistedSet}
           shortlistOrder={shortlistedIds}
           scoutSlotPlans={scoutSlotPlans}
+          scoutCoverage={scoutCoverage}
           availableSlotNames={viewerOpenSlotNames}
           pickAvailability={pickAvailability}
           scoutNoticeNames={scoutNoticeNames}

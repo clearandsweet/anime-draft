@@ -3,6 +3,7 @@ import test from "node:test";
 
 const {
   getDraftScoutSlotPlans,
+  getDraftScoutCoverage,
   getDraftShortlist,
   getUnavailableShortlistIds,
   moveShortlistId,
@@ -67,6 +68,33 @@ test("normalizes, updates, and prunes private category plans", () => {
     ),
     { 94: "Ghost / Dark", 133: "Wildcard" }
   );
+});
+
+test("summarizes Scout coverage across the viewer's open categories", () => {
+  assert.deepEqual(
+    getDraftScoutCoverage(
+      [25, 94, 133, 150],
+      {
+        25: "Mascot",
+        94: "Ghost / Dark",
+        133: "Mascot",
+        150: "Already filled",
+      },
+      ["Mascot", "Ghost / Dark", "Wildcard", "Mascot"]
+    ),
+    {
+      queuedCandidateCount: 4,
+      openSlotCount: 3,
+      coveredSlotCount: 2,
+      needsOpenPlanCount: 1,
+      slots: [
+        { name: "Mascot", candidateCount: 2 },
+        { name: "Ghost / Dark", candidateCount: 1 },
+        { name: "Wildcard", candidateCount: 0 },
+      ],
+    }
+  );
+  assert.equal(getDraftScoutCoverage([], {}, ["Mascot"]).coveredSlotCount, 0);
 });
 
 test("stores shortlist entries separately by room and draft type", () => {
