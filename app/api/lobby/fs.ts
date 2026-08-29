@@ -9,7 +9,13 @@ import {
 } from "./logic";
 import { normalizeReadyPlayerIds } from "../../lib/draftReadiness";
 import { VotesState, VoteRecord, normalizeVotesState } from "./votesLogic";
-import { generateManageKey, hashManageKey, verifyManageKey } from "./manageKey";
+import {
+  generateManageKey,
+  hashManageKey,
+  verifyLobbyDeleteCredential,
+} from "./manageKey";
+import { shouldDeleteStaleEmptyLobby } from "../../lib/lobbyRetention";
+import { getRuntimeLobbyDeletePassword } from "../runtimeStorage";
 
 type LobbyMeta = {
   id: string;
@@ -36,9 +42,6 @@ const ROOT = process.env.LOBBIES_DIR
   ? path.resolve(process.env.LOBBIES_DIR)
   : path.join(os.tmpdir(), "anime-draft", "lobbies");
 const INDEX = path.join(ROOT, "index.json");
-const ACTIVE_LOBBY_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
-const COMPLETED_LOBBY_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 30; // 30 days
-
 function lobbyPath(id: string) {
   return path.join(ROOT, `${id}.json`);
 }
@@ -233,7 +236,11 @@ export async function authorizeLobbyDelete(id: string, manageKey: string) {
   const idx = await readIndex();
   const meta = idx.list.find((m) => m.id === id);
   if (!meta) return false;
-  return verifyManageKey(manageKey, meta.manageKeyHash);
+  return verifyLobbyDeleteCredential(
+    manageKey,
+    meta.manageKeyHash,
+    getRuntimeLobbyDeletePassword()
+  );
 }
 
 export async function finishLobby(id: string, requesterName: string) {
@@ -257,14 +264,9 @@ export async function withLobby(
 async function cleanupStaleLobbies() {
   const idx = await readIndex();
   const now = Date.now();
-  const stale = idx.list.filter((meta) => {
-    const updatedAtMs = Date.parse(meta.updatedAt || meta.createdAt);
-    if (!Number.isFinite(updatedAtMs)) return false;
-    const ageMs = now - updatedAtMs;
-    const maxAgeMs =
-      meta.status === "completed" ? COMPLETED_LOBBY_MAX_AGE_MS : ACTIVE_LOBBY_MAX_AGE_MS;
-    return ageMs > maxAgeMs;
-  });
+  const stale = idx.list.filter((meta) =>
+    shouldDeleteStaleEmptyLobby(meta, now)
+  );
 
   if (!stale.length) return;
 

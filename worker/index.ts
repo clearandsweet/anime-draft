@@ -7,12 +7,14 @@ import handler from "vinext/server/app-router-entry";
 import {
   setCloudflareDb,
   setRuntimeGoogleApiKey,
+  setRuntimeLobbyDeletePassword,
 } from "../app/api/runtimeStorage";
 
 interface Env {
   ASSETS: Fetcher;
   DB: D1Database;
   GOOGLE_API_KEY?: string;
+  LOBBY_DELETE_PASSWORD?: string;
   IMAGES: {
     input(stream: ReadableStream): {
       transform(options: Record<string, unknown>): {
@@ -38,6 +40,7 @@ const worker = {
   ): Promise<Response> {
     setCloudflareDb(env.DB);
     setRuntimeGoogleApiKey(env.GOOGLE_API_KEY);
+    setRuntimeLobbyDeletePassword(env.LOBBY_DELETE_PASSWORD);
     const url = new URL(request.url);
 
     if (url.pathname === "/_vinext/image") {

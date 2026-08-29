@@ -13,7 +13,10 @@ export async function DELETE(
       typeof body?.manageKey === "string" ? body.manageKey.trim().slice(0, 128) : "";
     const authorized = await authorizeLobbyDelete(id, manageKey);
     if (!authorized) {
-      return NextResponse.json({ error: "Invalid lobby management key." }, { status: 403 });
+      return NextResponse.json(
+        { error: "Incorrect deletion password." },
+        { status: 403 }
+      );
     }
     await deleteLobby(id);
     return NextResponse.json({ ok: true }, { status: 200 });

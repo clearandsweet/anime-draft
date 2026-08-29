@@ -113,11 +113,12 @@ export default function DraftLobbyPage() {
   }
 
   async function handleDelete(id: string) {
-    const manageKey = getLobbyManagementKey(id);
-    if (!manageKey) {
-      alert("This browser does not own that room.");
-      return;
-    }
+    const ownedManageKey = getLobbyManagementKey(id);
+    const manageKey =
+      ownedManageKey ||
+      window.prompt(`Enter the deletion password for lobby #${id}:`)?.trim() ||
+      "";
+    if (!manageKey) return;
     if (!window.confirm(`Delete lobby #${id}? This cannot be undone.`)) return;
 
     const response = await fetch(`/api/lobbies/${id}`, {
@@ -130,7 +131,7 @@ export default function DraftLobbyPage() {
       alert(data.error || "Delete failed.");
       return;
     }
-    forgetLobbyManagementKey(id);
+    if (ownedManageKey) forgetLobbyManagementKey(id);
     setLobbies((current) => current.filter((lobby) => lobby.id !== id));
     setOwnedLobbyIds((current) => {
       const next = new Set(current);
@@ -140,7 +141,7 @@ export default function DraftLobbyPage() {
   }
 
   return (
-    <div className="club-draft-page min-h-screen overflow-hidden bg-neutral-950 text-neutral-100">
+    <div className="club-draft-page min-h-screen overflow-x-hidden bg-neutral-950 text-neutral-100">
       <div className="club-draft-texture pointer-events-none fixed inset-x-0 top-0 h-96" />
 
       <main className="relative mx-auto max-w-6xl space-y-7 px-5 py-10">
@@ -282,6 +283,7 @@ export default function DraftLobbyPage() {
           ownedLobbyIds={ownedLobbyIds}
           rememberedLobbyIds={rememberedLobbyIds}
           onDelete={handleDelete}
+          allowPasswordDelete
         />
       </main>
     </div>

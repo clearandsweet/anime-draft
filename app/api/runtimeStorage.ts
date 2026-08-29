@@ -1,6 +1,7 @@
 declare global {
   var __CLEARANDSWEET_D1__: D1Database | undefined;
   var __CLEARANDSWEET_GOOGLE_API_KEY__: string | undefined;
+  var __CLEARANDSWEET_LOBBY_DELETE_PASSWORD__: string | undefined;
 }
 
 export function setCloudflareDb(db: D1Database | undefined) {
@@ -28,5 +29,17 @@ export function getRuntimeGoogleApiKey() {
     globalThis.__CLEARANDSWEET_GOOGLE_API_KEY__?.trim() ||
     process.env.GOOGLE_API_KEY?.trim() ||
     ""
+  );
+}
+
+export function setRuntimeLobbyDeletePassword(password: string | undefined) {
+  globalThis.__CLEARANDSWEET_LOBBY_DELETE_PASSWORD__ = password;
+}
+
+export function getRuntimeLobbyDeletePassword() {
+  return (
+    globalThis.__CLEARANDSWEET_LOBBY_DELETE_PASSWORD__?.trim() ||
+    process.env.LOBBY_DELETE_PASSWORD?.trim() ||
+    "delete"
   );
 }

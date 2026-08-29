@@ -14,8 +14,16 @@ import {
   normalizeVotesState,
   tallyVotes,
 } from "./votesLogic";
-import { generateManageKey, hashManageKey, verifyManageKey } from "./manageKey";
+import {
+  generateManageKey,
+  hashManageKey,
+  verifyLobbyDeleteCredential,
+} from "./manageKey";
 import { normalizeReadyPlayerIds } from "../../lib/draftReadiness";
+import {
+  shouldDeleteStaleEmptyLobby,
+} from "../../lib/lobbyRetention";
+import { getRuntimeLobbyDeletePassword } from "../runtimeStorage";
 
 type LobbyMeta = {
   id: string;
@@ -34,8 +42,6 @@ export type PublicLobbyMeta = Omit<LobbyMeta, "manageKeyHash">;
 
 const INDEX_KEY = "lobby:index";
 const NEXT_ID_KEY = "lobby:nextId";
-const ACTIVE_LOBBY_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 30;
-
 function stateKey(id: string) {
   return `lobby:state:${id}`;
 }
@@ -296,7 +302,14 @@ export async function deleteLobby(id: string) {
 export async function authorizeLobbyDelete(id: string, manageKey: string) {
   if (!hasKVEnv()) return fsStore.authorizeLobbyDelete(id, manageKey);
   const meta = await kv.get<LobbyMeta>(metaKey(id));
-  return Boolean(meta && verifyManageKey(manageKey, meta.manageKeyHash));
+  return Boolean(
+    meta &&
+      verifyLobbyDeleteCredential(
+        manageKey,
+        meta.manageKeyHash,
+        getRuntimeLobbyDeletePassword()
+      )
+  );
 }
 
 async function cleanupStaleLobbies() {
@@ -307,12 +320,8 @@ async function cleanupStaleLobbies() {
   )) as (LobbyMeta | null)[];
   const now = Date.now();
   const staleIds = metas.flatMap((meta) => {
-    if (!meta || meta.status === "completed") return [];
-    const updatedAt = Date.parse(meta.updatedAt || meta.createdAt);
-    return Number.isFinite(updatedAt) &&
-      now - updatedAt > ACTIVE_LOBBY_MAX_AGE_MS
-      ? [meta.id]
-      : [];
+    if (!meta) return [];
+    return shouldDeleteStaleEmptyLobby(meta, now) ? [meta.id] : [];
   });
 
   await Promise.all(

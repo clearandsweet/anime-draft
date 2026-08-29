@@ -26,6 +26,7 @@ type Props = {
   ownedLobbyIds: Set<string>;
   rememberedLobbyIds: Set<string>;
   onDelete: (id: string) => void;
+  allowPasswordDelete?: boolean;
 };
 
 const PRESET_LABELS: Record<DraftPreset, string> = {
@@ -48,6 +49,7 @@ function RoomCard({
   ownedLobbyIds,
   rememberedLobbyIds,
   onDelete,
+  allowPasswordDelete,
 }: Omit<Props, "lobbies" | "loading"> & { lobby: LobbyMeta }) {
   const completed = lobby.status === "completed";
   const owned = ownedLobbyIds.has(lobby.id);
@@ -111,10 +113,11 @@ function RoomCard({
               Board
             </a>
           )}
-          {owned && (
+          {(owned || allowPasswordDelete) && (
             <button
               type="button"
               onClick={() => onDelete(lobby.id)}
+              title={owned ? "Delete this room" : "Delete with password"}
               className="rounded-lg border border-red-500/30 bg-red-950/20 px-3 py-2 text-xs text-red-300 transition hover:bg-red-950/40"
             >
               Delete
@@ -134,6 +137,7 @@ export function DraftRoomBrowser({
   ownedLobbyIds,
   rememberedLobbyIds,
   onDelete,
+  allowPasswordDelete = false,
 }: Props) {
   const [query, setQuery] = useState("");
   const [deviceOnly, setDeviceOnly] = useState(false);
@@ -268,6 +272,7 @@ export function DraftRoomBrowser({
                   ownedLobbyIds={ownedLobbyIds}
                   rememberedLobbyIds={rememberedLobbyIds}
                   onDelete={onDelete}
+                  allowPasswordDelete={allowPasswordDelete}
                 />
               ))
             ) : (
@@ -281,7 +286,7 @@ export function DraftRoomBrowser({
         </section>
 
         <section className="club-room-section rounded-2xl border border-neutral-800 bg-neutral-900/70 p-5">
-          <div className="mb-4 flex items-center justify-between">
+          <div className="mb-4 flex items-start justify-between gap-4">
             <div>
               <p className="text-xs uppercase tracking-[0.18em] text-emerald-300">
                 Archive
@@ -289,12 +294,20 @@ export function DraftRoomBrowser({
               <h3 className="mt-1 text-lg font-semibold text-white">
                 History
               </h3>
+              <p className="mt-2 max-w-sm text-xs text-neutral-500">
+                Scroll for older rooms. Unwanted rooms can be removed with the
+                deletion password.
+              </p>
             </div>
             <span className="rounded-full bg-neutral-950 px-3 py-1 text-xs text-neutral-400">
               {completed.length}
             </span>
           </div>
-          <div className="space-y-3">
+          <div
+            className="max-h-[42rem] space-y-3 overflow-y-auto overscroll-contain pr-2 [scrollbar-gutter:stable]"
+            aria-label="Lobby history"
+            tabIndex={completed.length ? 0 : undefined}
+          >
             {completed.length ? (
               completed.map((lobby) => (
                 <RoomCard
@@ -305,6 +318,7 @@ export function DraftRoomBrowser({
                   ownedLobbyIds={ownedLobbyIds}
                   rememberedLobbyIds={rememberedLobbyIds}
                   onDelete={onDelete}
+                  allowPasswordDelete={allowPasswordDelete}
                 />
               ))
             ) : (

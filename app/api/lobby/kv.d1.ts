@@ -13,8 +13,14 @@ import {
   normalizeVotesState,
   tallyVotes,
 } from "./votesLogic";
-import { generateManageKey, hashManageKey, verifyManageKey } from "./manageKey";
+import {
+  generateManageKey,
+  hashManageKey,
+  verifyLobbyDeleteCredential,
+} from "./manageKey";
 import { normalizeReadyPlayerIds } from "../../lib/draftReadiness";
+import { STALE_EMPTY_LOBBY_MAX_AGE_MS } from "../../lib/lobbyRetention";
+import { getRuntimeLobbyDeletePassword } from "../runtimeStorage";
 
 type LobbyMeta = {
   id: string;
@@ -60,8 +66,6 @@ export type PublicLobbyMeta = Omit<LobbyMeta, "manageKeyHash"> & {
   draftType?: "anime" | "pokemon";
   preset?: DraftPreset;
 };
-
-const ACTIVE_LOBBY_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 30;
 
 function getDb(): D1Database {
   return getCloudflareDb();
@@ -401,11 +405,17 @@ export async function deleteLobby(id: string) {
 export async function authorizeLobbyDelete(id: string, manageKey: string) {
   const row = await getLobbyRow(id);
   if (!row) return false;
-  return verifyManageKey(manageKey, row.manage_key_hash);
+  return verifyLobbyDeleteCredential(
+    manageKey,
+    row.manage_key_hash,
+    getRuntimeLobbyDeletePassword()
+  );
 }
 
 async function cleanupStaleLobbies() {
-  const activeCutoff = new Date(Date.now() - ACTIVE_LOBBY_MAX_AGE_MS).toISOString();
+  const activeCutoff = new Date(
+    Date.now() - STALE_EMPTY_LOBBY_MAX_AGE_MS
+  ).toISOString();
   const db = getDb();
 
   await db.batch([
@@ -415,12 +425,15 @@ async function cleanupStaleLobbies() {
           WHERE lobby_id IN (
             SELECT id FROM lobbies
              WHERE status = 'active' AND updated_at < ?
+               AND players_count = 0 AND last_pick_at IS NULL
           )`
       )
       .bind(activeCutoff),
     db
       .prepare(
-        "DELETE FROM lobbies WHERE status = 'active' AND updated_at < ?"
+        `DELETE FROM lobbies
+          WHERE status = 'active' AND updated_at < ?
+            AND players_count = 0 AND last_pick_at IS NULL`
       )
       .bind(activeCutoff),
   ]);
