@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "vinext dev",
-    "build": "vinext build",
+    "build": "vinext build && node scripts/restore-vercel-module-mode.cjs",
     "start": "vinext start",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "test:draft-turns": "node --experimental-strip-types --test tests/draftTurns.test.mjs",
@@ -31,6 +31,7 @@
     "test:voting": "node --experimental-strip-types --test tests/votesLogic.test.mjs",
     "test:blind-ranking": "node --experimental-strip-types --test tests/blindRanking.test.mjs",
     "test:custom-ranking": "node --experimental-strip-types --test tests/customRanking.test.mjs",
+    "test:api-response": "node --experimental-strip-types --test tests/apiResponse.test.mjs",
     "db:generate": "drizzle-kit generate"
   },
   "dependencies": {
@@ -60,6 +61,5 @@
     "vinext": "0.0.50",
     "vite": "8.0.13",
     "wrangler": "4.92.0"
-  },
-  "type": "module"
+  }
 }

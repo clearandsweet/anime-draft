@@ -13,6 +13,7 @@ import {
   customRankingManageKey,
   forgetSavedCustomRanking,
 } from "../../../lib/customRankingIdentity";
+import { readApiResponse } from "../../../lib/apiResponse";
 
 export default function CustomRankingPlayer({ slug }: { slug: string }) {
   const [ranking, setRanking] = useState<CustomRanking | null>(null);
@@ -30,7 +31,7 @@ export default function CustomRankingPlayer({ slug }: { slug: string }) {
     (async () => {
       try {
         const response = await fetch(`/api/blind-ranking/custom/${slug}`, { cache: "no-store" });
-        const data = (await response.json()) as { ranking?: CustomRanking; error?: string };
+        const data = await readApiResponse<{ ranking?: CustomRanking; error?: string }>(response);
         if (!response.ok || !data.ranking) throw new Error(data.error || "Ranking not found.");
         if (!active) return;
         setRanking(data.ranking);
@@ -53,7 +54,7 @@ export default function CustomRankingPlayer({ slug }: { slug: string }) {
     setError("");
     try {
       const response = await fetch(`/api/blind-ranking/custom/${slug}/play`, { method: "POST" });
-      const data = (await response.json()) as { items?: BlindRankingItem[]; error?: string };
+      const data = await readApiResponse<{ items?: BlindRankingItem[]; error?: string }>(response);
       if (!response.ok || !data.items) throw new Error(data.error || "The game could not start.");
       setItems(data.items);
       setBoard(createBlindRankingBoard(ranking.playCount));
@@ -97,7 +98,7 @@ export default function CustomRankingPlayer({ slug }: { slug: string }) {
       method: "DELETE",
       headers: { "x-manage-key": manageKey },
     });
-    const data = (await response.json()) as { error?: string };
+    const data = await readApiResponse<{ error?: string }>(response);
     if (!response.ok) return setError(data.error || "The ranking could not be deleted.");
     forgetSavedCustomRanking(ranking.id);
     window.location.href = "/blind-ranking/custom";

@@ -12,6 +12,7 @@ import {
   readBlindRankingCredentials,
   rememberBlindRankingCredentials,
 } from "../../../lib/blindRankingIdentity";
+import { readApiResponse } from "../../../lib/apiResponse";
 
 export default function BlindRankingRoomClient({ code: rawCode }: { code: string }) {
   const code = rawCode.toUpperCase().replace(/[^A-Z2-9]/g, "").slice(0, 6);
@@ -30,10 +31,10 @@ export default function BlindRankingRoomClient({ code: rawCode }: { code: string
       const response = await fetch(`/api/blind-ranking/rooms/${code}`, {
         cache: "no-store",
       });
-      const data = (await response.json()) as {
+      const data = await readApiResponse<{
         room?: PublicBlindRankingRoom;
         error?: string;
-      };
+      }>(response);
       if (!response.ok || !data.room) {
         throw new Error(data.error || "Room not found.");
       }
@@ -77,11 +78,11 @@ export default function BlindRankingRoomClient({ code: rawCode }: { code: string
               : null,
         }),
       });
-      const data = (await response.json()) as {
+      const data = await readApiResponse<{
         room?: PublicBlindRankingRoom;
         credentials?: BlindRankingCredentials;
         error?: string;
-      };
+      }>(response);
       if (!response.ok || !data.room || !data.credentials) {
         throw new Error(data.error || "Could not join the room.");
       }
@@ -105,10 +106,10 @@ export default function BlindRankingRoomClient({ code: rawCode }: { code: string
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(credentials),
       });
-      const data = (await response.json()) as {
+      const data = await readApiResponse<{
         room?: PublicBlindRankingRoom;
         error?: string;
-      };
+      }>(response);
       if (!response.ok || !data.room) {
         throw new Error(data.error || "Could not start the room.");
       }
@@ -133,10 +134,10 @@ export default function BlindRankingRoomClient({ code: rawCode }: { code: string
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...credentials, slot }),
       });
-      const data = (await response.json()) as {
+      const data = await readApiResponse<{
         room?: PublicBlindRankingRoom;
         error?: string;
-      };
+      }>(response);
       if (!response.ok || !data.room) {
         throw new Error(data.error || "That card could not be placed.");
       }

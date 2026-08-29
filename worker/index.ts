@@ -12,12 +12,12 @@ import {
 } from "../app/api/runtimeStorage";
 
 interface Env {
-  ASSETS: Fetcher;
-  DB: D1Database;
-  R2: R2Bucket;
+  ASSETS?: Fetcher;
+  DB?: D1Database;
+  R2?: R2Bucket;
   GOOGLE_API_KEY?: string;
   LOBBY_DELETE_PASSWORD?: string;
-  IMAGES: {
+  IMAGES?: {
     input(stream: ReadableStream): {
       transform(options: Record<string, unknown>): {
         output(options: {
@@ -37,24 +37,29 @@ interface ExecutionContext {
 const worker = {
   async fetch(
     request: Request,
-    env: Env,
-    ctx: ExecutionContext
+    env: Env | undefined,
+    ctx: ExecutionContext | undefined
   ): Promise<Response> {
-    setCloudflareDb(env.DB);
-    setCloudflareR2(env.R2);
-    setRuntimeGoogleApiKey(env.GOOGLE_API_KEY);
-    setRuntimeLobbyDeletePassword(env.LOBBY_DELETE_PASSWORD);
+    const runtimeEnv = env ?? {};
+    setCloudflareDb(runtimeEnv.DB);
+    setCloudflareR2(runtimeEnv.R2);
+    setRuntimeGoogleApiKey(runtimeEnv.GOOGLE_API_KEY);
+    setRuntimeLobbyDeletePassword(runtimeEnv.LOBBY_DELETE_PASSWORD);
     const url = new URL(request.url);
 
-    if (url.pathname === "/_vinext/image") {
+    if (
+      url.pathname === "/_vinext/image" &&
+      runtimeEnv.ASSETS &&
+      runtimeEnv.IMAGES
+    ) {
       const allowedWidths = [...DEFAULT_DEVICE_SIZES, ...DEFAULT_IMAGE_SIZES];
       return handleImageOptimization(
         request,
         {
           fetchAsset: (path) =>
-            env.ASSETS.fetch(new Request(new URL(path, request.url))),
+            runtimeEnv.ASSETS!.fetch(new Request(new URL(path, request.url))),
           transformImage: async (body, { width, format, quality }) => {
-            const result = await env.IMAGES.input(body)
+            const result = await runtimeEnv.IMAGES!.input(body)
               .transform(width > 0 ? { width } : {})
               .output({ format, quality });
             return result.response();
@@ -64,7 +69,7 @@ const worker = {
       );
     }
 
-    return handler.fetch(request, env, ctx);
+    return handler.fetch(request, runtimeEnv, ctx);
   },
 };
 

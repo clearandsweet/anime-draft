@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { CustomRankingSummary } from "../../lib/customRanking";
+import { readApiResponse } from "../../lib/apiResponse";
 
 export default function CustomRankingsPage() {
   const [query, setQuery] = useState("");
@@ -20,10 +21,10 @@ export default function CustomRankingsPage() {
           `/api/blind-ranking/custom?q=${encodeURIComponent(query.trim())}`,
           { signal: controller.signal, cache: "no-store" }
         );
-        const data = (await response.json()) as {
+        const data = await readApiResponse<{
           rankings?: CustomRankingSummary[];
           error?: string;
-        };
+        }>(response);
         if (!response.ok || !data.rankings) throw new Error(data.error || "Rankings could not be loaded.");
         setRankings(data.rankings);
       } catch (caught) {

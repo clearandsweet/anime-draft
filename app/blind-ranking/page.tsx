@@ -12,6 +12,7 @@ import {
   placeBlindRankingItem,
 } from "../lib/blindRanking";
 import { rememberBlindRankingCredentials } from "../lib/blindRankingIdentity";
+import { readApiResponse } from "../lib/apiResponse";
 
 type PlayMode = "solo" | "room";
 
@@ -38,10 +39,10 @@ export default function BlindRankingPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...value, seed: crypto.randomUUID() }),
       });
-      const data = (await response.json()) as {
+      const data = await readApiResponse<{
         items?: BlindRankingItem[];
         error?: string;
-      };
+      }>(response);
       if (!response.ok || !data.items) {
         throw new Error(data.error || "The ranking pool could not be loaded.");
       }
@@ -64,11 +65,11 @@ export default function BlindRankingPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(value),
       });
-      const data = (await response.json()) as {
+      const data = await readApiResponse<{
         room?: { code: string };
         credentials?: { participantId: string; token: string };
         error?: string;
-      };
+      }>(response);
       if (!response.ok || !data.room || !data.credentials) {
         throw new Error(data.error || "The room could not be created.");
       }

@@ -5,6 +5,7 @@ import { FormEvent, useState } from "react";
 import type { BlindRankingCount } from "../../../lib/blindRanking";
 import type { CustomRanking } from "../../../lib/customRanking";
 import { rememberSavedCustomRanking } from "../../../lib/customRankingIdentity";
+import { readApiResponse } from "../../../lib/apiResponse";
 
 type BuilderItem = {
   localId: string;
@@ -85,11 +86,11 @@ export default function NewCustomRankingPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ dataUrl }),
       });
-      const data = (await response.json()) as {
+      const data = await readApiResponse<{
         imageId?: string;
         imageUrl?: string;
         error?: string;
-      };
+      }>(response);
       if (!response.ok || !data.imageId || !data.imageUrl) {
         throw new Error(data.error || "The picture could not be uploaded.");
       }
@@ -133,11 +134,11 @@ export default function NewCustomRankingPage() {
           items: completeItems.map((item) => ({ title: item.title, imageId: item.imageId })),
         }),
       });
-      const data = (await response.json()) as {
+      const data = await readApiResponse<{
         ranking?: CustomRanking;
         manageKey?: string;
         error?: string;
-      };
+      }>(response);
       if (!response.ok || !data.ranking || !data.manageKey) {
         throw new Error(data.error || "The ranking could not be saved.");
       }
