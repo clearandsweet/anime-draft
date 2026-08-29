@@ -23,6 +23,21 @@ interface D1Database {
   ): Promise<D1Result<T>[]>;
 }
 
+interface R2ObjectBody {
+  body: ReadableStream<Uint8Array>;
+  httpMetadata?: { contentType?: string };
+}
+
+interface R2Bucket {
+  put(
+    key: string,
+    value: Uint8Array | ReadableStream,
+    options?: { httpMetadata?: { contentType?: string } }
+  ): Promise<unknown>;
+  get(key: string): Promise<R2ObjectBody | null>;
+  delete(key: string): Promise<void>;
+}
+
 interface Fetcher {
   fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response>;
 }

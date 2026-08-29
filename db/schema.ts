@@ -79,3 +79,21 @@ export const blindRankingRooms = sqliteTable(
   },
   (table) => [index("blind_ranking_rooms_updated_at_idx").on(table.updatedAt)]
 );
+
+export const customRankings = sqliteTable(
+  "custom_rankings",
+  {
+    id: text("id").primaryKey(),
+    slug: text("slug").notNull(),
+    stateJson: text("state_json").notNull(),
+    searchText: text("search_text").notNull(),
+    manageKeyHash: text("manage_key_hash").notNull(),
+    playsCount: integer("plays_count").notNull().default(0),
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("custom_rankings_slug_idx").on(table.slug),
+    index("custom_rankings_created_at_idx").on(table.createdAt),
+  ]
+);

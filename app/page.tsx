@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 type LibraryVideo = {
@@ -265,6 +266,9 @@ export default function HomePage() {
             <a href="/blind-ranking" className="v2-btn primary blind">
               Blind ranking
             </a>
+            <Link href="/blind-ranking/custom" className="v2-btn primary blind">
+              Custom rankings
+            </Link>
           </div>
         </article>
       </section>

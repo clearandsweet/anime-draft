@@ -149,6 +149,14 @@ export default function BlindRankingPage() {
         </p>
       </header>
 
+      {!items.length ? (
+        <Link className="custom-ranking-promo" href="/blind-ranking/custom">
+          <span>New · Community rankings</span>
+          <strong>Play a custom list—or build your own.</strong>
+          <em>Browse rankings →</em>
+        </Link>
+      ) : null}
+
       {items.length ? (
         <>
           <BlindRankingBoard

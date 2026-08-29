@@ -6,6 +6,7 @@ import {
 import handler from "vinext/server/app-router-entry";
 import {
   setCloudflareDb,
+  setCloudflareR2,
   setRuntimeGoogleApiKey,
   setRuntimeLobbyDeletePassword,
 } from "../app/api/runtimeStorage";
@@ -13,6 +14,7 @@ import {
 interface Env {
   ASSETS: Fetcher;
   DB: D1Database;
+  R2: R2Bucket;
   GOOGLE_API_KEY?: string;
   LOBBY_DELETE_PASSWORD?: string;
   IMAGES: {
@@ -39,6 +41,7 @@ const worker = {
     ctx: ExecutionContext
   ): Promise<Response> {
     setCloudflareDb(env.DB);
+    setCloudflareR2(env.R2);
     setRuntimeGoogleApiKey(env.GOOGLE_API_KEY);
     setRuntimeLobbyDeletePassword(env.LOBBY_DELETE_PASSWORD);
     const url = new URL(request.url);
