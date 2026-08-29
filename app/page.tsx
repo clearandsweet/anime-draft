@@ -262,6 +262,9 @@ export default function HomePage() {
             <a href="/amq" className="v2-btn primary quiz">
               Music quiz
             </a>
+            <a href="/blind-ranking" className="v2-btn primary blind">
+              Blind ranking
+            </a>
           </div>
         </article>
       </section>

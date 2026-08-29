@@ -29,6 +29,7 @@
     "test:turn-alerts": "node --experimental-strip-types --test tests/draftTurnAlerts.test.mjs",
     "test:undo": "node --experimental-strip-types --test tests/draftUndo.test.mjs",
     "test:voting": "node --experimental-strip-types --test tests/votesLogic.test.mjs",
+    "test:blind-ranking": "node --experimental-strip-types --test tests/blindRanking.test.mjs",
     "db:generate": "drizzle-kit generate"
   },
   "dependencies": {

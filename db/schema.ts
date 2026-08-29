@@ -64,3 +64,18 @@ export const broadcasts = sqliteTable(
     index("broadcasts_lobby_created_idx").on(table.lobbyId, table.createdAt),
   ]
 );
+
+export const blindRankingRooms = sqliteTable(
+  "blind_ranking_rooms",
+  {
+    code: text("code").primaryKey(),
+    stateJson: text("state_json").notNull(),
+    status: text("status", { enum: ["lobby", "playing", "complete"] })
+      .notNull()
+      .default("lobby"),
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+    version: integer("version").notNull().default(0),
+  },
+  (table) => [index("blind_ranking_rooms_updated_at_idx").on(table.updatedAt)]
+);
