@@ -2,6 +2,7 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import "./globals.css";
+import "./refresh.css";
 
 const title = "Clearandsweet | Kai Andersen";
 const description =
@@ -61,4 +62,3 @@ export default function RootLayout({
     </html>
   );
 }
-

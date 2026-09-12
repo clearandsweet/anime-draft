@@ -1,3 +1,4 @@
+import { AniListError, anilistErrorResponse } from "../../../lib/anilist";
 import { NextResponse } from "next/server";
 import { loadBlindRankingCandidates } from "../sources";
 import { blindRankingError, parseBlindRankingConfig, parseBlindRankingSource } from "../request";
@@ -31,6 +32,7 @@ export async function POST(request: Request) {
     }
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
+    if (error instanceof AniListError) return anilistErrorResponse(error);
     return NextResponse.json(
       { error: blindRankingError(error) },
       { status: 400 }

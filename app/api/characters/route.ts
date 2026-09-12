@@ -1,3 +1,4 @@
+import { anilistRequest, anilistErrorResponse } from "../../lib/anilist";
 // app/api/characters/route.ts
 
 export const dynamic = "force-dynamic";
@@ -19,6 +20,7 @@ type AniListCharacterResponse = {
   data?: {
     Page?: {
       characters?: AniListCharacter[];
+      pageInfo?: { hasNextPage: boolean };
     };
   };
 };
@@ -34,13 +36,17 @@ type NormalizedCharacter = {
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const pageParam = searchParams.get("page") || "1";
-  const page = parseInt(pageParam, 10) || 1;
+  const page = Number(pageParam);
+  if (!Number.isInteger(page) || page < 1 || page > 200) {
+    return Response.json({ error: "Page must be an integer from 1 to 200." }, { status: 400 });
+  }
 
   // AniList GraphQL query for characters ordered by favourites desc
   // We request, say, 50 per page
   const query = `
     query ($page: Int) {
       Page(page: $page, perPage: 50) {
+        pageInfo { hasNextPage }
         characters(sort: FAVOURITES_DESC) {
           id
           name {
@@ -60,29 +66,7 @@ export async function GET(req: Request) {
   const variables = { page };
 
   try {
-    const result = await fetch("https://graphql.anilist.co", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-      },
-      body: JSON.stringify({
-        query,
-        variables,
-      }),
-    });
-
-    if (!result.ok) {
-      return new Response(
-        JSON.stringify({
-          error: "AniList request failed",
-          status: result.status,
-        }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    const json = (await result.json()) as AniListCharacterResponse;
+    const json = await anilistRequest<AniListCharacterResponse>(query, variables, 3_600_000);
 
     // <- THIS IS IMPORTANT: shape must match what page.tsx expects
     const characters: NormalizedCharacter[] =
@@ -100,18 +84,10 @@ export async function GET(req: Request) {
       })) ?? [];
 
     return new Response(
-      JSON.stringify({ characters }),
-      { status: 200, headers: { "Content-Type": "application/json" } }
+      JSON.stringify({ characters, hasNextPage: json.data?.Page?.pageInfo?.hasNextPage ?? characters.length === 50 }),
+      { status: 200, headers: { "Content-Type": "application/json", "Cache-Control": "public, max-age=60, s-maxage=3600, stale-while-revalidate=86400" } }
     );
   } catch (err: unknown) {
-    const message =
-      err instanceof Error ? err.message : "AniList fetch threw";
-    return new Response(
-      JSON.stringify({
-        error: "AniList fetch threw",
-        message,
-      }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
-    );
+    return anilistErrorResponse(err);
   }
 }

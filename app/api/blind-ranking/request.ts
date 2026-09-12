@@ -1,3 +1,4 @@
+import { AniListError } from "../../lib/anilist";
 import {
   BlindRankingConfig,
   BlindRankingSource,
@@ -33,6 +34,7 @@ export function parseBlindRankingSource(
 }
 
 export function blindRankingError(error: unknown) {
+  if (error instanceof AniListError) return error.message;
   const message = error instanceof Error ? error.message : "Server error.";
   if (
     /not found|private|valid|already|full|started|eligible|join|host|room|reached/i.test(

@@ -1,6 +1,7 @@
+import { anilistRequest, anilistErrorResponse } from "../../lib/anilist";
 export const dynamic = "force-dynamic";
 
-const ANILIST_URL = "https://graphql.anilist.co";
+
 
 const SEARCH_QUERY = `
   query ($search: String) {
@@ -41,38 +42,8 @@ type NormalizedCharacter = {
 };
 
 async function searchAniListByName(term: string): Promise<NormalizedCharacter[]> {
-  let attempts = 0;
-  const maxAttempts = 3;
-
-  while (attempts < maxAttempts) {
-    attempts++;
-    const res = await fetch(ANILIST_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify({
-        query: SEARCH_QUERY,
-        variables: { search: term },
-      }),
-    });
-
-    if (res.status === 429 || (res.status >= 500 && res.status < 600)) {
-      // Rate limited or Server Error. Wait and retry.
-      if (attempts < maxAttempts) {
-        console.warn(`AniList ${res.status}. Retrying attempt ${attempts + 1}...`);
-        await new Promise((r) => setTimeout(r, 1500 * attempts)); // Backoff: 1.5s, 3s
-        continue;
-      }
-    }
-
-    if (!res.ok) {
-      throw new Error(`AniList search failed ${res.status}`);
-    }
-
-    const data = (await res.json()) as AniListSearchResponse;
-    const chars = data?.data?.Page?.characters ?? [];
+  const data = await anilistRequest<AniListSearchResponse>(SEARCH_QUERY, { search: term });
+  const chars = data?.data?.Page?.characters ?? [];
 
     return chars.map((c) => ({
       id: c.id,
@@ -84,8 +55,7 @@ async function searchAniListByName(term: string): Promise<NormalizedCharacter[]>
       image: { large: c.image?.large ?? "" },
       favourites: c.favourites ?? 0,
     }));
-  }
-  throw new Error("AniList search failed after retries");
+
 }
 
 export async function GET(req: Request) {
@@ -102,6 +72,7 @@ export async function GET(req: Request) {
       );
     }
 
+    if (q.trim().length > 100) return Response.json({ error: "Search must be 100 characters or fewer." }, { status: 400 });
     const found = await searchAniListByName(q.trim());
 
     return new Response(
@@ -112,18 +83,6 @@ export async function GET(req: Request) {
       }
     );
   } catch (err: unknown) {
-    console.error("searchCharacterByName GET failed:", err);
-    const message =
-      err instanceof Error ? err.message : "search failed";
-    return new Response(
-      JSON.stringify({
-        error: message,
-        characters: [],
-      }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      }
-    );
+    return anilistErrorResponse(err);
   }
 }

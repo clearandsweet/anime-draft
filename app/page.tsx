@@ -173,16 +173,20 @@ export default function HomePage() {
   const [latestFeed, setLatestFeed] = useState<FeedVideo[]>([]);
   const [latestFetchedAt, setLatestFetchedAt] = useState<string | null>(null);
   const [feedLoading, setFeedLoading] = useState(false);
+  const [feedError, setFeedError] = useState("");
 
   async function fetchLatest() {
     try {
       setFeedLoading(true);
+      setFeedError("");
       const res = await fetch("/api/youtube/latest", { cache: "no-store" });
       const data = await res.json();
-      if (!res.ok) return;
+      if (!res.ok) throw new Error("The latest uploads are temporarily unavailable. Try refreshing.");
       const videos = Array.isArray(data.videos) ? (data.videos as FeedVideo[]) : [];
       setLatestFeed(videos);
       setLatestFetchedAt(typeof data.fetchedAt === "string" ? data.fetchedAt : new Date().toISOString());
+    } catch {
+      setFeedError("The latest uploads are temporarily unavailable. Try refreshing.");
     } finally {
       setFeedLoading(false);
     }
@@ -222,7 +226,8 @@ export default function HomePage() {
   }, [mergedVideos, active, search]);
 
   return (
-    <main className="site-page-v2">
+    <main className="site-page-v2 home-editorial">
+      <div className="home-opening">
       <header className="club-masthead">
         <Image
           src="/clear-and-sweet-botanical-v1.png"
@@ -272,21 +277,23 @@ export default function HomePage() {
           </div>
         </article>
       </section>
+      </div>
 
       <section className="v2-section">
         <div className="v2-section-head">
           <h2>Latest</h2>
           <div className="v2-feed-meta">
-            <span>{formatTimestamp(latestFetchedAt)}</span>
+            {latestFetchedAt && <span>{formatTimestamp(latestFetchedAt)}</span>}
             <button onClick={fetchLatest} disabled={feedLoading} className="v2-refresh-btn">
               {feedLoading ? "Refreshing..." : "Refresh"}
             </button>
           </div>
         </div>
 
-        <div className="v2-video-grid latest">
+        {feedError && <p role="status" className="v2-feed-error">{feedError}</p>}
+        <div className="v2-video-grid latest" aria-busy={feedLoading}>
           {latestFeed.length === 0 ? (
-            <p className="v2-empty">No feed data.</p>
+            <p className="v2-empty">{feedLoading ? "Loading latest uploads…" : "No feed data."}</p>
           ) : (
             latestFeed.slice(0, 8).map((video) => (
               <a key={video.id} className="v2-video-card" href={video.url} target="_blank" rel="noreferrer">
@@ -306,8 +313,9 @@ export default function HomePage() {
           <h2>Series</h2>
         </div>
         <div className="v2-feature-grid">
-          {featured.map((item) => (
+          {featured.map((item, index) => (
             <a key={item.title} className="v2-feature-card" href={item.href} target="_blank" rel="noreferrer">
+              <span className="series-number" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
               <h3>{item.title}</h3>
             </a>
           ))}
@@ -325,6 +333,7 @@ export default function HomePage() {
                 key={category}
                 type="button"
                 onClick={() => setActive(category)}
+                aria-pressed={active === category}
                 className={`v2-chip ${active === category ? "active" : ""}`}
               >
                 {category}
@@ -335,10 +344,12 @@ export default function HomePage() {
             type="text"
             className="v2-search"
             placeholder="Search"
+            aria-label="Search the video library"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
           />
           <div className="v2-video-grid compact">
+            {filtered.length === 0 && <p className="v2-empty" role="status">No videos match your search.</p>}
             {filtered.map((video) => (
               <a key={video.id} className="v2-video-card" href={`https://www.youtube.com/watch?v=${video.id}`} target="_blank" rel="noreferrer">
                 <Image

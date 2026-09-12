@@ -23,6 +23,7 @@ export default function DraftLobbyPage() {
   const [preset, setPreset] = useState<DraftPreset>("classic");
   const [lobbies, setLobbies] = useState<LobbyMeta[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [createBusy, setCreateBusy] = useState(false);
   const [lastCreatedId, setLastCreatedId] = useState<string | null>(null);
   const [rematchOf, setRematchOf] = useState<string | null>(null);
@@ -34,15 +35,19 @@ export default function DraftLobbyPage() {
   async function refreshLobbies() {
     try {
       setLoading(true);
+      setLoadError("");
       const response = await fetch("/api/lobbies?draftType=anime", {
         cache: "no-store",
       });
       const data = await response.json();
+      if (!response.ok) throw new Error("Rooms could not be loaded. Please try Refresh.");
       const nextLobbies: LobbyMeta[] = Array.isArray(data.lobbies) ? data.lobbies : [];
       setLobbies(nextLobbies);
       const lobbyIds = nextLobbies.map((lobby) => lobby.id);
       setOwnedLobbyIds(findOwnedLobbyIds(lobbyIds));
       setRememberedLobbyIds(findRememberedLobbyIds(lobbyIds));
+    } catch {
+      setLoadError("Rooms could not be loaded. Please try Refresh.");
     } finally {
       setLoading(false);
     }
@@ -145,6 +150,8 @@ export default function DraftLobbyPage() {
       <div className="club-draft-texture pointer-events-none fixed inset-x-0 top-0 h-96" />
 
       <main className="relative mx-auto max-w-6xl space-y-7 px-5 py-10">
+        <a className="club-home-link" href="/">Clear &amp; Sweet</a>
+        {loadError && <p role="alert">{loadError}</p>}
         <header className="club-draft-header rounded-3xl border border-fuchsia-500/20 bg-neutral-900/75 p-6 shadow-2xl shadow-fuchsia-950/20 backdrop-blur md:p-8">
           <div className="flex flex-wrap items-start justify-between gap-6">
             <div className="max-w-2xl">

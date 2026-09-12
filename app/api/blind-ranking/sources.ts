@@ -1,3 +1,4 @@
+import { anilistRequest } from "../../lib/anilist";
 import {
   BlindRankingItem,
   BlindRankingMode,
@@ -8,7 +9,7 @@ import {
   selectBlindRankingItems,
 } from "../../lib/blindRanking";
 
-const ANILIST_URL = "https://graphql.anilist.co";
+
 const MAL_LIST_URL = "https://myanimelist.net/animelist";
 
 type AniListMedia = {
@@ -86,22 +87,6 @@ function normalizeAniListMedia(media: AniListMedia): BlindRankingItem {
   };
 }
 
-async function anilistRequest<T>(query: string, variables: object): Promise<T> {
-  const response = await fetch(ANILIST_URL, {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ query, variables }),
-    signal: AbortSignal.timeout(12_000),
-  });
-  if (!response.ok) {
-    throw new Error(`AniList could not be reached (${response.status}).`);
-  }
-  return (await response.json()) as T;
-}
-
 async function loadAniList(
   username: string,
   statuses: BlindRankingStatus[]
@@ -132,10 +117,10 @@ async function loadAniList(
   try {
     response = await anilistRequest<AniListListResponse>(query, {
       userName: cleaned,
-    });
+    }, 60_000);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    if (message.includes("(404)")) {
+    if (/not found|private/i.test(message)) {
       throw new Error(`AniList user ${cleaned} was not found or has a private list.`);
     }
     throw error;
@@ -214,6 +199,7 @@ async function loadPublicAnime(genres: string[], seed: string) {
     query ($page: Int!, $genres: [String]) {
       Page(page: $page, perPage: 50) {
         media(type: ANIME, sort: POPULARITY_DESC, genre_in: $genres, isAdult: false) {
+          idMal
           id
           title { english romaji }
           coverImage { extraLarge large }
@@ -229,7 +215,8 @@ async function loadPublicAnime(genres: string[], seed: string) {
     (total, character) => total + character.charCodeAt(0),
     0
   );
-  const pages = [1 + (pageSeed % 8), 1 + ((pageSeed + 3) % 8)];
+  // Always include the first page: narrow genres may not have eight pages.
+  const pages = [1, 2 + (pageSeed % 7)];
   const responses = await Promise.all(
     pages.map((page) =>
       anilistRequest<{

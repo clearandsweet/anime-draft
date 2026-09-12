@@ -1,6 +1,7 @@
+import { anilistRequest, anilistErrorResponse } from "../../lib/anilist";
 export const dynamic = "force-dynamic"; // don't cache
 
-const ANILIST_URL = "https://graphql.anilist.co";
+
 
 const QUERY = `
   query ($page: Int, $perPage: Int) {
@@ -72,20 +73,7 @@ type NormalizedAnime = {
 };
 
 async function fetchPage(page: number, perPage = 50): Promise<AniListMedia[]> {
-  const res = await fetch(ANILIST_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      query: QUERY,
-      variables: { page, perPage },
-    }),
-  });
-
-  if (!res.ok) {
-    throw new Error(`AniList fetch failed ${res.status}`);
-  }
-
-  const data = (await res.json()) as AniListResponse;
+  const data = await anilistRequest<AniListResponse>(QUERY, { page, perPage }, 3_600_000);
   return data?.data?.Page?.media ?? [];
 }
 
@@ -133,16 +121,6 @@ export async function GET() {
       headers: { "Content-Type": "application/json" },
     });
   } catch (err: unknown) {
-    const message =
-      err instanceof Error ? err.message : "AniList fetch failed";
-    return new Response(
-      JSON.stringify({
-        error: message,
-      }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      }
-    );
+    return anilistErrorResponse(err);
   }
 }

@@ -1,0 +1,110 @@
+/* Clear & Sweet: botanical print, forest ink, generous reading space. */
+:root { --cs-ink: #153c32; --cs-muted: #52685d; --cs-line: #c5cec3; --cs-paper: #f8f7f0; --cs-gold: #dbc181; }
+body { background: #edf0e9; }
+.home-editorial { max-width: 1400px; padding: clamp(1rem, 3vw, 3rem); font-family: "Atkinson Hyperlegible", sans-serif; }
+.home-opening { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); border: 1px solid var(--cs-ink); background: var(--cs-ink); }
+.home-opening .club-masthead { display: flex; align-items: center; margin: 0; padding: clamp(1rem, 3vw, 3rem); border: 0; border-radius: 0; background: #f5f0e5; box-shadow: none; }
+.home-opening .club-masthead img { width: 100%; height: auto; object-fit: contain; }
+.home-editorial .home-opening .v2-top-grid { display: flex; flex-direction: column; gap: 0; min-width: 0; }
+.home-editorial .home-opening .v2-panel { border: 0; border-radius: 0; background: transparent; box-shadow: none; padding: clamp(1.5rem, 3vw, 2.8rem); }
+.home-editorial .home-opening .v2-main-hero { padding-bottom: 1.3rem; }
+.home-editorial .v2-main-hero h1 { color: #fffdf2; font-family: "Newsreader", Georgia, serif; font-size: clamp(2.5rem, 4.5vw, 4.6rem); line-height: 1.03; letter-spacing: -.035em; max-width: 13ch; margin: .6rem 0 1rem; }
+.home-editorial .home-opening .v2-kicker { color: var(--cs-gold); font-size: .875rem; letter-spacing: .16em; }
+.home-editorial .home-opening .v2-draft-feature { border-top: 1px solid #547366; }
+.home-editorial .v2-draft-feature h2 { font-family: "Newsreader", Georgia, serif; color: #fffdf2; font-size: 1.8rem; line-height: 1.2; }
+.home-editorial .v2-btn { min-height: 44px; font-size: .9375rem; border-radius: 4px; padding: .65rem 1rem; }
+.home-editorial .home-opening .v2-btn { background: transparent; color: #fffdf2; border-color: #80998a; }
+.home-editorial .home-opening .v2-main-hero .v2-btn.primary { background: var(--cs-gold); color: #153c32; border-color: var(--cs-gold); }
+.home-editorial .home-opening .v2-btn:hover { background: #315a48; color: #fffdf2; transform: none; }
+.home-editorial .home-opening .v2-actions { gap: .5rem; margin-top: 1rem; }
+.home-editorial .home-opening .v2-actions.stack { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.home-editorial .v2-section { margin-top: 3.2rem; }
+.home-editorial .v2-section-head { align-items: center; border-bottom: 1px solid #819487; padding-bottom: 1rem; margin-bottom: 1.4rem; gap: 1rem; flex-wrap: wrap; }
+.home-editorial .v2-section-head h2 { font-family: "Newsreader", Georgia, serif; font-size: 2.15rem; line-height: 1.15; color: var(--cs-ink); }
+.home-editorial .v2-feed-meta { font-size: .875rem; color: var(--cs-muted); flex-wrap: wrap; }
+.home-editorial .v2-refresh-btn { min-height: 40px; padding: .5rem .9rem; font-size: .875rem; border-radius: 4px; }
+.home-editorial .v2-video-grid.latest { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.3rem; }
+.home-editorial .v2-video-card { border: 0; background: transparent; border-radius: 0; box-shadow: none; transition: transform .18s ease; }
+.home-editorial .v2-video-card:hover { box-shadow: none; transform: translateY(-3px); }
+.home-editorial .v2-video-card img { aspect-ratio: 16 / 9; object-fit: cover; border: 1px solid var(--cs-line); border-radius: 5px; filter: none; }
+.home-editorial .v2-video-meta { padding: .85rem 0; }
+.home-editorial .v2-video-meta h3 { font-size: 1rem; line-height: 1.4; color: var(--cs-ink); }
+.home-editorial .v2-video-meta p { font-size: .875rem; line-height: 1.5; color: var(--cs-muted); }
+.home-editorial .v2-feature-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; border: 1px solid var(--cs-line); }
+.home-editorial .v2-feature-card { display: flex; flex-direction: column; justify-content: space-between; gap: 1.5rem; min-height: 175px; padding: 1.2rem; background: var(--cs-paper); border: 0; border-right: 1px solid var(--cs-line); border-radius: 0; }
+.home-editorial .v2-feature-card:last-child { border-right: 0; }
+.home-editorial .v2-feature-card:hover { background: #e1e8dc; transform: none; box-shadow: none; }
+.home-editorial .v2-feature-card h3 { font-size: 1.05rem; line-height: 1.35; }
+.series-number { font-family: "Newsreader", Georgia, serif; color: #60785d; font-size: 1.8rem; }
+.home-editorial .v2-split { grid-template-columns: minmax(0, 3fr) minmax(220px, 1fr); align-items: start; gap: 2.4rem; }
+.home-editorial .v2-split > .v2-panel { padding: 0; border: 0; background: transparent; box-shadow: none; min-width: 0; }
+.home-editorial .v2-video-grid.compact { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; }
+.home-editorial .v2-chip { min-height: 40px; padding: .5rem .8rem; font-size: .875rem; border-radius: 4px; }
+.home-editorial .v2-chip.active { background: var(--cs-ink); }
+.home-editorial .v2-search { min-height: 48px; padding: .8rem 1rem; margin: 1rem 0 1.3rem; font-size: 1rem; border-radius: 4px; }
+.home-editorial .v2-link-list a { padding-block: .8rem; font-size: .9375rem; line-height: 1.4; }
+.home-editorial .v2-empty { grid-column: 1 / -1; padding: 1.5rem; font-size: 1rem; background: #f8f7f0; }
+.v2-feed-error { color: #8a3724; font-size: .9375rem; margin-bottom: 1rem; }
+/* The game controls come before the fold; the board takes priority in play. */
+.blind-page { --blind-ink: #173b32; --blind-paper: #eef0e8; --blind-paper-deep: #d9e0d1; --blind-acid: #e4c783; --blind-coral: #ae563b; --blind-violet: #355f52; background: var(--blind-paper); font-family: "Atkinson Hyperlegible", sans-serif; padding-top: 1.25rem; }
+.blind-page::before, .blind-orbit { display: none; }
+.blind-nav { font-size: .875rem; letter-spacing: .08em; padding-block: .4rem 1.1rem; }
+.blind-hero { display: grid; grid-template-columns: 1fr 1fr; align-items: end; column-gap: 2.5rem; padding: 2.2rem 0 1.6rem; }
+.blind-eyebrow { grid-column: 1 / -1; font-size: .875rem; }
+.blind-hero h1 { font-family: "Newsreader", Georgia, serif; font-size: clamp(2.8rem, 5vw, 4.5rem); line-height: 1; letter-spacing: -.035em; }
+.blind-lede { margin: 0; padding-left: 1.1rem; border-left-width: 2px; font-size: 1rem; max-width: 450px; }
+.blind-launch-panel { border-color: #8ca18e; border-radius: 8px; background: #fafbf5; box-shadow: 0 12px 35px #173b3210; }
+.blind-page .custom-ranking-promo { margin-block: 0 1.1rem; padding: .9rem 1.2rem; border: 1px solid #bdcab8; border-radius: 6px; background: #e0e8d8; box-shadow: none; color: var(--blind-ink); }
+.blind-page .custom-ranking-promo strong { font-size: 1.1rem; }
+.blind-page .custom-ranking-promo span, .blind-page .custom-ranking-promo em { font-size: .875rem; }
+.blind-mode-tabs button, .blind-segmented button, .blind-chip, .blind-field > span, .blind-setup legend { font-size: .9375rem; }
+.blind-page button, .blind-page input, .blind-page select { min-height: 44px; }
+.blind-page input, .blind-page select, .blind-page textarea { font-size: 1rem; }
+.blind-playing .blind-hero { padding-block: 1.2rem; }
+.blind-playing .blind-hero h1 { font-size: 2rem; }
+.blind-playing .blind-eyebrow, .blind-playing .blind-lede { display: none; }
+.blind-page .blind-primary-action { background: #214d3d; color: #fffdf2; border-color: #214d3d; box-shadow: none; }
+.blind-page .blind-primary-action:hover { background: #34694f; }
+.blind-footer { font-size: .875rem; }
+/* Draft setup uses the same paper and ink, preserving its existing controls. */
+.club-draft-page { background: #edf0e9 !important; }
+.club-draft-page main { max-width: 1240px; }
+.club-draft-header, .club-sheet, .club-room-section { border-color: #bcc9b9 !important; border-radius: 8px !important; box-shadow: 0 8px 24px #173b3209 !important; }
+.club-draft-header { border-top: 4px solid #214d3d !important; }
+.club-draft-header h1 { font-family: "Newsreader", Georgia, serif; font-weight: 500; line-height: 1.08; }
+.club-draft-header::after { display: none; }
+.club-draft-page input { min-height: 48px; font-size: 1rem; }
+.club-draft-page button { min-height: 44px; }
+.club-draft-page .text-xs { font-size: .875rem; line-height: 1.4; }
+.club-home-link { display: inline-block; margin-bottom: 1rem; color: #31583f; text-decoration: underline; text-underline-offset: 4px; }
+.pool-warning { margin: 1rem 0; padding: 1rem; border: 1px solid #bd984c; border-radius: 6px; background: #302716; color: #fff0c4; font-size: 1rem; }
+.pool-warning button { margin-left: .75rem; text-decoration: underline; min-height: 44px; }
+:where(.site-page-v2, .blind-page, .club-draft-page) :is(a, button, input, select, textarea):focus-visible { outline: 3px solid #bc7328; outline-offset: 4px; }
+:where(.site-page-v2, .blind-page, .club-draft-page) button:disabled { opacity: .6; cursor: wait; }
+@media (max-width: 1000px) {
+  .home-opening { grid-template-columns: 1fr 1fr; }
+  .home-editorial .v2-video-grid.latest { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .home-editorial .v2-feature-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .home-editorial .v2-feature-card { border-bottom: 1px solid var(--cs-line); min-height: 140px; }
+  .home-editorial .v2-feature-card:last-child { grid-column: 1 / -1; border-bottom: 0; }
+}
+@media (max-width: 700px) {
+  .home-opening { grid-template-columns: 1fr; }
+  .home-opening .club-masthead { padding: 1rem; }
+  .home-opening .club-masthead img { max-height: 260px; }
+  .home-editorial .v2-main-hero h1 { font-size: clamp(2.4rem, 10vw, 3.8rem); max-width: 16ch; }
+  .home-editorial .v2-split { grid-template-columns: 1fr; }
+  .home-editorial .v2-section { margin-top: 2.2rem; }
+  .blind-hero { grid-template-columns: 1fr; gap: 1rem; padding-block: 1.5rem; }
+  .blind-hero h1 { font-size: 3rem; }
+  .blind-page .custom-ranking-promo { display: flex; flex-wrap: wrap; gap: .5rem 1rem; }
+  .blind-nav { font-size: .8125rem; letter-spacing: .03em; }
+}
+@media (max-width: 420px) {
+  .home-editorial .v2-video-grid.latest, .home-editorial .v2-video-grid.compact { grid-template-columns: 1fr; }
+  .home-editorial .v2-feature-card { padding: 1rem; }
+  .home-editorial .v2-feature-card h3 { overflow-wrap: anywhere; }
+}
+@media (prefers-reduced-motion: reduce) {
+  :where(.site-page-v2, .blind-page, .club-draft-page) *, :where(.site-page-v2, .blind-page, .club-draft-page) *::before { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+}

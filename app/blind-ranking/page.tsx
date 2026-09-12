@@ -129,7 +129,7 @@ export default function BlindRankingPage() {
   }
 
   return (
-    <main className="blind-page">
+    <main className={`blind-page${items.length ? " blind-playing" : ""}`}>
       <div className="blind-orbit blind-orbit-one" />
       <div className="blind-orbit blind-orbit-two" />
       <nav className="blind-nav">

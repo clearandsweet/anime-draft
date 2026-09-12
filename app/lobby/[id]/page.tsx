@@ -64,6 +64,8 @@ export default function CharacterDraftApp() {
   // local giant character pool
   const [characters, setCharacters] = useState<Character[]>([]);
   const [loadingChars, setLoadingChars] = useState<boolean>(true);
+  const [poolError, setPoolError] = useState("");
+  const [poolAttempt, setPoolAttempt] = useState(0);
 
   // search / gender filters
   const [filters, setFilters] = useState<{ searchText: string; gender: string }>(
@@ -280,99 +282,64 @@ export default function CharacterDraftApp() {
     if (typeof window === "undefined") return;
     setPollLink(`${window.location.origin}/lobby/${lobbyId}/vote`);
   }, [lobbyId]);
-  // load character pool incrementally
+  // Load incrementally without skipping failed pages or retrying after unmount.
   useEffect(() => {
-    let active = true;
+    const controller = new AbortController();
+    const { signal } = controller;
+    const pause = (ms: number) => new Promise<void>((resolve) => {
+      const done = () => { clearTimeout(timer); signal.removeEventListener("abort", done); resolve(); };
+      const timer = setTimeout(done, ms);
+      signal.addEventListener("abort", done, { once: true });
+    });
     async function loadIncremental() {
-      setLoadingChars(true);
+      setPoolError("");
       const byId = new Map<number, Character>();
-
-      // Helper to update state safely
-      const updateState = () => {
-        if (!active) return;
-        setCharacters((prev) => {
-          // Merge new characters with existing ones to avoid overwriting deep search results or other state
-          // Actually, deep search results are separate. But let's be safe.
-          // Wait, setCharacters replaces the whole list.
-          // The issue might be that if deep search runs, it might trigger something?
-          // No, deep search uses `deepSearchResults`.
-          // The user said "stops loading".
-          // Maybe the browser pauses the background fetch if many requests happen?
-          // Let's just make sure we are robust.
-          const combined = new Map<number, Character>();
-          prev.forEach(c => combined.set(c.id, c));
-          byId.forEach(c => combined.set(c.id, c));
-          return Array.from(combined.values()).sort((a, b) => b.favourites - a.favourites);
-        });
-      };
-
-      let consecutiveFailures = 0;
-
-      for (let page = 1; page <= 200; page++) {
-        if (!active) break;
-
-        // PAUSE if deep search is running to avoid rate limits
-        while (active && deepSearchRunningRef.current) {
-          await new Promise((r) => setTimeout(r, 500));
-        }
-        if (!active) break;
-
+      let page = 1;
+      let failures = 0;
+      while (!signal.aborted && page <= 200) {
+        while (!signal.aborted && deepSearchRunningRef.current) await pause(500);
+        if (signal.aborted) break;
         try {
-          const res = await fetch(`/api/characters?page=${page}`, { cache: "no-store" });
+          const res = await fetch(`/api/characters?page=${page}`, { signal });
+          const data = await res.json();
           if (!res.ok) {
-            consecutiveFailures++;
-            if (consecutiveFailures > 3) {
-              console.warn("Too many fetch failures, stopping character load.");
-              break;
-            }
-            // If rate limited or error, wait a bit longer then continue or break
-            await new Promise((r) => setTimeout(r, 2000));
+            if (signal.aborted) break;
+            setLoadingChars(false);
+            setPoolError(data.error || "Character loading paused. You can retry or use name search.");
+            // Refusal or an invalid query will not improve with rapid retries.
+            if (res.status !== 429 || ++failures > 3) break;
+            const retry = Number(res.headers.get("Retry-After"));
+            await pause((Number.isFinite(retry) && retry > 0 ? retry : 60) * 1000);
             continue;
           }
-
-          const data = await res.json();
-          const chunk: Character[] = data?.characters || [];
-
-          if (!chunk.length) break; // No more characters
-
-          // Reset failures on success
-          consecutiveFailures = 0;
-
-          let newOnes = 0;
-          for (const ch of chunk) {
-            if (!byId.has(ch.id)) {
-              byId.set(ch.id, ch);
-              newOnes++;
-            }
-          }
-
-          // Update UI every page
-          if (newOnes > 0) updateState();
-
-          // First page loaded? Turn off "loading" spinner so user can start interacting
-          if (page === 1) setLoadingChars(false);
-
-          // Rate limit protection: wait 800ms between requests
-          // AniList limit is 90/min, so ~666ms minimum. 800ms is safe.
-          await new Promise((r) => setTimeout(r, 800));
-
-        } catch (e) {
-          console.error("Fetch error page", page, e);
-          consecutiveFailures++;
-          if (consecutiveFailures > 3) {
-            console.warn("Too many fetch exceptions, stopping character load.");
-            break;
-          }
-          await new Promise((r) => setTimeout(r, 2000));
+          if (!Array.isArray(data.characters)) throw new Error("Invalid character response.");
+          if (signal.aborted) break;
+          failures = 0;
+          setPoolError("");
+          for (const ch of data.characters as Character[]) byId.set(ch.id, ch);
+          setCharacters((previous) => {
+            const combined = new Map(previous.map((ch) => [ch.id, ch]));
+            byId.forEach((ch) => combined.set(ch.id, ch));
+            return [...combined.values()].sort((a, b) => b.favourites - a.favourites);
+          });
+          setLoadingChars(false);
+          if (!data.characters.length || data.hasNextPage === false) break;
+          page++;
+          // Leave headroom for name searches and ranking requests (30/min tier).
+          await pause(2200);
+        } catch {
+          if (signal.aborted) break;
+          setLoadingChars(false);
+          setPoolError("Character loading was interrupted. Loaded characters are still available; retry to continue.");
+          if (++failures > 2) break;
+          await pause(3000 * failures);
         }
       }
-      if (active) setLoadingChars(false);
+      if (!signal.aborted) setLoadingChars(false);
     }
-
-    loadIncremental();
-    return () => { active = false; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    void loadIncremental();
+    return () => controller.abort();
+  }, [poolAttempt]);
 
   // poll lobby
   useEffect(() => {
@@ -934,6 +901,13 @@ export default function CharacterDraftApp() {
     });
   }
 
+  const poolNotice = poolError ? (
+    <div className="pool-warning" role="status">
+      {poolError}
+      <button type="button" onClick={() => setPoolAttempt((attempt) => attempt + 1)}>Retry character loading</button>
+    </div>
+  ) : null;
+
   if (loadingChars) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-neutral-900 text-neutral-400 text-lg">
@@ -962,6 +936,7 @@ export default function CharacterDraftApp() {
               "Waiting for first player to join..."
             )}
           </div>
+          {poolNotice}
           <LobbyInvitePanel
             draftType="anime"
             lobbyId={lobbyId}
@@ -1269,6 +1244,7 @@ export default function CharacterDraftApp() {
           onDownloadBoard={downloadBoardPng}
           boardRefs={boardRefs}
         />
+        {poolNotice}
         <CharacterPool
           characters={characters}
           filteredPool={filteredLocalPool}
