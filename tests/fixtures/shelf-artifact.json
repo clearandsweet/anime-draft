@@ -1,0 +1,137 @@
+{
+ "about": "Figure Shelf Score artifact on 2026-10-22: its show scores, and the overall/value it showed for a few figures.",
+ "showScores": {
+  "city": 100,
+  "csm": 95,
+  "dandadan": 95,
+  "dressup": 80,
+  "frieren": 90,
+  "fujimoto1726": 90,
+  "ggstrive": 40,
+  "goodbyelara": 100,
+  "gup": 50,
+  "haruhi": 100,
+  "interstella": 70,
+  "jaadugar": 75,
+  "journalwitch": 100,
+  "leviathan": 60,
+  "lookback": 100,
+  "madoka": 100,
+  "mglt": 80,
+  "mushishi": 80,
+  "oshinoko": 100,
+  "pands": 100,
+  "perfectblue": 70,
+  "precure": 60,
+  "sailormoon": 100,
+  "sparks": 40,
+  "spyfamily": 90,
+  "takopi": 90,
+  "utena": 100,
+  "watanare": 70,
+  "wha": 80,
+  "yorimoi": 100,
+  "youngladies": 85,
+  "zls": 100
+ },
+ "chars": {
+  "ai": {
+   "show": "oshinoko",
+   "rank": 1
+  },
+  "anya": {
+   "show": "spyfamily",
+   "rank": 1
+  },
+  "asakura": {
+   "show": "haruhi",
+   "rank": 4
+  },
+  "bridget": {
+   "show": "ggstrive",
+   "rank": 1
+  },
+  "coco": {
+   "show": "wha",
+   "rank": 1
+  },
+  "fern": {
+   "show": "frieren",
+   "rank": 2
+  },
+  "frieren": {
+   "show": "frieren",
+   "rank": 1
+  },
+  "haruhi": {
+   "show": "haruhi",
+   "rank": 2
+  },
+  "homura": {
+   "show": "madoka",
+   "rank": 1,
+   "fav": 27048
+  },
+  "madoka": {
+   "show": "madoka",
+   "rank": 2,
+   "fav": 8835
+  },
+  "makima": {
+   "show": "csm",
+   "rank": 1
+  },
+  "marin": {
+   "show": "dressup",
+   "rank": 1
+  },
+  "miho": {
+   "show": "gup",
+   "rank": 1
+  },
+  "mima": {
+   "show": "perfectblue",
+   "rank": 1
+  },
+  "momo": {
+   "show": "dandadan",
+   "rank": 1
+  },
+  "nagato": {
+   "show": "haruhi",
+   "rank": 1
+  },
+  "panty": {
+   "show": "pands",
+   "rank": 1
+  },
+  "power": {
+   "show": "csm",
+   "rank": 2
+  },
+  "reze": {
+   "show": "csm",
+   "rank": 3
+  },
+  "shirase": {
+   "show": "yorimoi",
+   "rank": 1
+  },
+  "stocking": {
+   "show": "pands",
+   "rank": 2
+  },
+  "usagi": {
+   "show": "sailormoon",
+   "rank": 1
+  },
+  "utena": {
+   "show": "utena",
+   "rank": 1
+  },
+  "yor": {
+   "show": "spyfamily",
+   "rank": 2
+  }
+ }
+}

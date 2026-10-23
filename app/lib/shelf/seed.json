@@ -1,0 +1,1764 @@
+{
+ "pricesCheckedOn": "2026-10-22",
+ "shows": {
+  "city": {
+   "name": "CITY THE ANIMATION",
+   "anchor": 181841
+  },
+  "csm": {
+   "name": "Chainsaw Man",
+   "anchor": 127230
+  },
+  "dandadan": {
+   "name": "Dan Da Dan",
+   "anchor": 171018
+  },
+  "dressup": {
+   "name": "My Dress-Up Darling",
+   "anchor": 154768
+  },
+  "frieren": {
+   "name": "Frieren: Beyond Journey’s End",
+   "anchor": 154587
+  },
+  "fujimoto1726": {
+   "name": "Tatsuki Fujimoto 17–26",
+   "anchor": 198188
+  },
+  "ggstrive": {
+   "name": "Guilty Gear Strive: Dual Rulers",
+   "anchor": 178046
+  },
+  "goodbyelara": {
+   "name": "Goodbye, Lara",
+   "anchor": 177637
+  },
+  "gup": {
+   "name": "Girls und Panzer",
+   "anchor": 14131
+  },
+  "haruhi": {
+   "name": "The Melancholy / Disappearance of Haruhi Suzumiya",
+   "anchor": 849
+  },
+  "interstella": {
+   "name": "Interstella 5555",
+   "anchor": 731
+  },
+  "jaadugar": {
+   "name": "Jaadugar: A Witch in Mongolia",
+   "anchor": 190569
+  },
+  "journalwitch": {
+   "name": "Journal with Witch",
+   "anchor": 177385
+  },
+  "leviathan": {
+   "name": "Leviathan",
+   "anchor": 177887
+  },
+  "lookback": {
+   "name": "Look Back",
+   "anchor": 174788
+  },
+  "madoka": {
+   "name": "Puella Magi Madoka Magica",
+   "anchor": 9756
+  },
+  "mglt": {
+   "name": "The Magical Girl and the Evil Lieutenant Used to Be Archenemies",
+   "anchor": 170938
+  },
+  "mushishi": {
+   "name": "Mushi-shi",
+   "anchor": 457
+  },
+  "oshinoko": {
+   "name": "Oshi no Ko",
+   "anchor": 150672
+  },
+  "pands": {
+   "name": "Panty & Stocking with Garterbelt",
+   "anchor": 8795
+  },
+  "perfectblue": {
+   "name": "Perfect Blue",
+   "anchor": 437
+  },
+  "precure": {
+   "name": "Futari wa Precure",
+   "anchor": 603
+  },
+  "sailormoon": {
+   "name": "Sailor Moon",
+   "anchor": 530
+  },
+  "sparks": {
+   "name": "Sparks of Tomorrow",
+   "anchor": 103303
+  },
+  "spyfamily": {
+   "name": "Spy x Family",
+   "anchor": 140960
+  },
+  "takopi": {
+   "name": "Takopi’s Original Sin",
+   "anchor": 185407
+  },
+  "utena": {
+   "name": "Revolutionary Girl Utena",
+   "anchor": 440
+  },
+  "watanare": {
+   "name": "There’s No Freaking Way I’ll Be Your Lover! Unless…",
+   "anchor": 184591
+  },
+  "wha": {
+   "name": "Witch Hat Atelier",
+   "anchor": 147105
+  },
+  "yorimoi": {
+   "name": "A Place Further than the Universe",
+   "anchor": 99426
+  },
+  "youngladies": {
+   "name": "Young Ladies Don’t Play Fighting Games",
+   "anchor": 128757
+  },
+  "zls": {
+   "name": "Zombie Land Saga",
+   "anchor": 103871
+  }
+ },
+ "chars": {
+  "ai": {
+   "name": "Ai Hoshino",
+   "show": "oshinoko",
+   "rank": 1
+  },
+  "anya": {
+   "name": "Anya Forger",
+   "show": "spyfamily",
+   "rank": 1
+  },
+  "asakura": {
+   "name": "Ryoko Asakura",
+   "show": "haruhi",
+   "rank": 4
+  },
+  "bridget": {
+   "name": "Bridget",
+   "show": "ggstrive",
+   "rank": 1
+  },
+  "coco": {
+   "name": "Coco",
+   "show": "wha",
+   "rank": 1
+  },
+  "fern": {
+   "name": "Fern",
+   "show": "frieren",
+   "rank": 2
+  },
+  "frieren": {
+   "name": "Frieren",
+   "show": "frieren",
+   "rank": 1
+  },
+  "haruhi": {
+   "name": "Haruhi Suzumiya",
+   "show": "haruhi",
+   "rank": 2
+  },
+  "homura": {
+   "name": "Homura Akemi",
+   "show": "madoka",
+   "rank": 1,
+   "malFav": 27048
+  },
+  "madoka": {
+   "name": "Madoka Kaname",
+   "show": "madoka",
+   "rank": 2,
+   "malFav": 8835
+  },
+  "makima": {
+   "name": "Makima",
+   "show": "csm",
+   "rank": 1
+  },
+  "marin": {
+   "name": "Marin Kitagawa",
+   "show": "dressup",
+   "rank": 1
+  },
+  "miho": {
+   "name": "Miho Nishizumi",
+   "show": "gup",
+   "rank": 1
+  },
+  "mima": {
+   "name": "Mima Kirigoe",
+   "show": "perfectblue",
+   "rank": 1
+  },
+  "momo": {
+   "name": "Momo Ayase",
+   "show": "dandadan",
+   "rank": 1
+  },
+  "nagato": {
+   "name": "Yuki Nagato",
+   "show": "haruhi",
+   "rank": 1
+  },
+  "panty": {
+   "name": "Panty Anarchy",
+   "show": "pands",
+   "rank": 1
+  },
+  "power": {
+   "name": "Power",
+   "show": "csm",
+   "rank": 2
+  },
+  "reze": {
+   "name": "Reze",
+   "show": "csm",
+   "rank": 3
+  },
+  "shirase": {
+   "name": "Shirase Kobuchizawa",
+   "show": "yorimoi",
+   "rank": 1
+  },
+  "stocking": {
+   "name": "Stocking Anarchy",
+   "show": "pands",
+   "rank": 2
+  },
+  "usagi": {
+   "name": "Usagi Tsukino",
+   "show": "sailormoon",
+   "rank": 1
+  },
+  "utena": {
+   "name": "Utena Tenjou",
+   "show": "utena",
+   "rank": 1
+  },
+  "yor": {
+   "name": "Yor Forger",
+   "show": "spyfamily",
+   "rank": 2
+  }
+ },
+ "figures": {
+  "csm-makima-artfx": {
+   "name": "Makima ARTFX J 1/8",
+   "show": "csm",
+   "chars": [
+    "makima"
+   ],
+   "tier": "B",
+   "line": "ARTFX J 1/8",
+   "maker": "Kotobukiya",
+   "price": 282.59,
+   "cond": "pre-owned",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/products/chainsaw-man-makima-artfx-j-1-8-kotobukiya",
+   "mfcUrl": "https://myfigurecollection.net/item/1710549",
+   "avail": "Pre-owned only",
+   "note": "New copies sold out"
+  },
+  "csm-makima-fnex": {
+   "name": "Makima 1/7",
+   "show": "csm",
+   "chars": [
+    "makima"
+   ],
+   "tier": "B",
+   "line": "F:NEX 1/7",
+   "maker": "FuRyu / MAPPA",
+   "year": 2023,
+   "price": 259.47,
+   "cond": "new",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/products/chainsaw-man-makima-f-nex-1-7-furyu-mappa-shop-exclusive",
+   "mfcUrl": "https://myfigurecollection.net/item/1670954",
+   "avail": "In stock",
+   "note": "Shop exclusive"
+  },
+  "csm-makima-lumi": {
+   "name": "Makima Luminasta",
+   "show": "csm",
+   "chars": [
+    "makima"
+   ],
+   "tier": "E",
+   "line": "Luminasta (prize)",
+   "maker": "SEGA",
+   "price": 36.57,
+   "cond": "new",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/collections/chainsaw-man-figures",
+   "mfcUrl": "https://myfigurecollection.net/item/1670345",
+   "avail": "In stock",
+   "note": ""
+  },
+  "csm-makima-nendo": {
+   "name": "Nendoroid Makima #2004",
+   "show": "csm",
+   "chars": [
+    "makima"
+   ],
+   "tier": "C",
+   "line": "Nendoroid",
+   "maker": "Good Smile Company",
+   "price": 59.8,
+   "cond": "new",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/collections/chainsaw-man-figures",
+   "mfcUrl": "https://myfigurecollection.net/item/1710561",
+   "avail": "In stock",
+   "note": "A 2026 re-release is also listed"
+  },
+  "csm-makima-phat": {
+   "name": "Makima 1/7",
+   "show": "csm",
+   "chars": [
+    "makima"
+   ],
+   "tier": "B",
+   "line": "1/7 scale",
+   "maker": "Phat Company",
+   "year": 2024,
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/products/chainsaw-man-makima-1-7-phat-company",
+   "mfcUrl": "https://myfigurecollection.net/item/1820471",
+   "avail": "Sold out",
+   "note": "Sold out new and pre-owned at Solaris"
+  },
+  "csm-power-fnex": {
+   "name": "Power 1/7",
+   "show": "csm",
+   "chars": [
+    "power"
+   ],
+   "tier": "B",
+   "line": "F:NEX 1/7",
+   "maker": "FuRyu / MAPPA",
+   "price": 229.36,
+   "cond": "pre-owned",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/collections/chainsaw-man-figures",
+   "mfcUrl": "https://myfigurecollection.net/item/1585587",
+   "avail": "Pre-owned only",
+   "note": "Shop exclusive; new sold out"
+  },
+  "csm-power-pup": {
+   "name": "Power Pop Up Parade",
+   "show": "csm",
+   "chars": [
+    "power"
+   ],
+   "tier": "D",
+   "line": "Pop Up Parade",
+   "maker": "Good Smile Company",
+   "price": 55.54,
+   "cond": "pre-owned",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/collections/chainsaw-man-figures",
+   "mfcUrl": "https://myfigurecollection.net/item/1710563",
+   "avail": "In stock",
+   "note": "$56.61 new"
+  },
+  "csm-reze-bstyle": {
+   "name": "Reze B-style 1/4 Bunny Ver.",
+   "show": "csm",
+   "chars": [
+    "reze"
+   ],
+   "tier": "B",
+   "line": "B-style 1/4",
+   "maker": "FREEing",
+   "year": 2026,
+   "price": 318.09,
+   "cond": "pre-order",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/collections/chainsaw-man-figures",
+   "mfcUrl": "https://myfigurecollection.net/item/3198404",
+   "avail": "Pre-order",
+   "note": "Listed for Sep 2026 release"
+  },
+  "csm-reze-nendo": {
+   "name": "Nendoroid Reze #2865",
+   "show": "csm",
+   "chars": [
+    "reze"
+   ],
+   "tier": "C",
+   "line": "Nendoroid",
+   "maker": "Good Smile Company",
+   "price": 57.56,
+   "cond": "pre-owned",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/collections/chainsaw-man-figures",
+   "mfcUrl": "https://myfigurecollection.net/item/3044936",
+   "avail": "In stock",
+   "note": "$62.02 new"
+  },
+  "csm-reze-tenitol": {
+   "name": "Reze Tenitol Tall",
+   "show": "csm",
+   "chars": [
+    "reze"
+   ],
+   "tier": "D",
+   "line": "Tenitol",
+   "maker": "FuRyu",
+   "year": 2026,
+   "price": 103.83,
+   "cond": "pre-order",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/collections/chainsaw-man-figures",
+   "mfcUrl": "https://myfigurecollection.net/item/3213770",
+   "avail": "Pre-order",
+   "note": "Releases Nov 2026"
+  },
+  "dd-momo-fnex": {
+   "name": "Momo Ayase 1/7",
+   "show": "dandadan",
+   "chars": [
+    "momo"
+   ],
+   "tier": "B",
+   "line": "F:NEX 1/7",
+   "maker": "FuRyu",
+   "year": 2025,
+   "price": 148.16,
+   "cond": "new",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/products/dandadan-ayase-momo-f-nex-1-7-furyu",
+   "mfcUrl": "https://myfigurecollection.net/item/2594561",
+   "avail": "In stock",
+   "note": ""
+  },
+  "dd-momo-nendo": {
+   "name": "Nendoroid Momo Ayase #2701",
+   "show": "dandadan",
+   "chars": [
+    "momo"
+   ],
+   "tier": "C",
+   "line": "Nendoroid",
+   "maker": "Good Smile Company",
+   "year": 2025,
+   "price": 39.81,
+   "cond": "new",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/products/dandadan-ayase-momo-nendoroid-2701-good-smile-company",
+   "mfcUrl": "https://myfigurecollection.net/item/2556285",
+   "avail": "In stock",
+   "note": "On sale"
+  },
+  "dd-momo-pup": {
+   "name": "Momo Ayase Pop Up Parade",
+   "show": "dandadan",
+   "chars": [
+    "momo"
+   ],
+   "tier": "D",
+   "line": "Pop Up Parade",
+   "maker": "Good Smile Company",
+   "year": 2025,
+   "price": 27.37,
+   "cond": "new",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/products/dandadan-ayase-momo-pop-up-parade-good-smile-company",
+   "mfcUrl": "https://myfigurecollection.net/item/2596356",
+   "avail": "In stock",
+   "note": "23% off sale price"
+  },
+  "du-marin-alter": {
+   "name": "Marin Kitagawa 1/6 Liz Ver.",
+   "show": "dressup",
+   "chars": [
+    "marin"
+   ],
+   "tier": "A",
+   "line": "1/6 scale",
+   "maker": "Alter",
+   "price": 174.03,
+   "cond": "pre-owned",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/collections/figures/meta-character-kitagawa-marin",
+   "mfcUrl": "https://myfigurecollection.net/item/1710719",
+   "avail": "In stock",
+   "note": "$212.80 new"
+  },
+  "du-marin-amp": {
+   "name": "Marin Artist MasterPiece+ Black Lobelia",
+   "show": "dressup",
+   "chars": [
+    "marin"
+   ],
+   "tier": "E",
+   "line": "Artist MasterPiece+ (prize)",
+   "maker": "Taito",
+   "price": 22.64,
+   "cond": "new",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/collections/figures/meta-character-kitagawa-marin",
+   "mfcUrl": "https://myfigurecollection.net/item/2765185",
+   "avail": "In stock",
+   "note": ""
+  },
+  "du-marin-kd": {
+   "name": "Marin Kitagawa KDcolle 1/7 Yukata Ver.",
+   "show": "dressup",
+   "chars": [
+    "marin"
+   ],
+   "tier": "A",
+   "line": "KDcolle 1/7",
+   "maker": "Kadokawa / Good Smile Company",
+   "price": 197.23,
+   "cond": "new",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/collections/figures/meta-character-kitagawa-marin",
+   "mfcUrl": "https://myfigurecollection.net/item/2395525",
+   "avail": "In stock",
+   "note": ""
+  },
+  "du-marin-mf": {
+   "name": "Marin Kitagawa 1/7",
+   "show": "dressup",
+   "chars": [
+    "marin"
+   ],
+   "tier": "A",
+   "line": "1/7 scale",
+   "maker": "Max Factory",
+   "price": 212.08,
+   "cond": "pre-owned",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/collections/figures/meta-character-kitagawa-marin",
+   "mfcUrl": "https://myfigurecollection.net/item/1618698",
+   "avail": "In stock",
+   "note": "$262.77 new"
+  },
+  "du-marin-nendo": {
+   "name": "Nendoroid Marin Kitagawa #1935",
+   "show": "dressup",
+   "chars": [
+    "marin"
+   ],
+   "tier": "C",
+   "line": "Nendoroid",
+   "maker": "Good Smile Company",
+   "year": 2026,
+   "price": 58.97,
+   "cond": "new",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/collections/figures/meta-character-kitagawa-marin",
+   "mfcUrl": "https://myfigurecollection.net/item/1464633",
+   "avail": "In stock",
+   "note": "2026 re-release"
+  },
+  "du-marin-pup": {
+   "name": "Marin Kitagawa Pop Up Parade",
+   "show": "dressup",
+   "chars": [
+    "marin"
+   ],
+   "tier": "D",
+   "line": "Pop Up Parade",
+   "maker": "Good Smile Company",
+   "price": 37.83,
+   "cond": "pre-owned",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/collections/figures/meta-character-kitagawa-marin",
+   "mfcUrl": "https://myfigurecollection.net/item/1781684",
+   "avail": "In stock",
+   "note": "$53.52 new"
+  },
+  "du-marin-shizuku": {
+   "name": "Marin Kitagawa 1/6 Kuroe Shizuku",
+   "show": "dressup",
+   "chars": [
+    "marin"
+   ],
+   "tier": "A",
+   "line": "1/6 scale",
+   "maker": "Good Smile Company",
+   "price": 104.34,
+   "cond": "new",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/collections/figures/meta-character-kitagawa-marin",
+   "mfcUrl": "https://myfigurecollection.net/item/2591055",
+   "avail": "In stock",
+   "note": ""
+  },
+  "du-marin-swim": {
+   "name": "Marin Kitagawa 1/7 Swimsuit Ver.",
+   "show": "dressup",
+   "chars": [
+    "marin"
+   ],
+   "tier": "A",
+   "line": "1/7 scale",
+   "maker": "Good Smile Company",
+   "year": 2026,
+   "price": 89.63,
+   "cond": "pre-owned",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/collections/figures/meta-character-kitagawa-marin",
+   "mfcQuery": "Kitagawa Marin Swimsuit",
+   "avail": "In stock",
+   "note": "$130.01 new (2026 re-release)"
+  },
+  "fr-fern-effectreme": {
+   "name": "Fern Effectreme",
+   "show": "frieren",
+   "chars": [
+    "fern"
+   ],
+   "tier": "E",
+   "line": "Effectreme (prize)",
+   "maker": "Bandai Spirits",
+   "price": 21.29,
+   "cond": "pre-owned",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/collections/figures/meta-franchise-sousou-no-frieren",
+   "mfcUrl": "https://myfigurecollection.net/item/3266904",
+   "avail": "In stock",
+   "note": "$23.79 new"
+  },
+  "fr-fern-gsc": {
+   "name": "Fern 1/7 Reflections of a Distant Memory",
+   "show": "frieren",
+   "chars": [
+    "fern"
+   ],
+   "tier": "A",
+   "line": "1/7 scale",
+   "maker": "Good Smile Company",
+   "price": 184.07,
+   "cond": "pre-owned",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/collections/figures/meta-franchise-sousou-no-frieren",
+   "mfcUrl": "https://myfigurecollection.net/item/2664176",
+   "avail": "In stock",
+   "note": "$218.30 new"
+  },
+  "fr-frieren-figma": {
+   "name": "figma Frieren #658",
+   "show": "frieren",
+   "chars": [
+    "frieren"
+   ],
+   "tier": "C",
+   "line": "figma",
+   "maker": "Good Smile Company",
+   "price": 60.65,
+   "cond": "new",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/collections/figures/meta-franchise-sousou-no-frieren",
+   "mfcUrl": "https://myfigurecollection.net/item/2735390",
+   "avail": "In stock",
+   "note": ""
+  },
+  "fr-frieren-gsc": {
+   "name": "Frieren 1/7 Magic of the Eventide Glow",
+   "show": "frieren",
+   "chars": [
+    "frieren"
+   ],
+   "tier": "A",
+   "line": "1/7 scale",
+   "maker": "Good Smile Company",
+   "year": 2025,
+   "price": 241.98,
+   "cond": "pre-order",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/collections/figures/meta-franchise-sousou-no-frieren",
+   "mfcUrl": "https://myfigurecollection.net/item/2163903",
+   "avail": "Pre-order (2026 re-release)",
+   "note": "2025 release is $317.83 new"
+  },
+  "fr-frieren-harmonia": {
+   "name": "Frieren Harmonia Humming",
+   "show": "frieren",
+   "chars": [
+    "frieren"
+   ],
+   "tier": "B",
+   "line": "Harmonia Humming",
+   "maker": "Good Smile Company",
+   "price": 214.84,
+   "cond": "new",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/collections/figures/meta-franchise-sousou-no-frieren",
+   "mfcUrl": "https://myfigurecollection.net/item/2891187",
+   "avail": "In stock",
+   "note": ""
+  },
+  "fr-frieren-koto": {
+   "name": "Frieren 1/7",
+   "show": "frieren",
+   "chars": [
+    "frieren"
+   ],
+   "tier": "B",
+   "line": "1/7 scale",
+   "maker": "Kotobukiya",
+   "year": 2024,
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/products/sousou-no-frieren-frieren-1-7-kotobukiya",
+   "mfcUrl": "https://myfigurecollection.net/item/2160520",
+   "avail": "Sold out",
+   "note": "Sold out new and pre-owned at Solaris"
+  },
+  "fr-frieren-nendo": {
+   "name": "Nendoroid Frieren #2367",
+   "show": "frieren",
+   "chars": [
+    "frieren"
+   ],
+   "tier": "C",
+   "line": "Nendoroid",
+   "maker": "Good Smile Company",
+   "year": 2026,
+   "price": 41.56,
+   "cond": "pre-owned",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/collections/figures/meta-franchise-sousou-no-frieren",
+   "mfcUrl": "https://myfigurecollection.net/item/2059185",
+   "avail": "In stock",
+   "note": "$50.18 new (2026 re-release)"
+  },
+  "fr-frieren-pup": {
+   "name": "Frieren Pop Up Parade Braids Ver.",
+   "show": "frieren",
+   "chars": [
+    "frieren"
+   ],
+   "tier": "D",
+   "line": "Pop Up Parade",
+   "maker": "Good Smile Company",
+   "price": 35.09,
+   "cond": "pre-owned",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/collections/figures/meta-franchise-sousou-no-frieren",
+   "mfcUrl": "https://myfigurecollection.net/item/3397549",
+   "avail": "In stock",
+   "note": "$46.21 new"
+  },
+  "gg-bridget-alice": {
+   "name": "Bridget 1/7",
+   "show": "ggstrive",
+   "chars": [
+    "bridget"
+   ],
+   "tier": "B",
+   "line": "1/7 scale",
+   "maker": "Alice Glint / Broccoli",
+   "price": 234.81,
+   "cond": "new",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/collections/figures/meta-character-bridget",
+   "mfcUrl": "https://myfigurecollection.net/item/1781761",
+   "avail": "In stock",
+   "note": ""
+  },
+  "gg-bridget-koto": {
+   "name": "Bridget 1/7 with Return of the Killing Machine",
+   "show": "ggstrive",
+   "chars": [
+    "bridget"
+   ],
+   "tier": "B",
+   "line": "1/7 scale",
+   "maker": "Kotobukiya",
+   "price": 327.74,
+   "cond": "new",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/collections/figures/meta-character-bridget",
+   "mfcUrl": "https://myfigurecollection.net/item/1775541",
+   "avail": "In stock",
+   "note": ""
+  },
+  "gg-bridget-nendo": {
+   "name": "Nendoroid Bridget #2212",
+   "show": "ggstrive",
+   "chars": [
+    "bridget"
+   ],
+   "tier": "C",
+   "line": "Nendoroid",
+   "maker": "Good Smile Company",
+   "price": 103.45,
+   "cond": "new",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/collections/figures/meta-character-bridget",
+   "mfcUrl": "https://myfigurecollection.net/item/1781633",
+   "avail": "In stock",
+   "note": "Priced well above Nendoroid norms"
+  },
+  "gg-bridget-pup": {
+   "name": "Bridget Pop Up Parade Strive Black",
+   "show": "ggstrive",
+   "chars": [
+    "bridget"
+   ],
+   "tier": "D",
+   "line": "Pop Up Parade",
+   "maker": "Max Factory",
+   "price": 69.01,
+   "cond": "new",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/collections/figures/meta-character-bridget",
+   "mfcUrl": "https://myfigurecollection.net/item/1942017",
+   "avail": "In stock",
+   "note": ""
+  },
+  "gg-bridget-ques": {
+   "name": "Bridget 1/7",
+   "show": "ggstrive",
+   "chars": [
+    "bridget"
+   ],
+   "tier": "B",
+   "line": "1/7 scale",
+   "maker": "Ques Q",
+   "price": 102.53,
+   "cond": "pre-owned",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/collections/figures/meta-character-bridget",
+   "mfcUrl": "https://myfigurecollection.net/item/1781762",
+   "avail": "In stock",
+   "note": "$204.97 new"
+  },
+  "gg-bridget-wave": {
+   "name": "Bridget Dream Tech 1/7",
+   "show": "ggstrive",
+   "chars": [
+    "bridget"
+   ],
+   "tier": "B",
+   "line": "Dream Tech 1/7",
+   "maker": "Wave",
+   "price": 163.1,
+   "cond": "new",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/collections/figures/meta-character-bridget",
+   "mfcUrl": "https://myfigurecollection.net/item/2164126",
+   "avail": "In stock",
+   "note": ""
+  },
+  "gup-miho-cheer": {
+   "name": "Miho Nishizumi 1/7 Coco’s Cheerleader Ver.",
+   "show": "gup",
+   "chars": [
+    "miho"
+   ],
+   "tier": "B",
+   "line": "1/7 scale",
+   "maker": "Kotobukiya",
+   "price": 103.46,
+   "cond": "new",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/collections/figures/meta-character-nishizumi-miho",
+   "mfcUrl": "https://myfigurecollection.net/item/958338",
+   "avail": "In stock",
+   "note": ""
+  },
+  "gup-miho-figma": {
+   "name": "figma Miho Nishizumi #211",
+   "show": "gup",
+   "chars": [
+    "miho"
+   ],
+   "tier": "C",
+   "line": "figma",
+   "maker": "Max Factory",
+   "price": 71.73,
+   "cond": "new",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/collections/figures/meta-character-nishizumi-miho",
+   "mfcUrl": "https://myfigurecollection.net/item/166374",
+   "avail": "In stock",
+   "note": ""
+  },
+  "gup-miho-koto": {
+   "name": "Miho Nishizumi 1/7 Saishuushou",
+   "show": "gup",
+   "chars": [
+    "miho"
+   ],
+   "tier": "B",
+   "line": "1/7 scale",
+   "maker": "Kotobukiya",
+   "price": 117.9,
+   "cond": "pre-owned",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/collections/figures/meta-character-nishizumi-miho",
+   "mfcUrl": "https://myfigurecollection.net/item/604567",
+   "avail": "Pre-owned only",
+   "note": ""
+  },
+  "gup-miho-nendo": {
+   "name": "Nendoroid Miho Nishizumi #310",
+   "show": "gup",
+   "chars": [
+    "miho"
+   ],
+   "tier": "C",
+   "line": "Nendoroid",
+   "maker": "Good Smile Company",
+   "price": 27.07,
+   "cond": "pre-owned",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/collections/figures/meta-character-nishizumi-miho",
+   "mfcUrl": "https://myfigurecollection.net/item/127081",
+   "avail": "In stock",
+   "note": ""
+  },
+  "gup-miho-ques": {
+   "name": "Miho Nishizumi 1/7 der Film",
+   "show": "gup",
+   "chars": [
+    "miho"
+   ],
+   "tier": "B",
+   "line": "1/7 scale",
+   "maker": "Ques Q",
+   "price": 110.58,
+   "cond": "pre-owned",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/collections/figures/meta-character-nishizumi-miho",
+   "mfcUrl": "https://myfigurecollection.net/item/397050",
+   "avail": "Pre-owned only",
+   "note": "New sold out"
+  },
+  "hr-asakura-mf": {
+   "name": "Ryoko Asakura 1/8",
+   "show": "haruhi",
+   "chars": [
+    "asakura"
+   ],
+   "tier": "A",
+   "line": "1/8 scale",
+   "maker": "Max Factory",
+   "mfcR": 8.86,
+   "mfcN": 126,
+   "where": "",
+   "url": "https://myfigurecollection.net/item/52",
+   "avail": "Aftermarket",
+   "note": "No current price found"
+  },
+  "hr-haruhi-alter": {
+   "name": "Haruhi Suzumiya School Uniform 1/8",
+   "show": "haruhi",
+   "chars": [
+    "haruhi"
+   ],
+   "tier": "A",
+   "line": "1/8 scale",
+   "maker": "Alter",
+   "mfcR": 8.94,
+   "mfcN": 97,
+   "where": "",
+   "url": "https://myfigurecollection.net/item/2742",
+   "avail": "Aftermarket",
+   "note": "No current price found"
+  },
+  "hr-haruhi-gekisou": {
+   "name": "Haruhi Suzumiya Gekisou Ver. 1/8",
+   "show": "haruhi",
+   "chars": [
+    "haruhi"
+   ],
+   "tier": "A",
+   "line": "1/8 scale",
+   "maker": "Max Factory",
+   "year": 2009,
+   "mfcR": 9.51,
+   "mfcN": 393,
+   "where": "",
+   "url": "https://myfigurecollection.net/item/5438",
+   "avail": "Aftermarket",
+   "note": "No current price found"
+  },
+  "hr-nagato-mf": {
+   "name": "Yuki Nagato 1/8",
+   "show": "haruhi",
+   "chars": [
+    "nagato"
+   ],
+   "tier": "A",
+   "line": "1/8 scale",
+   "maker": "Max Factory",
+   "mfcR": 8.8,
+   "mfcN": 256,
+   "where": "",
+   "url": "https://myfigurecollection.net/item/54",
+   "avail": "Aftermarket",
+   "note": "No current price found"
+  },
+  "hr-nagato-nendo": {
+   "name": "Nendoroid Yuki Nagato Disappearance #123",
+   "show": "haruhi",
+   "chars": [
+    "nagato"
+   ],
+   "tier": "C",
+   "line": "Nendoroid",
+   "maker": "Good Smile Company",
+   "price": 44,
+   "cond": "pre-owned",
+   "where": "animota (¥7,000)",
+   "url": "https://myfigurecollection.net/item/27611",
+   "avail": "Aftermarket",
+   "note": ""
+  },
+  "md-akuma-evolve": {
+   "name": "Akuma Homura Evolve",
+   "show": "madoka",
+   "chars": [
+    "homura"
+   ],
+   "tier": "E",
+   "line": "Banpresto Evolve (prize)",
+   "maker": "Bandai Spirits",
+   "price": 34.15,
+   "cond": "new",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/collections/madoka-magica-madoka",
+   "mfcUrl": "https://myfigurecollection.net/item/2523601",
+   "avail": "Sold out there",
+   "note": ""
+  },
+  "md-akuma-nendo": {
+   "name": "Nendoroid Akuma Homura #456",
+   "show": "madoka",
+   "chars": [
+    "homura"
+   ],
+   "tier": "C",
+   "line": "Nendoroid",
+   "maker": "Good Smile Company",
+   "year": 2025,
+   "price": 52.27,
+   "cond": "pre-owned",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/collections/madoka-magica-madoka",
+   "mfcUrl": "https://myfigurecollection.net/item/239208",
+   "avail": "In stock (2025 re-release)",
+   "note": "$71.87 new"
+  },
+  "md-homura-exq": {
+   "name": "Akemi Homura EXQ",
+   "show": "madoka",
+   "chars": [
+    "homura"
+   ],
+   "tier": "E",
+   "line": "EXQ (prize)",
+   "maker": "Banpresto",
+   "year": 2018,
+   "mfcR": 8.57,
+   "mfcN": 154,
+   "where": "",
+   "url": "https://myfigurecollection.net/item/740281",
+   "avail": "Aftermarket",
+   "note": "No current price found"
+  },
+  "md-homura-figma": {
+   "name": "figma Homura #115",
+   "show": "madoka",
+   "chars": [
+    "homura"
+   ],
+   "tier": "C",
+   "line": "figma",
+   "maker": "Max Factory",
+   "year": 2011,
+   "mfcR": 8.7,
+   "mfcN": 545,
+   "price": 74.49,
+   "cond": "pre-owned",
+   "where": "Solaris Japan",
+   "url": "https://myfigurecollection.net/item/73397",
+   "avail": "Aftermarket",
+   "note": "Counterfeits common for older figma"
+  },
+  "md-homura-gift": {
+   "name": "Akemi Homura 1/8",
+   "show": "madoka",
+   "chars": [
+    "homura"
+   ],
+   "tier": "B",
+   "line": "1/8 scale",
+   "maker": "Gift",
+   "mfcR": 8.82,
+   "mfcN": 114,
+   "price": 65.1,
+   "cond": "pre-owned",
+   "where": "Solaris Japan",
+   "url": "https://myfigurecollection.net/item/117637",
+   "avail": "Aftermarket",
+   "note": ""
+  },
+  "md-homura-sq": {
+   "name": "Homura SQ",
+   "show": "madoka",
+   "chars": [
+    "homura"
+   ],
+   "tier": "E",
+   "line": "SQ (prize)",
+   "maker": "Banpresto",
+   "year": 2013,
+   "mfcR": 8.41,
+   "mfcN": 194,
+   "price": 42.89,
+   "cond": "pre-owned",
+   "where": "Solaris Japan",
+   "url": "https://myfigurecollection.net/item/101421",
+   "avail": "Aftermarket",
+   "note": ""
+  },
+  "md-homura-swim": {
+   "name": "Homura Swimsuit Ver. 1/8",
+   "show": "madoka",
+   "chars": [
+    "homura"
+   ],
+   "tier": "B",
+   "line": "Dream Tech 1/8",
+   "maker": "Wave",
+   "year": 2013,
+   "mfcR": 8.95,
+   "mfcN": 40,
+   "where": "",
+   "url": "https://myfigurecollection.net/item/129157",
+   "avail": "Aftermarket",
+   "note": "No current price found"
+  },
+  "md-homura-timeshift": {
+   "name": "Homura & Kyuubey Timeshift Ver. 1/7",
+   "show": "madoka",
+   "chars": [
+    "homura"
+   ],
+   "tier": "A",
+   "line": "1/7 scale",
+   "maker": "Aniplex",
+   "mfcR": 9.32,
+   "mfcN": 154,
+   "where": "",
+   "url": "https://myfigurecollection.net/item/196529",
+   "avail": "Aftermarket",
+   "note": "No current price found"
+  },
+  "md-madoka-maiko": {
+   "name": "Madoka Maiko Ver. 1/8",
+   "show": "madoka",
+   "chars": [
+    "madoka"
+   ],
+   "tier": "A",
+   "line": "1/8 scale",
+   "maker": "Good Smile Company / Aniplex",
+   "year": 2014,
+   "mfcR": 9.37,
+   "mfcN": 304,
+   "price": 94.6,
+   "cond": "pre-owned",
+   "where": "Solaris Japan",
+   "url": "https://myfigurecollection.net/item/155014",
+   "avail": "Aftermarket",
+   "note": ""
+  },
+  "md-madoka-movie": {
+   "name": "Kaname Madoka 1/8 (movie)",
+   "show": "madoka",
+   "chars": [
+    "madoka"
+   ],
+   "tier": "A",
+   "line": "1/8 scale",
+   "maker": "Good Smile Company",
+   "year": 2014,
+   "mfcR": 9.25,
+   "mfcN": 432,
+   "price": 57.8,
+   "cond": "pre-owned",
+   "where": "Solaris Japan",
+   "url": "https://myfigurecollection.net/item/166616",
+   "avail": "Aftermarket",
+   "note": ""
+  },
+  "md-madoka-nendo": {
+   "name": "Nendoroid Madoka #174",
+   "show": "madoka",
+   "chars": [
+    "madoka"
+   ],
+   "tier": "C",
+   "line": "Nendoroid",
+   "maker": "Good Smile Company",
+   "mfcR": 8.68,
+   "mfcN": 807,
+   "price": 63.14,
+   "cond": "pre-owned",
+   "where": "Solaris Japan",
+   "url": "https://myfigurecollection.net/item/61090",
+   "avail": "Aftermarket",
+   "note": ""
+  },
+  "md-madoka-tv": {
+   "name": "Kaname Madoka & Kyuubey 1/8",
+   "show": "madoka",
+   "chars": [
+    "madoka"
+   ],
+   "tier": "A",
+   "line": "1/8 scale",
+   "maker": "Good Smile Company",
+   "year": 2012,
+   "mfcR": 9.21,
+   "mfcN": 487,
+   "price": 61.48,
+   "cond": "new",
+   "where": "Solaris Japan",
+   "url": "https://myfigurecollection.net/item/78404",
+   "avail": "Limited stock",
+   "note": ""
+  },
+  "md-ultimate-gsc": {
+   "name": "Ultimate Madoka 1/8",
+   "show": "madoka",
+   "chars": [
+    "madoka"
+   ],
+   "tier": "A",
+   "line": "1/8 scale",
+   "maker": "Good Smile Company",
+   "year": 2012,
+   "mfcR": 9.51,
+   "mfcN": 1554,
+   "price": 126.9,
+   "cond": "pre-owned",
+   "where": "Solaris Japan",
+   "url": "https://myfigurecollection.net/item/98665",
+   "avail": "In stock (2024 re-release)",
+   "note": "Counterfeits exist; buy from established Japan-based stores. $152.28 new; skip the 2012 run at $222+, same sculpt."
+  },
+  "onk-ai-fnex": {
+   "name": "Ai Hoshino 1/7",
+   "show": "oshinoko",
+   "chars": [
+    "ai"
+   ],
+   "tier": "B",
+   "line": "F:NEX 1/7",
+   "maker": "FuRyu",
+   "price": 76.21,
+   "cond": "new",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/products/oshi-no-ko-hoshino-ai-f-nex-1-7-furyu",
+   "mfcUrl": "https://myfigurecollection.net/item/1808833",
+   "avail": "In stock",
+   "note": ""
+  },
+  "onk-ai-kd": {
+   "name": "Ai Hoshino KDcolle 1/7",
+   "show": "oshinoko",
+   "chars": [
+    "ai"
+   ],
+   "tier": "A",
+   "line": "KDcolle 1/7",
+   "maker": "Kadokawa",
+   "price": 102.83,
+   "cond": "new",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/products/oshi-no-ko-hoshino-ai-kdcolle-1-7-kadokawa",
+   "mfcUrl": "https://myfigurecollection.net/item/1781771",
+   "avail": "In stock",
+   "note": ""
+  },
+  "onk-ai-kdex": {
+   "name": "Ai Hoshino KDcolle 1/7 Exhibition Ver.",
+   "show": "oshinoko",
+   "chars": [
+    "ai"
+   ],
+   "tier": "A",
+   "line": "KDcolle 1/7",
+   "maker": "Kadokawa",
+   "price": 121.25,
+   "cond": "new",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/products/oshi-no-ko-hoshino-ai-kdcolle-1-7-exhibition-ver-kadokawa",
+   "mfcUrl": "https://myfigurecollection.net/item/2395465",
+   "avail": "In stock",
+   "note": ""
+  },
+  "onk-ai-nendo": {
+   "name": "Nendoroid Ai Hoshino #2300",
+   "show": "oshinoko",
+   "chars": [
+    "ai"
+   ],
+   "tier": "C",
+   "line": "Nendoroid",
+   "maker": "Good Smile Company",
+   "price": 40.64,
+   "cond": "pre-owned",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/collections/figures/meta-character-hoshino-ai",
+   "mfcUrl": "https://myfigurecollection.net/item/1941965",
+   "avail": "In stock",
+   "note": "$49.20 new"
+  },
+  "onk-ai-prisma": {
+   "name": "Ai Hoshino Prisma Wing 1/7",
+   "show": "oshinoko",
+   "chars": [
+    "ai"
+   ],
+   "tier": "B",
+   "line": "Prisma Wing 1/7",
+   "maker": "Prime 1 Studio",
+   "price": 284.43,
+   "cond": "pre-owned",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/collections/figures/meta-character-hoshino-ai",
+   "mfcUrl": "https://myfigurecollection.net/item/2582426",
+   "avail": "In stock",
+   "note": "$293.53 new"
+  },
+  "onk-ai-pup": {
+   "name": "Ai Hoshino Pop Up Parade",
+   "show": "oshinoko",
+   "chars": [
+    "ai"
+   ],
+   "tier": "D",
+   "line": "Pop Up Parade",
+   "maker": "Good Smile Company",
+   "price": 25.86,
+   "cond": "pre-owned",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/collections/figures/meta-character-hoshino-ai",
+   "mfcUrl": "https://myfigurecollection.net/item/1876992",
+   "avail": "In stock",
+   "note": "$39.72 new"
+  },
+  "onk-family-kd": {
+   "name": "Ai, Aqua & Ruby KDcolle 1/8 Mother and Children",
+   "show": "oshinoko",
+   "chars": [
+    "ai"
+   ],
+   "tier": "A",
+   "line": "KDcolle 1/8",
+   "maker": "Kadokawa",
+   "price": 195.77,
+   "cond": "pre-owned",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/collections/figures/meta-character-hoshino-ai",
+   "mfcUrl": "https://myfigurecollection.net/item/1942130",
+   "avail": "In stock",
+   "note": "$211.48 new"
+  },
+  "pb-mima-pup": {
+   "name": "Mima Kirigoe Pop Up Parade",
+   "show": "perfectblue",
+   "chars": [
+    "mima"
+   ],
+   "tier": "D",
+   "line": "Pop Up Parade",
+   "maker": "Good Smile Company",
+   "year": 2024,
+   "price": 30.19,
+   "cond": "MSRP",
+   "where": "Good Smile list price ¥4,800",
+   "url": "https://www.goodsmile.info/en/product/15333/POP+UP+PARADE+Mima+Kirigoe.html",
+   "mfcUrl": "https://myfigurecollection.net/item/1992402",
+   "avail": "Check aftermarket",
+   "note": "Price is the 2024 list price converted, not a current listing. About 13 cm tall."
+  },
+  "ps-duo-pup": {
+   "name": "Panty & Stocking Pop Up Parade (New series)",
+   "show": "pands",
+   "chars": [
+    "panty",
+    "stocking"
+   ],
+   "tier": "D",
+   "line": "Pop Up Parade",
+   "maker": "Good Smile Company",
+   "year": 2026,
+   "price": 74.84,
+   "cond": "pre-order",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/collections/figures/meta-franchise-panty-&-stocking-with-garterbelt",
+   "mfcQuery": "New Panty & Stocking Pop Up Parade",
+   "avail": "Pre-order",
+   "note": ""
+  },
+  "ps-panty-alter": {
+   "name": "Panty Anarchy 1/8",
+   "show": "pands",
+   "chars": [
+    "panty"
+   ],
+   "tier": "A",
+   "line": "1/8 scale",
+   "maker": "Alter",
+   "price": 54.2,
+   "cond": "pre-owned",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/collections/figures/meta-franchise-panty-&-stocking-with-garterbelt",
+   "mfcUrl": "https://myfigurecollection.net/item/61558",
+   "avail": "Pre-owned only",
+   "note": "New copies sold out; check condition"
+  },
+  "ps-panty-nendo": {
+   "name": "Nendoroid Panty Anarchy #2951 New Ver.",
+   "show": "pands",
+   "chars": [
+    "panty"
+   ],
+   "tier": "C",
+   "line": "Nendoroid",
+   "maker": "Good Smile Company",
+   "year": 2026,
+   "price": 56.2,
+   "cond": "pre-order",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/collections/figures/meta-franchise-panty-&-stocking-with-garterbelt",
+   "mfcUrl": "https://myfigurecollection.net/item/3054159",
+   "avail": "Pre-order",
+   "note": ""
+  },
+  "ps-panty-pup": {
+   "name": "Panty Anarchy Pop Up Parade",
+   "show": "pands",
+   "chars": [
+    "panty"
+   ],
+   "tier": "D",
+   "line": "Pop Up Parade",
+   "maker": "Good Smile Company",
+   "price": 41.11,
+   "cond": "pre-owned",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/collections/figures/meta-franchise-panty-&-stocking-with-garterbelt",
+   "mfcUrl": "https://myfigurecollection.net/item/1710581",
+   "avail": "In stock",
+   "note": "$46.17 new"
+  },
+  "ps-stocking-alter": {
+   "name": "Stocking Anarchy 1/8",
+   "show": "pands",
+   "chars": [
+    "stocking"
+   ],
+   "tier": "A",
+   "line": "1/8 scale",
+   "maker": "Alter",
+   "price": 61.16,
+   "cond": "pre-owned",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/collections/figures/meta-franchise-panty-&-stocking-with-garterbelt",
+   "mfcUrl": "https://myfigurecollection.net/item/61559",
+   "avail": "Pre-owned only",
+   "note": "New copies sold out; check condition"
+  },
+  "ps-stocking-nendo": {
+   "name": "Nendoroid Stocking Anarchy #2952 New Ver.",
+   "show": "pands",
+   "chars": [
+    "stocking"
+   ],
+   "tier": "C",
+   "line": "Nendoroid",
+   "maker": "Good Smile Company",
+   "year": 2026,
+   "price": 56.2,
+   "cond": "pre-order",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/collections/figures/meta-franchise-panty-&-stocking-with-garterbelt",
+   "mfcUrl": "https://myfigurecollection.net/item/3054160",
+   "avail": "Pre-order",
+   "note": ""
+  },
+  "ps-stocking-pup": {
+   "name": "Stocking Anarchy Pop Up Parade",
+   "show": "pands",
+   "chars": [
+    "stocking"
+   ],
+   "tier": "D",
+   "line": "Pop Up Parade",
+   "maker": "Good Smile Company",
+   "price": 55.28,
+   "cond": "pre-owned",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/collections/figures/meta-franchise-panty-&-stocking-with-garterbelt",
+   "mfcUrl": "https://myfigurecollection.net/item/1710583",
+   "avail": "In stock",
+   "note": "$57.52 new"
+  },
+  "sm-usagi-chouette": {
+   "name": "Figuarts Zero Chouette Kamen Budoukai",
+   "show": "sailormoon",
+   "chars": [
+    "usagi"
+   ],
+   "tier": "B",
+   "line": "Figuarts Zero Chouette",
+   "maker": "Bandai Spirits",
+   "mfcR": 9.18,
+   "mfcN": 17,
+   "where": "",
+   "url": "https://myfigurecollection.net/item/686366",
+   "avail": "Aftermarket",
+   "note": "Listed at ¥20,000; no current price found"
+  },
+  "sm-usagi-sekai": {
+   "name": "Usagi Sekai Seifuku Sakusen 1/10",
+   "show": "sailormoon",
+   "chars": [
+    "usagi"
+   ],
+   "tier": "B",
+   "line": "1/10 scale",
+   "maker": "MegaHouse",
+   "mfcR": 9.06,
+   "mfcN": 33,
+   "where": "",
+   "url": "https://myfigurecollection.net/item/220527",
+   "avail": "Aftermarket",
+   "note": "No current price found"
+  },
+  "sm-usagi-sweeties": {
+   "name": "Usagi Sweeties Fruit Parlor",
+   "show": "sailormoon",
+   "chars": [
+    "usagi"
+   ],
+   "tier": "D",
+   "line": "Sweeties",
+   "maker": "MegaHouse",
+   "mfcR": 8.73,
+   "mfcN": 49,
+   "where": "",
+   "url": "https://myfigurecollection.net/item/464668",
+   "avail": "Aftermarket",
+   "note": "No current price found"
+  },
+  "sxf-anyayor-gsc": {
+   "name": "Anya & Yor Forger 1/7",
+   "show": "spyfamily",
+   "chars": [
+    "anya",
+    "yor"
+   ],
+   "tier": "A",
+   "line": "1/7 scale",
+   "maker": "Good Smile Company",
+   "price": 88.35,
+   "cond": "pre-owned",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/products/spy-x-family-anya-forger-yor-forger-1-7-good-smile-company",
+   "mfcUrl": "https://myfigurecollection.net/item/1556060",
+   "avail": "In stock",
+   "note": "$153.43 new"
+  },
+  "sxf-yor-figuarts": {
+   "name": "Yor Forger S.H.Figuarts",
+   "show": "spyfamily",
+   "chars": [
+    "yor"
+   ],
+   "tier": "C",
+   "line": "S.H.Figuarts",
+   "maker": "Bandai Spirits",
+   "price": 71.67,
+   "cond": "new",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/collections/figures/meta-character-yor-forger",
+   "mfcUrl": "https://myfigurecollection.net/item/1531658",
+   "avail": "In stock",
+   "note": ""
+  },
+  "sxf-yor-fnex": {
+   "name": "Yor Forger 1/7",
+   "show": "spyfamily",
+   "chars": [
+    "yor"
+   ],
+   "tier": "B",
+   "line": "F:NEX 1/7",
+   "maker": "FuRyu",
+   "price": 141.47,
+   "cond": "new",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/products/spy-x-family-yor-forger-f-nex-1-7-furyu-shop-exclusive",
+   "mfcUrl": "https://myfigurecollection.net/item/1584323",
+   "avail": "In stock",
+   "note": "Shop exclusive"
+  },
+  "sxf-yor-nendo": {
+   "name": "Nendoroid Yor Forger #1903",
+   "show": "spyfamily",
+   "chars": [
+    "yor"
+   ],
+   "tier": "C",
+   "line": "Nendoroid",
+   "maker": "Good Smile Company",
+   "price": 22.4,
+   "cond": "pre-owned",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/collections/figures/meta-character-yor-forger",
+   "mfcUrl": "https://myfigurecollection.net/item/1531631",
+   "avail": "In stock",
+   "note": "$40.43 new"
+  },
+  "sxf-yor-pup": {
+   "name": "Yor Forger Pop Up Parade",
+   "show": "spyfamily",
+   "chars": [
+    "yor"
+   ],
+   "tier": "D",
+   "line": "Pop Up Parade",
+   "maker": "Good Smile Company",
+   "price": 47.14,
+   "cond": "pre-owned",
+   "where": "Solaris Japan",
+   "url": "https://solarisjapan.com/collections/figures/meta-character-yor-forger",
+   "mfcUrl": "https://myfigurecollection.net/item/1556058",
+   "avail": "In stock",
+   "note": "$57.66 new"
+  },
+  "ut-utena-figma": {
+   "name": "figma Utena #376 (with Chu-Chu)",
+   "show": "utena",
+   "chars": [
+    "utena"
+   ],
+   "tier": "C",
+   "line": "figma",
+   "maker": "Max Factory",
+   "year": 2018,
+   "mfcR": 9.27,
+   "mfcN": 33,
+   "price": 210,
+   "cond": "asking",
+   "where": "eBay",
+   "url": "https://myfigurecollection.net/item/549406",
+   "avail": "Aftermarket only",
+   "note": "eBay asking price plus about $90 shipping; sold prices likely lower"
+  },
+  "ut-utena-gem": {
+   "name": "Utena Tenjou G.E.M. 1/8",
+   "show": "utena",
+   "chars": [
+    "utena"
+   ],
+   "tier": "A",
+   "line": "G.E.M. 1/8",
+   "maker": "MegaHouse",
+   "mfcR": 9.26,
+   "mfcN": 95,
+   "where": "",
+   "url": "https://myfigurecollection.net/item/171481",
+   "avail": "Aftermarket",
+   "note": "No current price found"
+  },
+  "ut-utena-nendo": {
+   "name": "Nendoroid Utena Tenjou #2765",
+   "show": "utena",
+   "chars": [
+    "utena"
+   ],
+   "tier": "C",
+   "line": "Nendoroid",
+   "maker": "Good Smile Company",
+   "year": 2025,
+   "mfcR": 9.15,
+   "mfcN": 54,
+   "price": 41.31,
+   "cond": "new",
+   "where": "HobbySearch",
+   "url": "https://www.1999.co.jp/eng/11224065",
+   "mfcUrl": "https://myfigurecollection.net/item/2661251",
+   "avail": "In stock",
+   "note": "Also Nin-Nin-Game $46.15, HLJ $51.03. China-located eBay listings near $70: check the seller."
+  },
+  "ut-utena-pm": {
+   "name": "Utena Tenjou PM Figure",
+   "show": "utena",
+   "chars": [
+    "utena"
+   ],
+   "tier": "E",
+   "line": "PM Figure (prize)",
+   "maker": "SEGA",
+   "year": 2014,
+   "mfcR": 8.46,
+   "mfcN": 103,
+   "where": "",
+   "url": "https://myfigurecollection.net/item/183793",
+   "avail": "Aftermarket",
+   "note": "No current price found"
+  },
+  "wha-coco-nendo": {
+   "name": "Nendoroid Coco",
+   "show": "wha",
+   "chars": [
+    "coco"
+   ],
+   "tier": "C",
+   "line": "Nendoroid",
+   "maker": "Good Smile Company",
+   "year": 2026,
+   "price": 54,
+   "cond": "new",
+   "where": "Jump Ichiban",
+   "url": "https://jumpichiban.com/en-us/products/witch-hat-atelier-nendoroid-coco",
+   "mfcUrl": "https://myfigurecollection.net/item/3449463",
+   "avail": "Low stock",
+   "note": ""
+  },
+  "ym-shirase-nendo": {
+   "name": "Nendoroid Shirase Kobuchizawa #1006",
+   "show": "yorimoi",
+   "chars": [
+    "shirase"
+   ],
+   "tier": "C",
+   "line": "Nendoroid",
+   "maker": "Good Smile Company",
+   "year": 2019,
+   "price": 65,
+   "cond": "pre-owned",
+   "where": "MFC classifieds",
+   "url": "https://myfigurecollection.net/item/740146",
+   "avail": "Aftermarket",
+   "note": "Hinata Nendoroid #1021 also exists"
+  }
+ }
+}

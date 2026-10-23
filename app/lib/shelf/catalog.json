@@ -1,0 +1,1057 @@
+{
+ "generatedAt": "2026-10-22",
+ "shows": {
+  "city": {
+   "topFav": 2205,
+   "members": [
+    {
+     "id": 181841,
+     "idMal": 59898,
+     "title": "CITY THE ANIMATION",
+     "format": "TV",
+     "year": 2025
+    }
+   ]
+  },
+  "csm": {
+   "topFav": 22212,
+   "members": [
+    {
+     "id": 127230,
+     "idMal": 44511,
+     "title": "Chainsaw Man",
+     "format": "TV",
+     "year": 2022
+    },
+    {
+     "id": 171627,
+     "idMal": 57555,
+     "title": "Chainsaw Man – The Movie: Reze Arc",
+     "format": "MOVIE",
+     "year": 2025
+    },
+    {
+     "id": 198726,
+     "idMal": null,
+     "title": "Chainsaw Days",
+     "format": "ONA",
+     "year": 2025
+    },
+    {
+     "id": 157349,
+     "idMal": 53641,
+     "title": "Rendezvous",
+     "format": "MUSIC",
+     "year": null
+    },
+    {
+     "id": 204429,
+     "idMal": 63143,
+     "title": "Chainsaw Man: Shikaku-hen",
+     "format": null,
+     "year": null
+    }
+   ]
+  },
+  "dandadan": {
+   "topFav": 7356,
+   "members": [
+    {
+     "id": 171018,
+     "idMal": 57334,
+     "title": "DAN DA DAN",
+     "format": "TV",
+     "year": 2024
+    },
+    {
+     "id": 185660,
+     "idMal": 60543,
+     "title": "DAN DA DAN Season 2",
+     "format": "TV",
+     "year": 2025
+    },
+    {
+     "id": 198966,
+     "idMal": 62516,
+     "title": "Dandadan 3rd Season",
+     "format": "TV",
+     "year": null
+    }
+   ]
+  },
+  "dressup": {
+   "topFav": 17321,
+   "members": [
+    {
+     "id": 132405,
+     "idMal": 48736,
+     "title": "My Dress-Up Darling",
+     "format": "TV",
+     "year": 2022
+    },
+    {
+     "id": 154768,
+     "idMal": 53065,
+     "title": "My Dress-Up Darling Season 2",
+     "format": "TV",
+     "year": 2025
+    }
+   ]
+  },
+  "frieren": {
+   "topFav": 22554,
+   "members": [
+    {
+     "id": 154587,
+     "idMal": 52991,
+     "title": "Frieren: Beyond Journey’s End",
+     "format": "TV",
+     "year": 2023
+    },
+    {
+     "id": 170068,
+     "idMal": 56885,
+     "title": "Sousou no Frieren: ●● no Mahou",
+     "format": "ONA",
+     "year": 2023
+    },
+    {
+     "id": 189513,
+     "idMal": null,
+     "title": "Sousou no Frieren: ●● no Mahou Part 2",
+     "format": "ONA",
+     "year": 2025
+    },
+    {
+     "id": 182255,
+     "idMal": 59978,
+     "title": "Frieren: Beyond Journey’s End Season 2",
+     "format": "TV",
+     "year": 2026
+    },
+    {
+     "id": 206425,
+     "idMal": null,
+     "title": "Sousou no Frieren: ●● no Mahou Part 3",
+     "format": "ONA",
+     "year": 2026
+    },
+    {
+     "id": 209939,
+     "idMal": 63816,
+     "title": "Sousou no Frieren 3rd Season",
+     "format": "TV",
+     "year": 2027
+    }
+   ]
+  },
+  "fujimoto1726": {
+   "topFav": 115,
+   "members": [
+    {
+     "id": 198188,
+     "idMal": 62405,
+     "title": "Tatsuki Fujimoto 17-26",
+     "format": "MOVIE",
+     "year": 2025
+    }
+   ]
+  },
+  "ggstrive": {
+   "topFav": 2205,
+   "members": [
+    {
+     "id": 178046,
+     "idMal": 59070,
+     "title": "GUILTY GEAR STRIVE: DUAL RULERS",
+     "format": "TV",
+     "year": 2025
+    }
+   ]
+  },
+  "goodbyelara": {
+   "topFav": 2205,
+   "members": [
+    {
+     "id": 177637,
+     "idMal": 58878,
+     "title": "Goodbye, Lara",
+     "format": "TV",
+     "year": 2026
+    }
+   ]
+  },
+  "gup": {
+   "topFav": 718,
+   "members": [
+    {
+     "id": 14131,
+     "idMal": 14131,
+     "title": "Girls und Panzer",
+     "format": "TV",
+     "year": 2012
+    },
+    {
+     "id": 15811,
+     "idMal": 15811,
+     "title": "Girls und Panzer OVA Series",
+     "format": "SPECIAL",
+     "year": 2013
+    },
+    {
+     "id": 130362,
+     "idMal": 18343,
+     "title": "Fushou Akiyama Yukari no Sensha Kouza",
+     "format": "SPECIAL",
+     "year": 2013
+    },
+    {
+     "id": 154147,
+     "idMal": 29853,
+     "title": "Girls und Panzer Heartful Tank Disc: Fushou Akiyama Yukari no Sensha Kouza",
+     "format": "SPECIAL",
+     "year": 2013
+    },
+    {
+     "id": 18619,
+     "idMal": 18619,
+     "title": "Girls und Panzer: This is the Real Anzio Battle!",
+     "format": "OVA",
+     "year": 2014
+    },
+    {
+     "id": 154100,
+     "idMal": 33658,
+     "title": "Fushou Akiyama Yukari no Sensha Kouza: Italy Sensha-hen",
+     "format": "SPECIAL",
+     "year": 2014
+    },
+    {
+     "id": 18617,
+     "idMal": 18617,
+     "title": "Girls und Panzer der Film",
+     "format": "MOVIE",
+     "year": 2015
+    },
+    {
+     "id": 156909,
+     "idMal": null,
+     "title": "Fushou Akiyama Yukari no Sensha Kouza: M4 Sherman in Girls und Panzer",
+     "format": "SPECIAL",
+     "year": 2015
+    },
+    {
+     "id": 21649,
+     "idMal": 32740,
+     "title": "Girls und Panzer der Film: Alice War!",
+     "format": "SPECIAL",
+     "year": 2016
+    },
+    {
+     "id": 154146,
+     "idMal": null,
+     "title": "Girls und Panzer Movie: Fushou Akiyama Yukari no Sensha Kouza",
+     "format": "SPECIAL",
+     "year": 2016
+    },
+    {
+     "id": 99938,
+     "idMal": 33970,
+     "title": "Girls und Panzer das Finale - Part 1",
+     "format": "MOVIE",
+     "year": 2017
+    },
+    {
+     "id": 107208,
+     "idMal": 38081,
+     "title": "Girls und Panzer das Finale - Part 2",
+     "format": "MOVIE",
+     "year": 2019
+    },
+    {
+     "id": 124115,
+     "idMal": 39166,
+     "title": "Girls und Panzer das Finale - Part 3",
+     "format": "MOVIE",
+     "year": 2021
+    },
+    {
+     "id": 144803,
+     "idMal": 49690,
+     "title": "Girls und Panzer: Daikon War!",
+     "format": "OVA",
+     "year": 2021
+    },
+    {
+     "id": 188034,
+     "idMal": 61227,
+     "title": "Girls und Panzer: Motto Love Love Sakusen desu!",
+     "format": "TV",
+     "year": 2026
+    }
+   ]
+  },
+  "haruhi": {
+   "topFav": 3995,
+   "members": [
+    {
+     "id": 849,
+     "idMal": 849,
+     "title": "The Melancholy of Haruhi Suzumiya",
+     "format": "TV",
+     "year": 2006
+    },
+    {
+     "id": 4382,
+     "idMal": 4382,
+     "title": "The Melancholy of Haruhi Suzumiya (2009)",
+     "format": "TV",
+     "year": 2009
+    },
+    {
+     "id": 5118,
+     "idMal": 5118,
+     "title": "The Melancholy of Haruhi-chan Suzumiya",
+     "format": "ONA",
+     "year": 2009
+    },
+    {
+     "id": 7311,
+     "idMal": 7311,
+     "title": "The Disappearance of Haruhi Suzumiya",
+     "format": "MOVIE",
+     "year": 2010
+    },
+    {
+     "id": 20566,
+     "idMal": 26351,
+     "title": "The Disappearance of Nagato Yuki-chan",
+     "format": "TV",
+     "year": 2015
+    },
+    {
+     "id": 21122,
+     "idMal": 30379,
+     "title": "The Disappearance of Nagato Yuki-chan: I Cannot Let Summer Break End",
+     "format": "OVA",
+     "year": 2015
+    }
+   ]
+  },
+  "interstella": {
+   "topFav": 58,
+   "members": [
+    {
+     "id": 731,
+     "idMal": 731,
+     "title": "Interstella 5555: The 5tory of the 5ecret 5tar 5ystem",
+     "format": "MOVIE",
+     "year": 2003
+    }
+   ]
+  },
+  "jaadugar": {
+   "topFav": 307,
+   "members": [
+    {
+     "id": 190569,
+     "idMal": 61483,
+     "title": "Jaadugar: A Witch in Mongolia",
+     "format": "TV",
+     "year": 2026
+    }
+   ]
+  },
+  "journalwitch": {
+   "topFav": 1368,
+   "members": [
+    {
+     "id": 177385,
+     "idMal": 58788,
+     "title": "Journal with Witch",
+     "format": "TV",
+     "year": 2026
+    }
+   ]
+  },
+  "leviathan": {
+   "topFav": 14,
+   "members": [
+    {
+     "id": 177887,
+     "idMal": 59005,
+     "title": "Leviathan",
+     "format": "ONA",
+     "year": 2025
+    }
+   ]
+  },
+  "lookback": {
+   "topFav": 1092,
+   "members": [
+    {
+     "id": 174788,
+     "idMal": 58125,
+     "title": "LOOK BACK",
+     "format": "MOVIE",
+     "year": 2024
+    }
+   ]
+  },
+  "madoka": {
+   "topFav": 12401,
+   "members": [
+    {
+     "id": 9756,
+     "idMal": 9756,
+     "title": "Puella Magi Madoka Magica",
+     "format": "TV",
+     "year": 2011
+    },
+    {
+     "id": 11977,
+     "idMal": 11977,
+     "title": "Puella Magi Madoka Magica the Movie Part 1: Beginnings",
+     "format": "MOVIE",
+     "year": 2012
+    },
+    {
+     "id": 11979,
+     "idMal": 11979,
+     "title": "Puella Magi Madoka Magica the Movie Part 2: Eternal",
+     "format": "MOVIE",
+     "year": 2012
+    },
+    {
+     "id": 11981,
+     "idMal": 11981,
+     "title": "Puella Magi Madoka Magica the Movie -Rebellion-",
+     "format": "MOVIE",
+     "year": 2013
+    },
+    {
+     "id": 101090,
+     "idMal": 32153,
+     "title": "Puella Magi Madoka Magica Concept Movie",
+     "format": "MOVIE",
+     "year": 2015
+    },
+    {
+     "id": 133007,
+     "idMal": 48820,
+     "title": "Puella Magi Madoka Magica the Movie -Walpurgisnacht: Rising-",
+     "format": "MOVIE",
+     "year": 2026
+    }
+   ]
+  },
+  "mglt": {
+   "topFav": 274,
+   "members": [
+    {
+     "id": 170938,
+     "idMal": 57217,
+     "title": "The Magical Girl and the Evil Lieutenant Used to Be Archenemies",
+     "format": "TV_SHORT",
+     "year": 2024
+    }
+   ]
+  },
+  "mushishi": {
+   "topFav": 4428,
+   "members": [
+    {
+     "id": 457,
+     "idMal": 457,
+     "title": "MUSHI-SHI",
+     "format": "TV",
+     "year": 2005
+    },
+    {
+     "id": 20526,
+     "idMal": 21329,
+     "title": "MUSHI-SHI OVA",
+     "format": "SPECIAL",
+     "year": 2014
+    },
+    {
+     "id": 20595,
+     "idMal": 21939,
+     "title": "MUSHI-SHI The Next Passage",
+     "format": "TV",
+     "year": 2014
+    },
+    {
+     "id": 20751,
+     "idMal": 24701,
+     "title": "MUSHI-SHI The Next Passage 2",
+     "format": "TV",
+     "year": 2014
+    },
+    {
+     "id": 20752,
+     "idMal": 24687,
+     "title": "MUSHI-SHI The Next Passage Special - Path of Thorns",
+     "format": "SPECIAL",
+     "year": 2014
+    },
+    {
+     "id": 21008,
+     "idMal": 28957,
+     "title": "MUSHI-SHI Special: Bell Droplets",
+     "format": "MOVIE",
+     "year": 2015
+    }
+   ]
+  },
+  "oshinoko": {
+   "topFav": 11807,
+   "members": [
+    {
+     "id": 150672,
+     "idMal": 52034,
+     "title": "OSHI NO KO",
+     "format": "TV",
+     "year": 2023
+    },
+    {
+     "id": 166531,
+     "idMal": 55791,
+     "title": "OSHI NO KO Season 2",
+     "format": "TV",
+     "year": 2024
+    },
+    {
+     "id": 182587,
+     "idMal": 60058,
+     "title": "OSHI NO KO Season 3",
+     "format": "TV",
+     "year": 2026
+    },
+    {
+     "id": 209827,
+     "idMal": 63794,
+     "title": "[Oshi no Ko] Final Season",
+     "format": "TV",
+     "year": null
+    }
+   ]
+  },
+  "pands": {
+   "topFav": 2947,
+   "members": [
+    {
+     "id": 8795,
+     "idMal": 8795,
+     "title": "Panty & Stocking with Garterbelt",
+     "format": "TV",
+     "year": 2010
+    },
+    {
+     "id": 10739,
+     "idMal": 10739,
+     "title": "Panty & Stocking in Sanitarybox",
+     "format": "SPECIAL",
+     "year": 2011
+    },
+    {
+     "id": 151799,
+     "idMal": 52293,
+     "title": "New PANTY & STOCKING with GARTERBELT",
+     "format": "TV",
+     "year": 2025
+    }
+   ]
+  },
+  "perfectblue": {
+   "topFav": 1340,
+   "members": [
+    {
+     "id": 437,
+     "idMal": 437,
+     "title": "Perfect Blue",
+     "format": "MOVIE",
+     "year": 1998
+    }
+   ]
+  },
+  "precure": {
+   "topFav": 2205,
+   "members": [
+    {
+     "id": 603,
+     "idMal": 603,
+     "title": "Precure",
+     "format": "TV",
+     "year": 2004
+    },
+    {
+     "id": 1929,
+     "idMal": 1929,
+     "title": "PreCure Max Heart",
+     "format": "TV",
+     "year": 2005
+    },
+    {
+     "id": 1930,
+     "idMal": 1930,
+     "title": "Futari wa Precure: Max Heart (Movie)",
+     "format": "MOVIE",
+     "year": 2005
+    },
+    {
+     "id": 1931,
+     "idMal": 1931,
+     "title": "Futari wa Precure: Max Heart 2 - Yukizora no Tomodachi",
+     "format": "MOVIE",
+     "year": 2005
+    }
+   ]
+  },
+  "sailormoon": {
+   "topFav": 2677,
+   "members": [
+    {
+     "id": 530,
+     "idMal": 530,
+     "title": "Sailor Moon",
+     "format": "TV",
+     "year": 1992
+    },
+    {
+     "id": 531,
+     "idMal": 531,
+     "title": "Sailor Moon R: The Movie",
+     "format": "MOVIE",
+     "year": 1993
+    },
+    {
+     "id": 740,
+     "idMal": 740,
+     "title": "Sailor Moon R",
+     "format": "TV",
+     "year": 1993
+    },
+    {
+     "id": 2937,
+     "idMal": 2937,
+     "title": "Sailor Moon R: Make Up! Sailor Guardians",
+     "format": "SPECIAL",
+     "year": 1993
+    },
+    {
+     "id": 532,
+     "idMal": 532,
+     "title": "Sailor Moon S",
+     "format": "TV",
+     "year": 1994
+    },
+    {
+     "id": 997,
+     "idMal": 997,
+     "title": "Sailor Moon S Movie: Hearts in Ice",
+     "format": "MOVIE",
+     "year": 1994
+    },
+    {
+     "id": 1239,
+     "idMal": 1239,
+     "title": "Sailor Moon SuperS",
+     "format": "TV",
+     "year": 1995
+    },
+    {
+     "id": 1240,
+     "idMal": 1240,
+     "title": "Sailor Moon SuperS the Movie: Black Dream Hole",
+     "format": "MOVIE",
+     "year": 1995
+    },
+    {
+     "id": 1278,
+     "idMal": 1278,
+     "title": "Sailor Moon SuperS Plus: Ami's First Love",
+     "format": "SPECIAL",
+     "year": 1995
+    },
+    {
+     "id": 3076,
+     "idMal": 3076,
+     "title": "Bishoujo Senshi Sailor Moon SuperS Special",
+     "format": "SPECIAL",
+     "year": 1995
+    },
+    {
+     "id": 996,
+     "idMal": 996,
+     "title": "Sailor Moon Sailor Stars",
+     "format": "TV",
+     "year": 1996
+    },
+    {
+     "id": 14751,
+     "idMal": 14751,
+     "title": "Pretty Guardian Sailor Moon Crystal: Seasons 1-2",
+     "format": "ONA",
+     "year": 2014
+    },
+    {
+     "id": 21462,
+     "idMal": 31733,
+     "title": "Pretty Guardian Sailor Moon Crystal: Season 3",
+     "format": "TV",
+     "year": 2016
+    },
+    {
+     "id": 103712,
+     "idMal": 40429,
+     "title": "Pretty Guardian Sailor Moon Eternal The Movie Part 2",
+     "format": "MOVIE",
+     "year": 2021
+    },
+    {
+     "id": 103713,
+     "idMal": 40024,
+     "title": "Pretty Guardian Sailor Moon Eternal The Movie Part 1",
+     "format": "MOVIE",
+     "year": 2021
+    },
+    {
+     "id": 148149,
+     "idMal": 51716,
+     "title": "Pretty Guardian Sailor Moon Cosmos The Movie: Part 1",
+     "format": "MOVIE",
+     "year": 2023
+    },
+    {
+     "id": 160850,
+     "idMal": null,
+     "title": "Pretty Guardian Sailor Moon Cosmos The Movie: Part 2",
+     "format": "MOVIE",
+     "year": 2023
+    }
+   ]
+  },
+  "sparks": {
+   "topFav": 142,
+   "members": [
+    {
+     "id": 103303,
+     "idMal": 62856,
+     "title": "Sparks of Tomorrow",
+     "format": "TV",
+     "year": 2026
+    }
+   ]
+  },
+  "spyfamily": {
+   "topFav": 14346,
+   "members": [
+    {
+     "id": 140960,
+     "idMal": 50265,
+     "title": "SPY x FAMILY",
+     "format": "TV",
+     "year": 2022
+    },
+    {
+     "id": 142838,
+     "idMal": 50602,
+     "title": "SPY x FAMILY Cour 2",
+     "format": "TV",
+     "year": 2022
+    },
+    {
+     "id": 158927,
+     "idMal": 53887,
+     "title": "SPY x FAMILY Season 2",
+     "format": "TV",
+     "year": 2023
+    },
+    {
+     "id": 158928,
+     "idMal": 53888,
+     "title": "SPY x FAMILY CODE: White",
+     "format": "MOVIE",
+     "year": 2023
+    },
+    {
+     "id": 177937,
+     "idMal": 59027,
+     "title": "SPY x FAMILY Season 3",
+     "format": "TV",
+     "year": 2025
+    }
+   ]
+  },
+  "takopi": {
+   "topFav": 1464,
+   "members": [
+    {
+     "id": 185407,
+     "idMal": 60489,
+     "title": "Takopi's Original Sin",
+     "format": "ONA",
+     "year": 2025
+    },
+    {
+     "id": 212539,
+     "idMal": 64266,
+     "title": "Takopii no Genzai: Arigatou, Mata Ashita",
+     "format": "MOVIE",
+     "year": 2026
+    }
+   ]
+  },
+  "utena": {
+   "topFav": 2697,
+   "members": [
+    {
+     "id": 440,
+     "idMal": 440,
+     "title": "Revolutionary Girl Utena",
+     "format": "TV",
+     "year": 1997
+    },
+    {
+     "id": 441,
+     "idMal": 441,
+     "title": "Revolutionary Girl Utena: The Adolescence of Utena",
+     "format": "MOVIE",
+     "year": 1999
+    }
+   ]
+  },
+  "watanare": {
+   "topFav": 686,
+   "members": [
+    {
+     "id": 184591,
+     "idMal": 60326,
+     "title": "There's No Freaking Way I'll Be Your Lover! Unless…",
+     "format": "TV",
+     "year": 2025
+    },
+    {
+     "id": 199112,
+     "idMal": 62543,
+     "title": "There's No Freaking Way I'll Be Your Lover! Unless… ~Next Shine~",
+     "format": "TV",
+     "year": 2026
+    }
+   ]
+  },
+  "wha": {
+   "topFav": 3529,
+   "members": [
+    {
+     "id": 147105,
+     "idMal": 51553,
+     "title": "Witch Hat Atelier",
+     "format": "ONA",
+     "year": 2026
+    },
+    {
+     "id": 213702,
+     "idMal": 64516,
+     "title": "Witch Hat Atelier Season 2",
+     "format": "TV",
+     "year": null
+    }
+   ]
+  },
+  "yorimoi": {
+   "topFav": 1662,
+   "members": [
+    {
+     "id": 99426,
+     "idMal": 35839,
+     "title": "A Place Further Than the Universe",
+     "format": "TV",
+     "year": 2018
+    }
+   ]
+  },
+  "youngladies": {
+   "topFav": 231,
+   "members": [
+    {
+     "id": 128757,
+     "idMal": 46488,
+     "title": "Young Ladies Don't Play Fighting Games",
+     "format": "TV",
+     "year": 2026
+    }
+   ]
+  },
+  "zls": {
+   "topFav": 1507,
+   "members": [
+    {
+     "id": 103871,
+     "idMal": 37976,
+     "title": "ZOMBIE LAND SAGA",
+     "format": "TV",
+     "year": 2018
+    },
+    {
+     "id": 110733,
+     "idMal": 40174,
+     "title": "ZOMBIE LAND SAGA REVENGE",
+     "format": "TV",
+     "year": 2021
+    },
+    {
+     "id": 140337,
+     "idMal": 50159,
+     "title": "Zombie Land Saga: Yumeginga Paradise",
+     "format": "MOVIE",
+     "year": 2025
+    },
+    {
+     "id": 121035,
+     "idMal": 40630,
+     "title": "Saga Jihen",
+     "format": "MUSIC",
+     "year": null
+    },
+    {
+     "id": 154006,
+     "idMal": 40477,
+     "title": "Curry Meshi × Zombie Land Saga",
+     "format": "ONA",
+     "year": null
+    },
+    {
+     "id": 185189,
+     "idMal": null,
+     "title": "Sukicchan! Karachu",
+     "format": "MUSIC",
+     "year": null
+    }
+   ]
+  }
+ },
+ "chars": {
+  "makima": {
+   "anilistId": 137080,
+   "name": "Makima",
+   "fav": 22212
+  },
+  "power": {
+   "anilistId": 137079,
+   "name": "Power",
+   "fav": 20437
+  },
+  "reze": {
+   "anilistId": 148740,
+   "name": "Reze",
+   "fav": 10433
+  },
+  "momo": {
+   "anilistId": 222594,
+   "name": "Momo Ayase",
+   "fav": 7356
+  },
+  "marin": {
+   "anilistId": 133676,
+   "name": "Marin Kitagawa",
+   "fav": 17321
+  },
+  "fern": {
+   "anilistId": 183965,
+   "name": "Fern",
+   "fav": 8725
+  },
+  "frieren": {
+   "anilistId": 176754,
+   "name": "Frieren",
+   "fav": 22554
+  },
+  "bridget": {
+   "anilistId": 30785,
+   "name": "Bridget",
+   "fav": 269
+  },
+  "miho": {
+   "anilistId": 62939,
+   "name": "Miho Nishizumi",
+   "fav": 393
+  },
+  "asakura": {
+   "anilistId": 255,
+   "name": "Ryouko Asakura",
+   "fav": 151
+  },
+  "haruhi": {
+   "anilistId": 251,
+   "name": "Haruhi Suzumiya",
+   "fav": 3995
+  },
+  "nagato": {
+   "anilistId": 249,
+   "name": "Yuki Nagato",
+   "fav": 2922
+  },
+  "homura": {
+   "anilistId": 38005,
+   "name": "Homura Akemi",
+   "fav": 12401
+  },
+  "madoka": {
+   "anilistId": 37832,
+   "name": "Madoka Kaname",
+   "fav": 5445
+  },
+  "ai": {
+   "anilistId": 172759,
+   "name": "Ai Hoshino",
+   "fav": 6465
+  },
+  "panty": {
+   "anilistId": 32800,
+   "name": "Panty Anarchy",
+   "fav": 1353
+  },
+  "stocking": {
+   "anilistId": 32801,
+   "name": "Stocking Anarchy",
+   "fav": 2947
+  },
+  "mima": {
+   "anilistId": 4866,
+   "name": "Mima Kirigoe",
+   "fav": 1340
+  },
+  "usagi": {
+   "anilistId": 2030,
+   "name": "Usagi Tsukino",
+   "fav": 2677
+  },
+  "anya": {
+   "anilistId": 138100,
+   "name": "Anya Forger",
+   "fav": 13196
+  },
+  "yor": {
+   "anilistId": 138102,
+   "name": "Yor Forger",
+   "fav": 14346
+  },
+  "utena": {
+   "anilistId": 747,
+   "name": "Utena Tenjou",
+   "fav": 2697
+  },
+  "coco": {
+   "anilistId": 129840,
+   "name": "Coco",
+   "fav": 2538
+  },
+  "shirase": {
+   "anilistId": 124546,
+   "name": "Shirase Kobuchizawa",
+   "fav": 1662
+  }
+ }
+}

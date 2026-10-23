@@ -32,6 +32,8 @@
     "test:blind-ranking": "node --experimental-strip-types --test tests/blindRanking.test.mjs",
     "test:custom-ranking": "node --experimental-strip-types --test tests/customRanking.test.mjs",
     "test:api-response": "node --experimental-strip-types --test tests/apiResponse.test.mjs",
+    "test:shelf": "node --experimental-strip-types --test tests/shelfScore.test.mjs tests/shelfFranchise.test.mjs tests/shelfBuild.test.mjs tests/shelfCharacters.test.mjs",
+    "shelf:catalog": "node --experimental-strip-types scripts/shelf-catalog.ts",
     "db:generate": "drizzle-kit generate"
   },
   "dependencies": {
