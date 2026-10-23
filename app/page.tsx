@@ -274,6 +274,9 @@ export default function HomePage() {
             <Link href="/blind-ranking/custom" className="v2-btn primary blind">
               Custom rankings
             </Link>
+            <Link href="/shelf" className="v2-btn primary">
+              Figure picks
+            </Link>
           </div>
         </article>
       </section>

@@ -32,8 +32,9 @@
     "test:blind-ranking": "node --experimental-strip-types --test tests/blindRanking.test.mjs",
     "test:custom-ranking": "node --experimental-strip-types --test tests/customRanking.test.mjs",
     "test:api-response": "node --experimental-strip-types --test tests/apiResponse.test.mjs",
-    "test:shelf": "node --experimental-strip-types --test tests/shelfScore.test.mjs tests/shelfFranchise.test.mjs tests/shelfBuild.test.mjs tests/shelfCharacters.test.mjs",
+    "test:shelf": "node --experimental-strip-types --test tests/shelfScore.test.mjs tests/shelfFranchise.test.mjs tests/shelfBuild.test.mjs tests/shelfCharacters.test.mjs tests/shelfMatch.test.mjs",
     "shelf:catalog": "node --experimental-strip-types scripts/shelf-catalog.ts",
+    "shelf:solaris": "node --experimental-strip-types scripts/shelf-solaris.ts",
     "db:generate": "drizzle-kit generate"
   },
   "dependencies": {
