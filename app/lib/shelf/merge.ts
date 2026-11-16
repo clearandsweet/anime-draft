@@ -21,6 +21,36 @@ const offerOf = (figure: ShelfFigure): Offer => ({
   note: figure.note,
 });
 
+// A key depends only on the listing and the show's titles, so keys are kept between requests:
+// the same list, or the same show on someone else's, doesn't work them out again.
+const keyCache = new Map<string, Map<string, string>>();
+const KEY_CACHE_LIMIT = 150_000;
+let cachedKeys = 0;
+
+function keysFor(titles: string[]) {
+  const signature = titles.join("|");
+  let known = keyCache.get(signature);
+  if (!known) {
+    if (cachedKeys > KEY_CACHE_LIMIT) {
+      keyCache.clear();
+      cachedKeys = 0;
+    }
+    known = new Map();
+    keyCache.set(signature, known);
+  }
+  const keys = known;
+  return (name: string, maker: string) => {
+    const id = `${maker}\n${name}`;
+    let key = keys.get(id);
+    if (key === undefined) {
+      key = identityKey(name, titles, maker);
+      keys.set(id, key);
+      cachedKeys++;
+    }
+    return key;
+  };
+}
+
 // A researched figure knows the most (an MFC page and rating); Solaris names its listings most cleanly.
 const leadRank = (figure: ShelfFigure) => (figure.id.startsWith("seed:") ? 0 : figure.id.startsWith("solaris:") ? 1 : 2);
 
@@ -29,7 +59,7 @@ const leadRank = (figure: ShelfFigure) => (figure.id.startsWith("seed:") ? 0 : f
  * for the same show come down to the same words once the series title and filler are removed.
  */
 export function mergeOffers(figures: ShelfFigure[], shows: Pick<ShelfShow, "id" | "terms">[]): ShelfFigure[] {
-  const titles = new Map(shows.map((show) => [show.id, [...show.terms.exact, ...show.terms.loose, ...show.terms.related]]));
+  const keyOf = new Map(shows.map((show) => [show.id, keysFor([...show.terms.exact, ...show.terms.loose, ...show.terms.related].sort((a, b) => b.length - a.length))]));
   const parent = figures.map((_, i) => i);
   const find = (i: number): number => (parent[i] === i ? i : (parent[i] = find(parent[i])));
   const seen = new Map<string, number>();
@@ -40,7 +70,7 @@ export function mergeOffers(figures: ShelfFigure[], shows: Pick<ShelfShow, "id" 
   };
   figures.forEach((figure, i) => {
     if (figure.jan) join(`jan:${figure.jan}`, i);
-    const words = identityKey(figure.name, titles.get(figure.show) ?? [], figure.maker);
+    const words = keyOf.get(figure.show)?.(figure.name, figure.maker) ?? identityKey(figure.name, [], figure.maker);
     if (!words) return;
     join(`${figure.show}|${normalize(figure.maker).split(" ")[0]}|${words}`, i);
     // Shops credit a figure to its maker, its brand or its distributor; a description this

@@ -69,12 +69,36 @@ export function groupFranchises(media: FranchiseMedia[]): FranchiseGroup[] {
     return out;
   };
 
+  const position = new Map(media.map((entry, i) => [entry.id, i]));
+  // Entries that share a character, and entries one continues: the only pairs worth comparing
+  // on a list of hundreds.
+  const starring = new Map<number, number[]>();
+  media.forEach((entry, i) => {
+    for (const character of new Set(entry.cast)) {
+      const list = starring.get(character);
+      if (list) list.push(i);
+      else starring.set(character, [i]);
+    }
+  });
+  const continues = new Map<number, Set<number>>();
+  const link = (a: number, b: number) => continues.set(a, (continues.get(a) ?? new Set()).add(b));
+  for (const entry of media) {
+    for (const relation of entry.relations) {
+      if (!CONTINUATION.has(relation.type) || !byId.has(relation.id) || relation.id === entry.id) continue;
+      link(entry.id, relation.id);
+      link(relation.id, entry.id);
+    }
+  }
+
   // Pass 1: pairs whose whole casts match, closest first. Unrelated entries (S1 and S3 with
   // no S2 on the list) only join when the casts are all but the same.
   const pairs: [number, number, number][] = [];
   for (let i = 0; i < media.length; i++) {
-    for (let j = i + 1; j < media.length; j++) {
-      const [a, b] = [media[i], media[j]];
+    const a = media[i];
+    const later = new Set<number>();
+    for (const character of a.cast) for (const j of starring.get(character) ?? []) if (j > i) later.add(j);
+    for (const j of [...later].sort((x, y) => x - y)) {
+      const b = media[j];
       const similarity = castSimilarity(a.cast, b.cast);
       if (
         (related(a, b, CONTINUATION) && similarity >= 0.3) ||
@@ -93,9 +117,12 @@ export function groupFranchises(media: FranchiseMedia[]): FranchiseGroup[] {
   for (const [first] of ordered) {
     const ids = membersOf(first);
     const cast = castOf(ids);
-    const candidates = [...groups().values()]
-      .filter((other) => find(other[0]) !== find(first) && castOf(other).length >= cast.length)
-      .filter((other) => ids.some((id) => other.some((o) => related(byId.get(id)!, byId.get(o)!, CONTINUATION))))
+    const roots = new Set<number>();
+    for (const id of ids) for (const other of continues.get(id) ?? []) if (find(other) !== find(first)) roots.add(find(other));
+    const candidates = [...roots]
+      .map((root) => membersOf(root))
+      .sort((a, b) => position.get(a[0])! - position.get(b[0])!)
+      .filter((other) => castOf(other).length >= cast.length)
       .map((other) => ({ other, overlap: shared(cast, castOf(other)) }));
     const best = cast.length
       ? candidates.filter((c) => c.overlap / cast.length >= 0.5).sort((a, b) => b.overlap - a.overlap)[0]
@@ -106,13 +133,22 @@ export function groupFranchises(media: FranchiseMedia[]): FranchiseGroup[] {
     }
   }
 
-  const final = [...groups().values()];
-  return final.map((ids) => {
-    const cast = castOf(ids);
+  const final = [...groups().values()].map((ids) => ({ ids, cast: castOf(ids) }));
+  const groupsWith = new Map<number, number[]>();
+  final.forEach((group, i) => {
+    for (const character of group.cast) {
+      const list = groupsWith.get(character);
+      if (list) list.push(i);
+      else groupsWith.set(character, [i]);
+    }
+  });
+  return final.map(({ ids, cast }, i) => {
     // A lone entry whose cast reaches into two franchises that share nobody.
-    const touching = final.filter((other) => other !== ids && shared(cast, castOf(other)) > 0);
-    const crossover = ids.length === 1 && cast.length >= 2 &&
-      touching.some((x, i) => touching.slice(i + 1).some((y) => shared(castOf(x), castOf(y)) === 0));
+    let crossover = false;
+    if (ids.length === 1 && cast.length >= 2) {
+      const touching = [...new Set(cast.flatMap((character) => groupsWith.get(character) ?? []))].filter((j) => j !== i).map((j) => final[j].cast);
+      crossover = touching.some((x, at) => touching.slice(at + 1).some((y) => shared(x, y) === 0));
+    }
     return { ids: ids.sort((a, b) => a - b), cast, crossover };
   });
 }

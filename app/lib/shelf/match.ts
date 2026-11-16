@@ -314,7 +314,11 @@ const GENERIC = new Set([
 export function identityKey(title: string, seriesTitles: string[], maker = "") {
   let text = ` ${normalize(title)} `;
   const rereleased = /\b(re ?release|reissue|resale|re ?run)\b/.test(text);
-  for (const series of [...seriesTitles].sort((a, b) => b.length - a.length)) {
+  // Longest first; callers with thousands of listings pass them already in that order.
+  const longestFirst = seriesTitles.every((series, i) => i === 0 || series.length <= seriesTitles[i - 1].length)
+    ? seriesTitles
+    : [...seriesTitles].sort((a, b) => b.length - a.length);
+  for (const series of longestFirst) {
     if (text.includes(` ${series} `)) {
       text = text.replace(` ${series} `, " ");
       break;
