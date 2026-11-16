@@ -35,6 +35,7 @@
     "test:shelf": "node --experimental-strip-types --test tests/shelfScore.test.mjs tests/shelfFranchise.test.mjs tests/shelfBuild.test.mjs tests/shelfCharacters.test.mjs tests/shelfMatch.test.mjs",
     "shelf:catalog": "node --experimental-strip-types scripts/shelf-catalog.ts",
     "shelf:solaris": "node --experimental-strip-types scripts/shelf-solaris.ts",
+    "shelf:shops": "node --experimental-strip-types scripts/shelf-shops.ts",
     "db:generate": "drizzle-kit generate"
   },
   "dependencies": {

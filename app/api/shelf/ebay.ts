@@ -26,6 +26,25 @@ async function accessToken() {
   return token.value;
 }
 
+let health: { ok: boolean; checked: number } | null = null;
+
+/**
+ * Whether the keys really work. eBay refuses a keyset it has disabled (one that hasn't answered
+ * its marketplace-account-deletion step), and every search would then fail, so the page only
+ * offers live search once a token has actually been issued. Rechecked every ten minutes.
+ */
+export async function ebayReady() {
+  if (!ebayConfigured()) return false;
+  if (health && Date.now() - health.checked < (health.ok ? 3_600_000 : 600_000)) return health.ok;
+  try {
+    await accessToken();
+    health = { ok: true, checked: Date.now() };
+  } catch {
+    health = { ok: false, checked: Date.now() };
+  }
+  return health.ok;
+}
+
 const slim = (item: EbayItem): EbayItem => ({
   itemId: item.itemId,
   title: item.title,

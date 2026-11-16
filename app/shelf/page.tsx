@@ -6,8 +6,8 @@ import { readApiResponse } from "../lib/apiResponse";
 import type { WorkResult } from "../lib/shelf/characters";
 import { shopSearches } from "../lib/shelf/links";
 import { DEFAULT_SETTINGS, TIERS, type Tier, type TypeGroup } from "../lib/shelf/score";
-import { scoreShelf } from "../lib/shelf/shelf";
-import type { ScoredFigure, ShelfFigure, ShelfShow } from "../lib/shelf/types";
+import { describeDevotion, scoreShelf } from "../lib/shelf/shelf";
+import type { Condition, ScoredFigure, ShelfFigure, ShelfShow } from "../lib/shelf/types";
 import CharacterRater, { type StoredRating } from "./CharacterRater";
 
 type Service = "anilist" | "mal";
@@ -19,17 +19,21 @@ type Shelf = {
   entryCount: number;
   unmatched: number;
   favouriteCharacters: number[];
-  catalogDate: string;
+  catalogs: { name: string; checkedOn: string; listings: number }[];
   liveSearch: string | null;
   shows: ShelfShow[];
   figures: ShelfFigure[];
-  /** Every figure matched to the list; the best of each show's are in `figures`. */
+  /** Shop listings matched to the list, and the distinct figures they come to; the best of each show's are in `figures`. */
   matched: number;
+  distinct: number;
 };
 type LiveState = { done: Record<string, number | "error">; pending: string[] };
 
 const RATINGS_KEY = "shelf-character-ratings";
 const PAGE = 60;
+// With variety on, the all-shows list takes a show's best few figures and one per character.
+const PER_SHOW = 3;
+const SHOW_THUMBS = 4;
 // Live (eBay) search covers the best-scored shows straight away; the rest wait for a click.
 const LIVE_FIRST = 60;
 const LIVE_BATCH = 6;
@@ -60,6 +64,8 @@ export default function ShelfPage() {
   const [maxPrice, setMaxPrice] = useState("");
   const [buyable, setBuyable] = useState(true);
   const [hideAdult, setHideAdult] = useState(true);
+  const [variety, setVariety] = useState(true);
+  const [conditions, setConditions] = useState<Set<Condition>>(new Set(["new", "pre-owned"]));
   const [limit, setLimit] = useState(PAGE);
   const [open, setOpen] = useState<Set<string>>(new Set());
   const [ratings, setRatings] = useState<Record<string, StoredRating>>({});
@@ -174,16 +180,44 @@ export default function ShelfPage() {
 
   const eligible = useMemo(() => scored.filter((f) => (!buyable || f.avail !== "sold out") && (!hideAdult || !f.nsfw)), [scored, buyable, hideAdult]);
 
-  const shown = useMemo(() => {
+  // What each show's row on the Shows tab previews: its best figures, for sale first.
+  const showBest = useMemo(() => {
+    const best = new Map<string, ScoredFigure[]>();
+    for (const figure of scored) {
+      if ((hideAdult && figure.nsfw) || figure.avail === "sold out") continue;
+      const list = best.get(figure.show);
+      if (!list) best.set(figure.show, [figure]);
+      else if (list.length < SHOW_THUMBS) list.push(figure);
+    }
+    return best;
+  }, [scored, hideAdult]);
+
+  const filtered = useMemo(() => {
     const allowed = new Set(Object.entries(TIERS).filter(([, t]) => types.has(t.group)).map(([tier]) => tier));
     const cap = Number(maxPrice) > 0 ? Number(maxPrice) : null;
     const rows = eligible.filter((f) =>
       (show === "all" || f.show === show) &&
       allowed.has(f.tier) &&
+      conditions.has(f.cond) &&
       (!cap || (f.result.price !== null && f.result.price <= cap)) &&
       (sort !== "value" || f.result.value !== null));
     return sort === "value" ? [...rows].sort((a, b) => (b.result.value ?? 0) - (a.result.value ?? 0)) : rows;
-  }, [eligible, show, types, maxPrice, sort]);
+  }, [eligible, show, types, conditions, maxPrice, sort]);
+
+  // Across all shows, variety keeps one franchise or one character from filling the list.
+  const spread = variety && show === "all";
+  const shown = useMemo(() => {
+    if (!spread) return filtered;
+    const perShow = new Map<string, number>();
+    const characters = new Set<string>();
+    return filtered.filter((f) => {
+      const lead = f.result.popularChar && f.result.popularChar !== "unknown" ? `${f.show}|${f.result.popularChar}` : null;
+      if ((perShow.get(f.show) ?? 0) >= PER_SHOW || (lead && characters.has(lead))) return false;
+      perShow.set(f.show, (perShow.get(f.show) ?? 0) + 1);
+      if (lead) characters.add(lead);
+      return true;
+    });
+  }, [filtered, spread]);
 
   const picks = useMemo(() => {
     if (!eligible.length) return null;
@@ -218,8 +252,8 @@ export default function ShelfPage() {
         <p className="shelf-eyebrow">Figure picks from your own list</p>
         <h1>Figure Shelf</h1>
         <p className="shelf-lede">
-          Every show on your AniList or MyAnimeList, scored by you, matched against thousands of figures. Each
-          franchise counts once, at your highest score for any entry that shares its characters.
+          Every show on your AniList or MyAnimeList, scored by you, matched against about 90,000 figures for
+          sale in three shops. Each franchise counts once, at your highest score for any entry that shares its characters.
         </p>
         <form
           className="shelf-form"
@@ -251,8 +285,8 @@ export default function ShelfPage() {
           <div className="shelf-status">
             <span><b>{shelf.entryCount.toLocaleString("en-US")}</b> entries on {shelf.username}&apos;s {SERVICE_NAMES[shelf.service]}</span>
             <span><b>{shelf.shows.length.toLocaleString("en-US")}</b> franchises, {scoredShows.length.toLocaleString("en-US")} scored</span>
-            <span><b>{shelf.matched.toLocaleString("en-US")}</b> figures matched, best {scored.length.toLocaleString("en-US")} loaded</span>
-            <span>Catalog checked {shelf.catalogDate}</span>
+            <span><b>{shelf.matched.toLocaleString("en-US")}</b> listings matched across {shelf.catalogs.length} shops</span>
+            <span><b>{shelf.distinct.toLocaleString("en-US")}</b> different figures, best {scored.length.toLocaleString("en-US")} loaded</span>
             {shelf.liveSearch ? (
               <span>
                 {liveState.pending.length
@@ -318,16 +352,37 @@ export default function ShelfPage() {
                   </div>
                 </div>
                 <div className="shelf-field">
+                  <span>Condition</span>
+                  <div className="shelf-chips">
+                    {(["new", "pre-owned"] as Condition[]).map((id) => (
+                      <button
+                        type="button"
+                        key={id}
+                        aria-pressed={conditions.has(id)}
+                        onClick={() => { setLimit(PAGE); setConditions((prev) => {
+                          const next = new Set(prev);
+                          if (next.has(id)) next.delete(id); else next.add(id);
+                          return next;
+                        }); }}
+                      >
+                        {id === "new" ? "New" : "Pre-owned"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="shelf-field">
                   <span>Show only</span>
                   <div className="shelf-chips">
                     <button type="button" aria-pressed={buyable} onClick={() => setBuyable((v) => !v)}>For sale now</button>
                     <button type="button" aria-pressed={hideAdult} onClick={() => setHideAdult((v) => !v)}>Hide 18+</button>
+                    <button type="button" aria-pressed={variety} onClick={() => { setVariety((v) => !v); setLimit(PAGE); }}>Variety</button>
                   </div>
                 </div>
               </div>
               <p className="shelf-count">
                 {plural(shown.length, "figure")}
                 {show !== "all" ? <> from {showsById.get(show)?.name} · <button type="button" className="shelf-link" onClick={() => setShow("all")}>all shows</button></> : null}
+                {spread ? <> · variety on: up to {PER_SHOW} per show and one per character, out of {filtered.length.toLocaleString("en-US")} · <button type="button" className="shelf-link" onClick={() => setVariety(false)}>show them all</button></> : null}
                 {sort === "value" ? " · value = overall ÷ log₁₀ price" : ""}
               </p>
               <ol className="shelf-grid">
@@ -361,6 +416,7 @@ export default function ShelfPage() {
             <ShowList
               shows={shelf.shows}
               counts={figureCount}
+              best={showBest}
               liveName={shelf.liveSearch}
               liveState={liveState}
               onPicks={(id) => { setShow(id); setLimit(PAGE); setTab("picks"); }}
@@ -370,13 +426,13 @@ export default function ShelfPage() {
 
           {tab === "characters" ? <CharacterRater ratings={ratings} onRate={rate} quickPicks={quickPicks} /> : null}
 
-          {tab === "method" ? <Method liveName={shelf.liveSearch} /> : null}
+          {tab === "method" ? <Method liveName={shelf.liveSearch} catalogs={shelf.catalogs} /> : null}
         </>
       ) : (
         <>
           <ul className="shelf-intro">
-            <li><b>Your whole list</b> Every entry and score, grouped into franchises by shared characters.</li>
-            <li><b>Real listings</b> Solaris Japan&apos;s catalog of new and pre-owned figures, with photos and prices.</li>
+            <li><b>Your whole list</b> Every entry and score, grouped into franchises by shared characters, plus rewatches and favourites.</li>
+            <li><b>Three shops compared</b> About 90,000 new and pre-owned figures from Solaris Japan, animota and Ninoma, with photos and the best price.</li>
             <li><b>Your characters</b> AniList favourites count fully, and you can rate any character below.</li>
           </ul>
           <CharacterRater ratings={ratings} onRate={rate} quickPicks={quickPicks} />
@@ -414,6 +470,9 @@ function FigureCard({ figure, rank, sort, show, open, onToggle }: {
   const r = figure.result;
   const total = r.overall || 1;
   const tierLabel = TIERS[figure.tier as Tier].label;
+  // The first offer is the card's own price; the rest are other shops, or the other condition.
+  const others = (figure.offers ?? []).slice(1);
+  const makerNote = figure.qAdj ? ` (${figure.qAdj > 0 ? "+" : "−"}${Math.abs(figure.qAdj)} for the maker${figure.maker ? `, ${figure.maker}` : ""})` : "";
   return (
     <li className={`shelf-card${open ? " is-open" : ""}`}>
       <div className="shelf-card-media">
@@ -432,7 +491,8 @@ function FigureCard({ figure, rank, sort, show, open, onToggle }: {
           <span>{figure.line}</span>
           {r.realRating ? <span className="is-real">MFC {figure.mfcR?.toFixed(2)}</span> : null}
           <span className={`is-${figure.avail.replace(" ", "-")}`}>{figure.avail}</span>
-          {figure.cond === "pre-owned" ? <span>pre-owned</span> : null}
+          {figure.cond === "pre-owned" ? <span>{figure.note?.startsWith("Pre-owned") ? figure.note.toLowerCase() : "pre-owned"}</span> : null}
+          {figure.match === "related" ? <span className="is-related">related series</span> : null}
         </div>
         <div className="shelf-card-buy">
           {r.price !== null ? (
@@ -440,6 +500,18 @@ function FigureCard({ figure, rank, sort, show, open, onToggle }: {
           ) : <span className="shelf-price is-none">No price</span>}
           <a href={figure.url} target="_blank" rel="noopener noreferrer">{figure.source} ↗</a>
         </div>
+        {others.length ? (
+          <ul className="shelf-offers" aria-label="Other offers">
+            {others.map((offer) => (
+              <li key={`${offer.url}|${offer.cond}`}>
+                <a href={offer.url} target="_blank" rel="noopener noreferrer">
+                  <span>{offer.source}{offer.cond === "pre-owned" ? ", pre-owned" : ""}{offer.avail === "in stock" ? "" : `, ${offer.avail}`}</span>
+                  <b className="shelf-num">{offer.price !== null ? money(offer.price) : "—"}</b>
+                </a>
+              </li>
+            ))}
+          </ul>
+        ) : null}
         <div className="shelf-card-links">
           <a href={figure.mfcHref} target="_blank" rel="noopener noreferrer">{figure.mfcDirect ? "MFC page ↗" : "Find on MFC ↗"}</a>
           <button type="button" aria-expanded={open} onClick={onToggle}>{open ? "Hide score" : "Why this score"}</button>
@@ -453,20 +525,20 @@ function FigureCard({ figure, rank, sort, show, open, onToggle }: {
             </div>
             <dl>
               <dt className="is-show">Show</dt>
-              <dd>Your score {r.showScore} of 100</dd>
+              <dd>{r.showHow}</dd>
               <dd className="shelf-num">{one(r.parts.show)}</dd>
               <dt className="is-quality">Figure</dt>
               <dd>
                 {r.realRating
                   ? `MFC ${figure.mfcR?.toFixed(2)} from ${figure.mfcN} ratings, pulled toward the ${tierLabel.toLowerCase()} average ${r.prior.toFixed(1)}`
-                  : `${tierLabel} average ${r.prior.toFixed(1)} (no MFC rating on file)`}
+                  : `${tierLabel} average ${r.prior.toFixed(1)}${makerNote}; no MFC rating on file`}
               </dd>
               <dd className="shelf-num">{one(r.parts.quality)}</dd>
               <dt className="is-pop">Character</dt>
               <dd>{r.popularity.how} → {r.popularity.value.toFixed(2)}</dd>
               <dd className="shelf-num">{one(r.parts.popularity)}</dd>
             </dl>
-            {figure.note ? <p className="shelf-note">{figure.note}</p> : null}
+            {figure.maker || figure.note ? <p className="shelf-note">{[figure.maker ? `Made by ${figure.maker}` : "", figure.note ?? ""].filter(Boolean).join(" · ")}</p> : null}
           </div>
         ) : null}
       </div>
@@ -483,9 +555,10 @@ function LiveMore({ count, name, onClick }: { count: number; name: string; onCli
   );
 }
 
-function ShowList({ shows, counts, liveName, liveState, onPicks, onSearch }: {
+function ShowList({ shows, counts, best, liveName, liveState, onPicks, onSearch }: {
   shows: ShelfShow[];
   counts: Map<string, number>;
+  best: Map<string, ScoredFigure[]>;
   liveName: string | null;
   liveState: LiveState;
   onPicks: (id: string) => void;
@@ -527,7 +600,17 @@ function ShowList({ shows, counts, liveName, liveState, onPicks, onSearch }: {
               ) : <span className="shelf-shows-blank" aria-hidden="true" />}
               <div className="shelf-shows-body">
                 <h3><a href={s.anilistUrl} target="_blank" rel="noopener noreferrer">{s.name}</a></h3>
-                <p>{s.basis}</p>
+                <p>{s.basis}{s.boost && s.score > 0 && s.score < 100 ? ` +${s.boost} ${describeDevotion(s.devotion)}.` : ""}</p>
+                {best.get(s.id)?.length ? (
+                  <div className="shelf-shows-best">
+                    {best.get(s.id)!.map((figure) => (
+                      <a key={figure.id} href={figure.url} target="_blank" rel="noopener noreferrer" title={`${figure.name} · ${figure.source}`}>
+                        <Thumb figure={figure} />
+                        <span className="shelf-num">{figure.result.price !== null ? money(figure.result.price) : "—"}</span>
+                      </a>
+                    ))}
+                  </div>
+                ) : null}
                 <div className="shelf-shows-links">
                   {shopSearches(s.name).map((shop) => (
                     <a key={shop.label} href={shop.href} target="_blank" rel="noopener noreferrer">{shop.label} ↗</a>
@@ -554,7 +637,7 @@ function ShowList({ shows, counts, liveName, liveState, onPicks, onSearch }: {
   );
 }
 
-function Method({ liveName }: { liveName: string | null }) {
+function Method({ liveName, catalogs }: { liveName: string | null; catalogs: Shelf["catalogs"] }) {
   const s = DEFAULT_SETTINGS;
   const total = s.wShow + s.wQuality + s.wPop;
   const pct = (w: number) => `${Math.round((100 * w) / total)}%`;
@@ -563,22 +646,34 @@ function Method({ liveName }: { liveName: string | null }) {
       <h2>How a figure is scored</h2>
       <p>
         Three parts, each scaled 0 to 1: your score for the show ({pct(s.wShow)}), the figure&apos;s quality
-        ({pct(s.wQuality)}), and how loved the character is ({pct(s.wPop)}).
+        ({pct(s.wQuality)}), and how loved the character is ({pct(s.wPop)}). Ties go to what&apos;s in stock, then to the lower price.
       </p>
       <ul>
-        <li><b>Your show score</b> is your highest score for any entry in the franchise. A franchise is every entry with the same characters: seasons, films and remakes count together, while a spin-off with a new cast, or each Precure series, stands alone. Unscored shows are listed under Shows but get no picks.</li>
-        <li><b>Figure quality</b> is the MyFigureCollection rating where the shelf has one, pulled toward the average for its kind of figure (scale, Nendoroid, Pop Up Parade, prize) when few people have rated it. Other figures use that average.</li>
+        <li><b>Your show score</b> starts from your highest score in the franchise. A franchise is every entry with the same characters: seasons, films and remakes count together, while a spin-off with a new cast, or each Precure series, stands alone.</li>
+        <li><b>Shared characters</b> carry their own score: your best among the entries that character appears in. Someone who only turns up in a season you scored lower counts for less, and a character who crosses into another show you scored higher counts for more, even on a show you haven&apos;t scored.</li>
+        <li><b>Devotion</b> adds up to 5 points below 100: a favourite on AniList gets all 5, a rewatch 3 or 4, and following a franchise through 3 or more entries 1 or 2.</li>
+        <li><b>Related series</b> you haven&apos;t listed (Macross Frontier when you scored Macross) count in full when the figure shows a character you know, and at {Math.round(s.relatedWeight * 100)}% of the show score when it doesn&apos;t.</li>
+        <li><b>Figure quality</b> is the MyFigureCollection rating where the shelf has one, pulled toward the average for its kind of figure when few people have rated it. Other figures use that average: {s.priors.A} for scales from the makers that rate best, {s.priors.B} for other scales (0.3 less for budget makers), {s.priors.C} for Nendoroids and figma, {s.priors.D} for Pop Up Parade class and {s.priors.E} for prize figures.</li>
         <li><b>Character</b> is √(the character&apos;s AniList favourites ÷ the franchise&apos;s most-favourited character). Your AniList favourites count fully, and a character you rate under Rate characters uses your rating instead (10 counts fully, 5 counts half).</li>
         <li><b>Value</b> divides the overall score by log₁₀ of the price, so a $40 figure isn&apos;t automatically ahead of a $130 one.</li>
       </ul>
       <h2>Where the figures come from</h2>
       <ul>
-        <li><b>Solaris Japan</b>: its catalog of new and pre-owned figures, matched to your shows by series and character. Prices are in US dollars, before shipping, as of the catalog date.</li>
+        {catalogs.map((catalog) => (
+          <li key={catalog.name}><b>{catalog.name}</b>: {catalog.listings.toLocaleString("en-US")} listings, checked {catalog.checkedOn}. {CATALOG_NOTES[catalog.name] ?? ""}</li>
+        ))}
+        <li><b>One card per figure</b>: the same figure in several shops, or re-released, is shown once with every offer, cheapest in-stock first. Prices are in US dollars before shipping (yen converted at the day&apos;s rate), and stock is as of each catalog&apos;s date.</li>
         <li><b>Researched picks</b> from the original shelf, with real MyFigureCollection ratings.</li>
         {liveName ? <li><b>{liveName}</b>: live buy-it-now listings for your best-scored shows, searched as the page loads. Obvious knock-offs are dropped, but check the seller before buying.</li> : null}
         <li><b>MyFigureCollection</b> has no public API, so every figure links to its MFC page or an MFC search instead.</li>
-        <li>Older and rarer figures are mostly on the secondhand market: every show under Shows links to searches on MFC, eBay, Mandarake, AmiAmi and Solaris.</li>
+        <li>Every show under Shows also links to searches on MFC, eBay, Mandarake, AmiAmi and Solaris, for what no catalog here carries.</li>
       </ul>
     </section>
   );
 }
+
+const CATALOG_NOTES: Record<string, string> = {
+  "Solaris Japan": "New and pre-owned, including figures that have sold out.",
+  animota: "New figures plus a large pre-owned range graded S to B.",
+  Ninoma: "New and in-stock older figures, priced in yen.",
+};

@@ -21,9 +21,9 @@ const MEDIA_FIELDS = `
   id idMal format seasonYear popularity synonyms
   title { english romaji native }
   coverImage { medium }
-  relations { edges { relationType node { id type } } }
+  relations { edges { relationType node { id type title { english romaji } } } }
   main: characters(role: MAIN, perPage: 12) { nodes { id } }
-  top: characters(sort: FAVOURITES_DESC, perPage: 8) { nodes { id favourites name { full first last alternative } } }
+  top: characters(sort: FAVOURITES_DESC, perPage: 12) { nodes { id favourites name { full first last alternative } } }
 `;
 
 type RawMedia = {
@@ -35,7 +35,12 @@ type RawMedia = {
   synonyms?: string[] | null;
   title?: { english?: string | null; romaji?: string | null; native?: string | null } | null;
   coverImage?: { medium?: string | null } | null;
-  relations?: { edges?: { relationType?: string | null; node?: { id: number; type?: string | null } | null }[] | null } | null;
+  relations?: {
+    edges?: {
+      relationType?: string | null;
+      node?: { id: number; type?: string | null; title?: { english?: string | null; romaji?: string | null } | null } | null;
+    }[] | null;
+  } | null;
   main?: { nodes?: { id: number }[] | null } | null;
   top?: {
     nodes?: {
@@ -58,7 +63,7 @@ function toMedia(raw: RawMedia): ListMedia {
     image: raw.coverImage?.medium ?? null,
     relations: (raw.relations?.edges ?? [])
       .filter((edge) => edge.node && edge.node.type === "ANIME" && edge.relationType)
-      .map((edge) => ({ type: edge.relationType!, id: edge.node!.id })),
+      .map((edge) => ({ type: edge.relationType!, id: edge.node!.id, english: edge.node!.title?.english ?? null, romaji: edge.node!.title?.romaji ?? null })),
     main: (raw.main?.nodes ?? []).map((node) => node.id),
     top: (raw.top?.nodes ?? [])
       .filter((node) => node.name?.full)
@@ -75,23 +80,23 @@ function toMedia(raw: RawMedia): ListMedia {
 
 type AniListShelfResponse = {
   data?: {
-    User?: { favourites?: { characters?: { nodes?: { id: number }[] } } } | null;
+    User?: { favourites?: { anime?: { nodes?: { id: number }[] }; characters?: { nodes?: { id: number }[] } } } | null;
     MediaListCollection?: {
       lists?: {
         isCustomList?: boolean;
-        entries?: { status?: string | null; score?: number | null; media?: RawMedia | null }[] | null;
+        entries?: { status?: string | null; score?: number | null; repeat?: number | null; media?: RawMedia | null }[] | null;
       }[] | null;
     } | null;
   };
 };
 
-/** The whole anime list in one call (about 1 MB for 600 titles), plus favourite characters. */
+/** The whole anime list in one call (about 1.6 MB for 600 titles), plus favourite anime and characters. */
 export async function loadAniListShelf(username: string) {
   const query = `
     query ($userName: String!) {
-      User(name: $userName) { favourites { characters(perPage: 25) { nodes { id } } } }
+      User(name: $userName) { favourites { anime(perPage: 50) { nodes { id } } characters(perPage: 50) { nodes { id } } } }
       MediaListCollection(userName: $userName, type: ANIME) {
-        lists { isCustomList entries { status score(format: POINT_100) media { ${MEDIA_FIELDS} } } }
+        lists { isCustomList entries { status repeat score(format: POINT_100) media { ${MEDIA_FIELDS} } } }
       }
     }
   `;
@@ -102,12 +107,13 @@ export async function loadAniListShelf(username: string) {
     if (list.isCustomList) continue;
     for (const entry of list.entries ?? []) {
       if (!entry.media) continue;
-      byId.set(entry.media.id, { media: toMedia(entry.media), score: entry.score ?? 0, status: entry.status ?? null });
+      byId.set(entry.media.id, { media: toMedia(entry.media), score: entry.score ?? 0, status: entry.status ?? null, repeat: entry.repeat ?? 0 });
     }
   }
   return {
     entries: [...byId.values()],
     favouriteCharacters: response.data?.User?.favourites?.characters?.nodes?.map((node) => node.id) ?? [],
+    favouriteAnime: response.data?.User?.favourites?.anime?.nodes?.map((node) => node.id) ?? [],
     unmatched: 0,
   };
 }
@@ -144,5 +150,5 @@ export async function loadMalShelf(username: string) {
     const media = byMal.get(entry.anime_id);
     if (media) entries.push({ media, score: (entry.score ?? 0) * 10, status: MAL_STATUS[entry.status ?? 0] ?? null });
   }
-  return { entries, favouriteCharacters: [] as number[], unmatched: mal.length - entries.length };
+  return { entries, favouriteCharacters: [] as number[], favouriteAnime: [] as number[], unmatched: mal.length - entries.length };
 }

@@ -38,10 +38,12 @@ export function matchEbay(items: EbayItem[], show: CatalogShow): ShelfFigure[] {
     figures.push({
       id: `ebay:${item.itemId}`,
       show: show.id,
+      match: chars.length ? "cast" : "series",
       name: item.title,
       line: kind.line,
       maker: "",
       tier: kind.tier,
+      qAdj: kind.adj || undefined,
       chars: chars.length ? chars : ["unknown"],
       charNames: chars.map((key) => castNames.get(key) ?? key),
       price: Math.round(price * 100) / 100,
