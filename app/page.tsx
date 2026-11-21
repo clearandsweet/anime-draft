@@ -265,6 +265,9 @@ export default function HomePage() {
             <a href="/draft/pokemon" className="v2-btn primary pokemon">
               Pokémon draft
             </a>
+            <Link href="/mega-starmie" className="v2-btn primary pokemon">
+              Mega Starmie Deck Simulation Tool
+            </Link>
             <a href="/amq" className="v2-btn primary quiz">
               Music quiz
             </a>
