@@ -268,6 +268,9 @@ export default function HomePage() {
             <Link href="/mega-starmie" className="v2-btn primary pokemon">
               Mega Starmie Deck Simulation Tool
             </Link>
+            <Link href="/pokemon-cn-binder" className="v2-btn primary pokemon">
+              China-only Pokémon card binder
+            </Link>
             <a href="/amq" className="v2-btn primary quiz">
               Music quiz
             </a>

@@ -33,6 +33,7 @@
     "test:custom-ranking": "node --experimental-strip-types --test tests/customRanking.test.mjs",
     "test:api-response": "node --experimental-strip-types --test tests/apiResponse.test.mjs",
     "test:shelf": "node --experimental-strip-types --test tests/shelfScore.test.mjs tests/shelfFranchise.test.mjs tests/shelfBuild.test.mjs tests/shelfCharacters.test.mjs tests/shelfMatch.test.mjs",
+    "test:cn-binder": "node --experimental-strip-types --test tests/chinaBinder.test.mjs",
     "shelf:catalog": "node --experimental-strip-types scripts/shelf-catalog.ts",
     "shelf:solaris": "node --experimental-strip-types scripts/shelf-solaris.ts",
     "shelf:shops": "node --experimental-strip-types scripts/shelf-shops.ts",

@@ -11,7 +11,7 @@ export const ebayConfigured = () => Boolean(process.env.EBAY_CLIENT_ID && proces
 
 let token: { value: string; expires: number } | null = null;
 
-async function accessToken() {
+export async function accessToken() {
   if (token && token.expires > Date.now() + 60_000) return token.value;
   const basic = Buffer.from(`${process.env.EBAY_CLIENT_ID}:${process.env.EBAY_CLIENT_SECRET}`).toString("base64");
   const response = await fetch(TOKEN_URL, {
