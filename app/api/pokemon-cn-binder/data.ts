@@ -44,15 +44,39 @@ export type MarketResponse = {
   cards: Record<string, CardMarket>;
 };
 
+// PriceCharting rate-limits bursts, so its pages are read two at a time with one polite retry.
+let pcActive = 0;
+const pcQueue: (() => void)[] = [];
+async function pcSlot<T>(work: () => Promise<T>): Promise<T> {
+  if (pcActive >= 2) await new Promise<void>((resolve) => pcQueue.push(resolve));
+  pcActive++;
+  try {
+    return await work();
+  } finally {
+    pcActive--;
+    pcQueue.shift()?.();
+  }
+}
+
+const pause = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 function priceCharting(card: CnCard): Promise<PriceChartingData> {
-  return cached(`cnbinder:pc:v1:${card.id}`, TTL, async () => {
-    const response = await fetch(PC_BASE + card.pc, {
-      headers: { "User-Agent": UA, Accept: "text/html" },
-      signal: AbortSignal.timeout(15_000),
-    });
-    if (!response.ok) throw new Error(`PriceCharting answered ${response.status}.`);
-    return parsePriceCharting(await response.text(), 40);
-  });
+  return cached(`cnbinder:pc:v1:${card.id}`, TTL, () =>
+    pcSlot(async () => {
+      for (let attempt = 0; ; attempt++) {
+        const response = await fetch(PC_BASE + card.pc, {
+          headers: { "User-Agent": UA, Accept: "text/html" },
+          signal: AbortSignal.timeout(15_000),
+        });
+        if (response.status === 429 && attempt === 0) {
+          await pause(2_500);
+          continue;
+        }
+        if (!response.ok) throw new Error(`PriceCharting answered ${response.status}.`);
+        return parsePriceCharting(await response.text(), 40);
+      }
+    })
+  );
 }
 
 type BrowseItem = { title?: string; price?: { value?: string; currency?: string }; itemWebUrl?: string; itemAffiliateWebUrl?: string };
@@ -155,9 +179,18 @@ async function buildMarket(): Promise<MarketResponse> {
 
     let history = histories[card.id] ?? [];
     if (pc || ask) {
-      const point: HistoryPoint = { d: today, raw: pc?.ungraded ?? null, psa: pc?.psa10 ?? null, ask: ask?.median ?? null, n: ask?.count ?? null };
+      // One reading a day; a source that failed earlier today fills its gap on a later load.
       const last = history[history.length - 1];
-      if (!last || last.d !== today) {
+      const earlier = last?.d === today ? last : null;
+      const point: HistoryPoint = {
+        d: today,
+        raw: pc?.ungraded ?? earlier?.raw ?? null,
+        psa: pc?.psa10 ?? earlier?.psa ?? null,
+        ask: earlier?.ask ?? ask?.median ?? null,
+        n: earlier?.n ?? ask?.count ?? null,
+      };
+      const changed = !earlier || (["raw", "psa", "ask", "n"] as const).some((k) => (earlier[k] ?? null) !== (point[k] ?? null));
+      if (changed) {
         history = addHistory(history, point, HISTORY_DAYS);
         await writeHistory(card.id, history);
       }
